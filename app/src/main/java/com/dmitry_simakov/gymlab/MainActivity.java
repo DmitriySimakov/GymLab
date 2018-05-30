@@ -40,26 +40,8 @@ public class MainActivity extends AppCompatActivity {
 
         mPreferences = getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
 
-        mDbHelper = new DbHelper(this);
-        mDatabase = mDbHelper.getReadableDatabase();
-
-        //Копируем базу данных при первом запуске приложение
-        if(!mPreferences.contains(IS_DB_COPIED)) {
-            boolean success = mDbHelper.copyDatabase(this);
-            if(success) {
-                SharedPreferences.Editor editor = mPreferences.edit();
-                editor.putBoolean(IS_DB_COPIED, true);
-                editor.apply();
-            }
-        }
-
-        String[] projection = { MuscleEntry._ID, MuscleEntry.COLUMN_NAME };
-
-        mCursor = mDatabase.query(MuscleEntry.TABLE_NAME, projection,
-                null, null, null, null, null);
-
         initElv();
-        //new LoadExercisesTask().execute();
+        new LoadExercisesTask().execute();
     }
 
     private void initElv() {
@@ -67,17 +49,6 @@ public class MainActivity extends AppCompatActivity {
 
         ProgressBar progressBar = findViewById(R.id.progressBar);
         mExerciseElv.setEmptyView(progressBar);
-
-        String[] groupFrom = { MuscleEntry.COLUMN_NAME };
-        int[] groupTo = { android.R.id.text1 };
-        String[] childFrom = { ExerciseEntry.COLUMN_NAME };
-        int[] childTo = { android.R.id.text1 };
-
-        mCursorAdapter = new ExerciseCursorTreeAdapter(this, mDatabase, mCursor,
-                android.R.layout.simple_expandable_list_item_1, groupFrom, groupTo,
-                android.R.layout.simple_list_item_1, childFrom, childTo);
-
-        mExerciseElv.setAdapter(mCursorAdapter);
 
         mExerciseElv.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
             @Override
@@ -91,8 +62,6 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
-
-        mExerciseElv.expandGroup(3);
     }
 
     @Override
@@ -137,7 +106,16 @@ public class MainActivity extends AppCompatActivity {
 
             super.onPostExecute(param);
             if(param) {
-                mCursorAdapter.changeCursor(mCursor);
+                String[] groupFrom = { MuscleEntry.COLUMN_NAME };
+                int[] groupTo = { android.R.id.text1 };
+                String[] childFrom = { ExerciseEntry.COLUMN_NAME };
+                int[] childTo = { android.R.id.text1 };
+
+                mCursorAdapter = new ExerciseCursorTreeAdapter(MainActivity.this, mDatabase, mCursor,
+                        android.R.layout.simple_expandable_list_item_1, groupFrom, groupTo,
+                        android.R.layout.simple_list_item_1, childFrom, childTo);
+
+                mExerciseElv.setAdapter(mCursorAdapter);
             } else {
                 Toast.makeText(MainActivity.this, "Проблемы с загрузкой базы данных", Toast.LENGTH_SHORT).show();
             }
