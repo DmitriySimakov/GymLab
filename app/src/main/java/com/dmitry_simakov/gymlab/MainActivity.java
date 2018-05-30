@@ -10,23 +10,22 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ListView;
+import android.widget.ExpandableListView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
-import com.dmitry_simakov.gymlab.data.ExerciseContract.ExerciseEntry;
-import com.dmitry_simakov.gymlab.data.ExerciseDbHelper;
+import com.dmitry_simakov.gymlab.database.DbContract.*;
+import com.dmitry_simakov.gymlab.database.DbHelper;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
     private SQLiteDatabase mDatabase;
-    private ExerciseDbHelper mDbHelper;
+    private DbHelper mDbHelper;
     private Cursor mCursor;
-    private ListView mExerciseListView;
-    private ExerciseCursorAdapter mCursorAdapter;
+    private ExerciseCursorTreeAdapter mCursorAdapter;
+    private ExpandableListView mExerciseElv;
 
     public static final String APP_PREFERENCES = "AppPreferences";
     public static final String IS_DB_COPIED = "isDbCopied";
@@ -41,22 +40,59 @@ public class MainActivity extends AppCompatActivity {
 
         mPreferences = getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
 
-        mExerciseListView = findViewById(R.id.list);
+        mDbHelper = new DbHelper(this);
+        mDatabase = mDbHelper.getReadableDatabase();
+
+        //Копируем базу данных при первом запуске приложение
+        if(!mPreferences.contains(IS_DB_COPIED)) {
+            boolean success = mDbHelper.copyDatabase(this);
+            if(success) {
+                SharedPreferences.Editor editor = mPreferences.edit();
+                editor.putBoolean(IS_DB_COPIED, true);
+                editor.apply();
+            }
+        }
+
+        String[] projection = { MuscleEntry._ID, MuscleEntry.COLUMN_NAME };
+
+        mCursor = mDatabase.query(MuscleEntry.TABLE_NAME, projection,
+                null, null, null, null, null);
+
+        initElv();
+        //new LoadExercisesTask().execute();
+    }
+
+    private void initElv() {
+        mExerciseElv = findViewById(R.id.elv);
+
         ProgressBar progressBar = findViewById(R.id.progressBar);
-        mExerciseListView.setEmptyView(progressBar);
+        mExerciseElv.setEmptyView(progressBar);
 
-        mCursorAdapter = new ExerciseCursorAdapter(this, null);
-        mExerciseListView.setAdapter(mCursorAdapter);
-        new LoadExercisesTask().execute();
+        String[] groupFrom = { MuscleEntry.COLUMN_NAME };
+        int[] groupTo = { android.R.id.text1 };
+        String[] childFrom = { ExerciseEntry.COLUMN_NAME };
+        int[] childTo = { android.R.id.text1 };
 
-        mExerciseListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        mCursorAdapter = new ExerciseCursorTreeAdapter(this, mDatabase, mCursor,
+                android.R.layout.simple_expandable_list_item_1, groupFrom, groupTo,
+                android.R.layout.simple_list_item_1, childFrom, childTo);
+
+        mExerciseElv.setAdapter(mCursorAdapter);
+
+        mExerciseElv.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
+            public boolean onChildClick(ExpandableListView parent, View v,int groupPosition, int childPosition, long id) {
                 Intent intent = new Intent(MainActivity.this, ExerciseDescriptionActivity.class);
                 intent.putExtra(ExerciseEntry._ID, (int)id);
                 startActivity(intent);
+                /* Если мы возвращаем true – это значит, мы сообщаем, что сами полностью обработали
+                событие и оно не пойдет в дальнейшие обработчики (если они есть).
+                Если возвращаем false – значит, мы позволяем событию идти дальше. */
+                return true;
             }
         });
+
+        mExerciseElv.expandGroup(3);
     }
 
     @Override
@@ -73,7 +109,7 @@ public class MainActivity extends AppCompatActivity {
         protected Boolean doInBackground(Void... params) {
             Log.d(LOG_TAG, "doInBackground");
 
-            mDbHelper = new ExerciseDbHelper(MainActivity.this);
+            mDbHelper = new DbHelper(MainActivity.this);
             mDatabase = mDbHelper.getReadableDatabase();
 
             //Копируем базу данных при первом запуске приложение
@@ -88,18 +124,10 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
-            String[] projection = {
-                    ExerciseEntry._ID,
-                    ExerciseEntry.COLUMN_EXERCISE_NAME };
+            String[] projection = {MuscleEntry._ID, MuscleEntry.COLUMN_NAME};
 
-            mCursor = mDatabase.query(
-                    ExerciseEntry.TABLE_NAME,
-                    projection,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null);
+            mCursor = mDatabase.query(MuscleEntry.TABLE_NAME, projection,
+                    null, null, null, null, null);
 
             return true;
         }

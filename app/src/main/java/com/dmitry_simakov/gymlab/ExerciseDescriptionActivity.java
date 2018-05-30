@@ -9,8 +9,8 @@ import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.dmitry_simakov.gymlab.data.ExerciseContract.ExerciseEntry;
-import com.dmitry_simakov.gymlab.data.ExerciseDbHelper;
+import com.dmitry_simakov.gymlab.database.DbContract.ExerciseEntry;
+import com.dmitry_simakov.gymlab.database.DbHelper;
 
 public class ExerciseDescriptionActivity extends AppCompatActivity {
 
@@ -31,12 +31,12 @@ public class ExerciseDescriptionActivity extends AppCompatActivity {
         int exerciseId = (Integer)getIntent().getExtras().get(ExerciseEntry._ID);
 
         try {
-            ExerciseDbHelper mDbHelper = new ExerciseDbHelper(this);
+            DbHelper mDbHelper = new DbHelper(this);
             SQLiteDatabase db = mDbHelper.getWritableDatabase();
 
             String[] projection = {
-                    ExerciseEntry.COLUMN_EXERCISE_NAME,
-                    ExerciseEntry.COLUMN_MAJOR_MUSCLES,
+                    ExerciseEntry.COLUMN_NAME,
+                    ExerciseEntry.COLUMN_MUSCLE_TARGETED,
                     ExerciseEntry.COLUMN_DESCRIPTION };
 
             Cursor cursor = db.query(ExerciseEntry.TABLE_NAME,
@@ -48,8 +48,8 @@ public class ExerciseDescriptionActivity extends AppCompatActivity {
                     null);
 
             if (cursor.moveToFirst()) {
-                int nameColumnIndex = cursor.getColumnIndex(ExerciseEntry.COLUMN_EXERCISE_NAME);
-                int majorMusclesColumnIndex = cursor.getColumnIndex(ExerciseEntry.COLUMN_MAJOR_MUSCLES);
+                int nameColumnIndex = cursor.getColumnIndex(ExerciseEntry.COLUMN_NAME);
+                int majorMusclesColumnIndex = cursor.getColumnIndex(ExerciseEntry.COLUMN_MUSCLE_TARGETED);
                 int descriptionColumnIndex = cursor.getColumnIndex(ExerciseEntry.COLUMN_DESCRIPTION);
 
                 String name = cursor.getString(nameColumnIndex);
@@ -64,7 +64,7 @@ public class ExerciseDescriptionActivity extends AppCompatActivity {
             }
             cursor.close();
             db.close();
-        }  catch(SQLiteException e) {
+        } catch(SQLiteException e) {
             Toast.makeText(this, "Database unavailable", Toast.LENGTH_SHORT).show();
         }
     }

@@ -1,4 +1,4 @@
-package com.dmitry_simakov.gymlab.data;
+package com.dmitry_simakov.gymlab.database;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -6,16 +6,16 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
-import com.dmitry_simakov.gymlab.data.ExerciseContract.ExerciseEntry;
+import com.dmitry_simakov.gymlab.database.DbContract.ExerciseEntry;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class ExerciseDbHelper extends SQLiteOpenHelper {
+public class DbHelper extends SQLiteOpenHelper {
 
-    private static final String LOG_TAG = ExerciseDbHelper.class.getSimpleName();
+    private static final String LOG_TAG = DbHelper.class.getSimpleName();
 
     public static final String DB_NAME = "gymlab.db";
     private static final int DB_VERSION = 1;
@@ -23,7 +23,7 @@ public class ExerciseDbHelper extends SQLiteOpenHelper {
 
     private Context mContext;
 
-    public ExerciseDbHelper(Context context) {
+    public DbHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
         Log.d(LOG_TAG, "constructor");
         mContext = context;
@@ -37,13 +37,12 @@ public class ExerciseDbHelper extends SQLiteOpenHelper {
     private static void insertExercise(
             SQLiteDatabase db, String name, int majorMuscles, String description) {
         ContentValues contentValues = new ContentValues();
-        contentValues.put(ExerciseEntry.COLUMN_EXERCISE_NAME, name);
-        contentValues.put(ExerciseEntry.COLUMN_MAJOR_MUSCLES, majorMuscles);
+        contentValues.put(ExerciseEntry.COLUMN_NAME, name);
+        contentValues.put(ExerciseEntry.COLUMN_MUSCLE_TARGETED, majorMuscles);
         contentValues.put(ExerciseEntry.COLUMN_DESCRIPTION, description);
 
         db.insert(ExerciseEntry.TABLE_NAME, null, contentValues);
     }
-
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
