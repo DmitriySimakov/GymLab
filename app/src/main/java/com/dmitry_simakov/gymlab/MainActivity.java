@@ -11,7 +11,9 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.ExpandableListView;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
+import android.widget.SimpleCursorTreeAdapter;
 import android.widget.Toast;
 
 import com.dmitry_simakov.gymlab.database.DbContract.*;
@@ -93,7 +95,10 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
-            String[] projection = {MuscleEntry._ID, MuscleEntry.COLUMN_NAME};
+            String[] projection = {
+                    MuscleEntry._ID,
+                    MuscleEntry.COLUMN_NAME,
+                    MuscleEntry.COLUMN_IMAGE};
 
             mCursor = mDatabase.query(MuscleEntry.TABLE_NAME, projection,
                     null, null, null, null, null);
@@ -106,14 +111,36 @@ public class MainActivity extends AppCompatActivity {
 
             super.onPostExecute(param);
             if(param) {
-                String[] groupFrom = { MuscleEntry.COLUMN_NAME };
-                int[] groupTo = { android.R.id.text1 };
-                String[] childFrom = { ExerciseEntry.COLUMN_NAME };
-                int[] childTo = { android.R.id.text1 };
+                String[] groupFrom = { MuscleEntry.COLUMN_NAME, MuscleEntry.COLUMN_IMAGE };
+                int[] groupTo = { R.id.muscle_name, R.id.muscle_image };
+                String[] childFrom = { ExerciseEntry.COLUMN_NAME, ExerciseEntry.COLUMN_IMAGE };
+                int[] childTo = { R.id.exercise_name, R.id.exercise_image };
 
                 mCursorAdapter = new ExerciseCursorTreeAdapter(MainActivity.this, mDatabase, mCursor,
-                        android.R.layout.simple_expandable_list_item_1, groupFrom, groupTo,
-                        android.R.layout.simple_list_item_1, childFrom, childTo);
+                        R.layout.exercise_expandable_list_item, groupFrom, groupTo,
+                        R.layout.exercise_list_item, childFrom, childTo);
+
+                mCursorAdapter.setViewBinder(new SimpleCursorTreeAdapter.ViewBinder() {
+                    @Override
+                    public boolean setViewValue(View view, Cursor cursor, int columnIndex) {
+                        if (view.getId() == R.id.muscle_image || view.getId() == R.id.exercise_image) {
+                            ImageView imageView = (ImageView) view;
+                            //String name = cursor.getString(1);
+                            String imageName = cursor.getString(columnIndex);
+                            if (imageName != null) {
+                                int resID = getApplicationContext().getResources().getIdentifier(imageName, "drawable", getApplicationContext().getPackageName());
+                                if (resID != 0) {
+                                    imageView.setImageDrawable(getApplicationContext().getResources().getDrawable(resID));
+                                    return true;
+                                }
+                            }
+
+                            imageView.setImageResource(R.drawable.no_image);
+                            return true;
+                        }
+                        return false;
+                    }
+                });
 
                 mExerciseElv.setAdapter(mCursorAdapter);
             } else {

@@ -11,6 +11,7 @@ public class DbContract {
 
         public final static String _ID = BaseColumns._ID;
         public final static String COLUMN_NAME ="name";
+        public final static String COLUMN_IMAGE ="image";
         public final static String COLUMN_MUSCLE_TARGETED ="muscle_targeted";
         public final static String COLUMN_DESCRIPTION ="description";
         public final static String COLUMN_TECHNIQUE ="technique";
@@ -21,5 +22,6 @@ public class DbContract {
 
         public final static String _ID = BaseColumns._ID;
         public final static String COLUMN_NAME ="name";
+        public final static String COLUMN_IMAGE ="image";
     }
 }

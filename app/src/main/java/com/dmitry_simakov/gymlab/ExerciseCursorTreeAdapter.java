@@ -27,7 +27,8 @@ public class ExerciseCursorTreeAdapter extends SimpleCursorTreeAdapter {
 
         String[] projection = {
                 ExerciseEntry._ID,
-                ExerciseEntry.COLUMN_NAME };
+                ExerciseEntry.COLUMN_NAME,
+                ExerciseEntry.COLUMN_IMAGE};
 
         return mDatabase.query(ExerciseEntry.TABLE_NAME,
                 projection,
