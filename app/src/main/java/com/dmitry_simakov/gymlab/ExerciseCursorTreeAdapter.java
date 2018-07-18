@@ -22,17 +22,17 @@ public class ExerciseCursorTreeAdapter extends SimpleCursorTreeAdapter {
 
     @Override
     protected Cursor getChildrenCursor(Cursor groupCursor) {
-        int idColumn = groupCursor.getColumnIndex(MuscleEntry._ID);
+        int idColumn = groupCursor.getColumnIndex(MusclesEntry._ID);
         int id = groupCursor.getInt(idColumn);
 
         String[] projection = {
-                ExerciseEntry._ID,
-                ExerciseEntry.COLUMN_NAME,
-                ExerciseEntry.COLUMN_IMAGE};
+                ExercisesEntry._ID,
+                ExercisesEntry.COLUMN_NAME,
+                ExercisesEntry.COLUMN_IMAGE};
 
-        return mDatabase.query(ExerciseEntry.TABLE_NAME,
+        return mDatabase.query(ExercisesEntry.TABLE_NAME,
                 projection,
-                ExerciseEntry.COLUMN_MUSCLE_TARGETED + " = ?",
+                ExercisesEntry.COLUMN_MAIN_MUSCLE_ID + " = ?",
                 new String[]{Integer.toString(id)},
                 null, null, null);
     }

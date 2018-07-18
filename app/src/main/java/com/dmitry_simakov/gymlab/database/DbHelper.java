@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
-import com.dmitry_simakov.gymlab.database.DbContract.ExerciseEntry;
+import com.dmitry_simakov.gymlab.database.DbContract.ExercisesEntry;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -37,11 +37,11 @@ public class DbHelper extends SQLiteOpenHelper {
     private static void insertExercise(
             SQLiteDatabase db, String name, int majorMuscles, String description) {
         ContentValues contentValues = new ContentValues();
-        contentValues.put(ExerciseEntry.COLUMN_NAME, name);
-        contentValues.put(ExerciseEntry.COLUMN_MUSCLE_TARGETED, majorMuscles);
-        contentValues.put(ExerciseEntry.COLUMN_DESCRIPTION, description);
+        contentValues.put(ExercisesEntry.COLUMN_NAME, name);
+        contentValues.put(ExercisesEntry.COLUMN_MAIN_MUSCLE_ID, majorMuscles);
+        contentValues.put(ExercisesEntry.COLUMN_DESCRIPTION, description);
 
-        db.insert(ExerciseEntry.TABLE_NAME, null, contentValues);
+        db.insert(ExercisesEntry.TABLE_NAME, null, contentValues);
     }
 
     @Override

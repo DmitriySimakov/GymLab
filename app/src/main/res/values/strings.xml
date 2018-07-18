@@ -1,10 +1,17 @@
 <resources>
     <string name="app_name">GymLab</string>
 
-    <string name="exercise_name">Название упражнения</string>
-    <string name="major_muscles">Целевые мышцы</string>
-    <string name="description">Описание</string>
+
     <string name="exercise">Упражнение</string>
-    <string name="editor_activity_title_new_pet">Новое упражнение</string>
+
+    <string name="exercise_name">Название упражнения</string>
+    <string name="images">Изображения</string>
+    <string name="main_muscle">Целевые мышцы</string>
+    <string name="targeted_muscles">Второстепенные мышцы</string>
+    <string name="mechanics_type">Тип</string>
+    <string name="exercise_type">Вид</string>
+    <string name="equipment">Оборудование</string>
+    <string name="description">Описание</string>
+    <string name="technique">Техника выполнения</string>
 
 </resources>

@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public boolean onChildClick(ExpandableListView parent, View v,int groupPosition, int childPosition, long id) {
                 Intent intent = new Intent(MainActivity.this, ExerciseDescriptionActivity.class);
-                intent.putExtra(ExerciseEntry._ID, (int)id);
+                intent.putExtra(ExercisesEntry._ID, (int)id);
                 startActivity(intent);
                 /* Если мы возвращаем true – это значит, мы сообщаем, что сами полностью обработали
                 событие и оно не пойдет в дальнейшие обработчики (если они есть).
@@ -96,11 +96,11 @@ public class MainActivity extends AppCompatActivity {
             }
 
             String[] projection = {
-                    MuscleEntry._ID,
-                    MuscleEntry.COLUMN_NAME,
-                    MuscleEntry.COLUMN_IMAGE};
+                    MusclesEntry._ID,
+                    MusclesEntry.COLUMN_NAME,
+                    MusclesEntry.COLUMN_IMAGE};
 
-            mCursor = mDatabase.query(MuscleEntry.TABLE_NAME, projection,
+            mCursor = mDatabase.query(MusclesEntry.TABLE_NAME, projection,
                     null, null, null, null, null);
 
             return true;
@@ -111,9 +111,9 @@ public class MainActivity extends AppCompatActivity {
 
             super.onPostExecute(param);
             if(param) {
-                String[] groupFrom = { MuscleEntry.COLUMN_NAME, MuscleEntry.COLUMN_IMAGE };
+                String[] groupFrom = { MusclesEntry.COLUMN_NAME, MusclesEntry.COLUMN_IMAGE };
                 int[] groupTo = { R.id.muscle_name, R.id.muscle_image };
-                String[] childFrom = { ExerciseEntry.COLUMN_NAME, ExerciseEntry.COLUMN_IMAGE };
+                String[] childFrom = { ExercisesEntry.COLUMN_NAME, ExercisesEntry.COLUMN_IMAGE };
                 int[] childTo = { R.id.exercise_name, R.id.exercise_image };
 
                 mCursorAdapter = new ExerciseCursorTreeAdapter(MainActivity.this, mDatabase, mCursor,

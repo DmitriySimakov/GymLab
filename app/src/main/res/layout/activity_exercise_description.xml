@@ -20,12 +20,68 @@
     <View style="@style/DividerStyle" />
 
     <TextView
-        android:text="@string/major_muscles"
+        android:text="@string/images"
+        style="@style/LabelStyle" />
+
+    <ImageView
+        android:id="@+id/images"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:src="@drawable/no_image"/>
+
+    <View style="@style/DividerStyle" />
+
+    <TextView
+        android:text="@string/main_muscle"
         style="@style/LabelStyle" />
 
     <TextView
-        android:id="@+id/major_muscles"
-        android:text="@string/major_muscles"
+        android:id="@+id/main_muscle"
+        android:text="@string/main_muscle"
+        style="@style/FieldStyle" />
+
+    <View style="@style/DividerStyle" />
+
+    <TextView
+        android:text="@string/targeted_muscles"
+        style="@style/LabelStyle" />
+
+    <TextView
+        android:id="@+id/targeted_muscles"
+        android:text="@string/targeted_muscles"
+        style="@style/FieldStyle" />
+
+    <View style="@style/DividerStyle" />
+
+    <TextView
+        android:text="@string/mechanics_type"
+        style="@style/LabelStyle" />
+
+    <TextView
+        android:id="@+id/mechanics_type"
+        android:text="@string/mechanics_type"
+        style="@style/FieldStyle" />
+
+    <View style="@style/DividerStyle" />
+
+    <TextView
+        android:text="@string/exercise_type"
+        style="@style/LabelStyle" />
+
+    <TextView
+        android:id="@+id/exercise_type"
+        android:text="@string/exercise_type"
+        style="@style/FieldStyle" />
+
+    <View style="@style/DividerStyle" />
+
+    <TextView
+        android:text="@string/equipment"
+        style="@style/LabelStyle" />
+
+    <TextView
+        android:id="@+id/equipment"
+        android:text="@string/equipment"
         style="@style/FieldStyle" />
 
     <View style="@style/DividerStyle" />
@@ -37,6 +93,17 @@
     <TextView
         android:id="@+id/description"
         android:text="@string/description"
+        style="@style/FieldStyle" />
+
+    <View style="@style/DividerStyle" />
+
+    <TextView
+        android:text="@string/technique"
+        style="@style/LabelStyle" />
+
+    <TextView
+        android:id="@+id/technique"
+        android:text="@string/technique"
         style="@style/FieldStyle" />
 
 </LinearLayout>
