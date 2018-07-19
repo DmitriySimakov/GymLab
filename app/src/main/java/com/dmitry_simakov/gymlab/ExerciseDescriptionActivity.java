@@ -12,12 +12,16 @@ import android.widget.Toast;
 
 import com.dmitry_simakov.gymlab.database.DbHelper;
 
+import java.util.ArrayList;
+import java.util.StringJoiner;
+
 public class ExerciseDescriptionActivity extends AppCompatActivity {
 
     private static final String LOG_TAG = ExerciseDescriptionActivity.class.getSimpleName();
 
     private static class ExE extends com.dmitry_simakov.gymlab.database.DbContract.ExercisesEntry{}
     private static class ME extends com.dmitry_simakov.gymlab.database.DbContract.MusclesEntry{}
+    private static class TME extends com.dmitry_simakov.gymlab.database.DbContract.TargetedMusclesEntry{}
     private static class MTE extends com.dmitry_simakov.gymlab.database.DbContract.MechanicsTypesEntry{}
     private static class ETE extends com.dmitry_simakov.gymlab.database.DbContract.ExerciseTypesEntry{}
     private static class EqE extends com.dmitry_simakov.gymlab.database.DbContract.EquipmentEntry{}
@@ -32,6 +36,7 @@ public class ExerciseDescriptionActivity extends AppCompatActivity {
         TextView mExerciseNameTextView = findViewById(R.id.exercise_name);
         ImageView mImageView = findViewById(R.id.images);
         TextView mMainMuscleTextView = findViewById(R.id.main_muscle);
+        TextView mTargetedMusclesTextView = findViewById(R.id.targeted_muscles);
         TextView mMechanicsTypeTextView = findViewById(R.id.mechanics_type);
         TextView mExerciseTypeTextView = findViewById(R.id.exercise_type);
         TextView mEquipmentTextView = findViewById(R.id.equipment);
@@ -93,6 +98,24 @@ public class ExerciseDescriptionActivity extends AppCompatActivity {
                 mDescriptionTextView.setText(description);
                 mTechniqueTextView.setText(technique);
             }
+
+            cursor = db.rawQuery("SELECT (SELECT name FROM muscles WHERE _id = targeted_muscles.muscle_id) AS muscle " +
+                            "FROM targeted_muscles " +
+                            "WHERE exercise_id = ?",
+                    new String[]{Integer.toString(exerciseId)});
+
+            if (cursor.moveToFirst()) {
+                int muscleColumnIndex = cursor.getColumnIndex("muscle");
+                StringBuilder sb = new StringBuilder();
+                do {
+                    sb.append(cursor.getString(muscleColumnIndex));
+                    sb.append(", ");
+                } while (cursor.moveToNext());
+                sb.setLength(sb.length() - 2); // Delete last delimiter
+
+                mTargetedMusclesTextView.setText(sb.toString());
+            }
+
             cursor.close();
             db.close();
         } catch(SQLiteException e) {

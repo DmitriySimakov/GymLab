@@ -42,7 +42,6 @@ public class DbContract {
 
         public final static String EXERCISE_ID = "exercise_id";
         public final static String MUSCLE_ID = "muscle_id";
-        public final static String TYPE = "type";
     }
 
     public static class MechanicsTypesEntry implements BaseColumns {
