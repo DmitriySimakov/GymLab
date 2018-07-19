@@ -95,12 +95,12 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
-            String[] projection = {
+            String[] columns = {
                     MusclesEntry._ID,
-                    MusclesEntry.COLUMN_NAME,
-                    MusclesEntry.COLUMN_IMAGE};
+                    MusclesEntry.NAME,
+                    MusclesEntry.IMAGE};
 
-            mCursor = mDatabase.query(MusclesEntry.TABLE_NAME, projection,
+            mCursor = mDatabase.query(MusclesEntry.TABLE_NAME, columns,
                     null, null, null, null, null);
 
             return true;
@@ -111,9 +111,9 @@ public class MainActivity extends AppCompatActivity {
 
             super.onPostExecute(param);
             if(param) {
-                String[] groupFrom = { MusclesEntry.COLUMN_NAME, MusclesEntry.COLUMN_IMAGE };
+                String[] groupFrom = { MusclesEntry.NAME, MusclesEntry.IMAGE};
                 int[] groupTo = { R.id.muscle_name, R.id.muscle_image };
-                String[] childFrom = { ExercisesEntry.COLUMN_NAME, ExercisesEntry.COLUMN_IMAGE };
+                String[] childFrom = { ExercisesEntry.NAME, ExercisesEntry.IMAGE};
                 int[] childTo = { R.id.exercise_name, R.id.exercise_image };
 
                 mCursorAdapter = new ExerciseCursorTreeAdapter(MainActivity.this, mDatabase, mCursor,

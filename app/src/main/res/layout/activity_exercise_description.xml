@@ -14,7 +14,7 @@
 
     <TextView
         android:id="@+id/exercise_name"
-        android:text="@string/exercise_name"
+        tools:text="@string/exercise_name"
         style="@style/FieldStyle" />
 
     <View style="@style/DividerStyle" />
@@ -37,7 +37,7 @@
 
     <TextView
         android:id="@+id/main_muscle"
-        android:text="@string/main_muscle"
+        tools:text="@string/main_muscle"
         style="@style/FieldStyle" />
 
     <View style="@style/DividerStyle" />
@@ -48,7 +48,7 @@
 
     <TextView
         android:id="@+id/targeted_muscles"
-        android:text="@string/targeted_muscles"
+        tools:text="@string/targeted_muscles"
         style="@style/FieldStyle" />
 
     <View style="@style/DividerStyle" />
@@ -59,7 +59,7 @@
 
     <TextView
         android:id="@+id/mechanics_type"
-        android:text="@string/mechanics_type"
+        tools:text="@string/mechanics_type"
         style="@style/FieldStyle" />
 
     <View style="@style/DividerStyle" />
@@ -70,7 +70,7 @@
 
     <TextView
         android:id="@+id/exercise_type"
-        android:text="@string/exercise_type"
+        tools:text="@string/exercise_type"
         style="@style/FieldStyle" />
 
     <View style="@style/DividerStyle" />
@@ -81,7 +81,7 @@
 
     <TextView
         android:id="@+id/equipment"
-        android:text="@string/equipment"
+        tools:text="@string/equipment"
         style="@style/FieldStyle" />
 
     <View style="@style/DividerStyle" />
@@ -92,7 +92,7 @@
 
     <TextView
         android:id="@+id/description"
-        android:text="@string/description"
+        tools:text="@string/description"
         style="@style/FieldStyle" />
 
     <View style="@style/DividerStyle" />
@@ -103,7 +103,7 @@
 
     <TextView
         android:id="@+id/technique"
-        android:text="@string/technique"
+        tools:text="@string/technique"
         style="@style/FieldStyle" />
 
 </LinearLayout>

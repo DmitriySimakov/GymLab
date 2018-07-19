@@ -25,14 +25,14 @@ public class ExerciseCursorTreeAdapter extends SimpleCursorTreeAdapter {
         int idColumn = groupCursor.getColumnIndex(MusclesEntry._ID);
         int id = groupCursor.getInt(idColumn);
 
-        String[] projection = {
+        String[] columns = {
                 ExercisesEntry._ID,
-                ExercisesEntry.COLUMN_NAME,
-                ExercisesEntry.COLUMN_IMAGE};
+                ExercisesEntry.NAME,
+                ExercisesEntry.IMAGE};
 
         return mDatabase.query(ExercisesEntry.TABLE_NAME,
-                projection,
-                ExercisesEntry.COLUMN_MAIN_MUSCLE_ID + " = ?",
+                columns,
+                ExercisesEntry.MAIN_MUSCLE_ID + " = ?",
                 new String[]{Integer.toString(id)},
                 null, null, null);
     }

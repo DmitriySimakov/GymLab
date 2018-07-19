@@ -4,49 +4,65 @@ import android.provider.BaseColumns;
 
 public class DbContract {
 
+    private final static String ID = BaseColumns._ID;
+
     private DbContract() {};
 
-    public static final class ExercisesEntry implements BaseColumns {
+    public static class ExercisesEntry implements BaseColumns {
         public final static String TABLE_NAME = "exercises";
 
-        public final static String _ID = BaseColumns._ID;
-        public final static String COLUMN_NAME ="name";
-        public final static String COLUMN_IMAGE ="image";
-        public final static String COLUMN_MAIN_MUSCLE_ID ="main_muscle_id";
-        public final static String COLUMN_MECHANICS_TYPE ="mechanics_type";
-        public final static String COLUMN_EXERCISE_TYPE_ID ="exercise_type_id";
-        public final static String COLUMN_EQUIPMENT_ID ="equipment_id";
-        public final static String COLUMN_DESCRIPTION ="description";
-        public final static String COLUMN_TECHNIQUE ="technique";
+        // Names for external keys
+        public final static String MAIN_MUSCLE = "main_muscle";
+        public final static String MECHANICS_TYPE = "mechanics_type";
+        public final static String EXERCISE_TYPE = "exercise_type";
+        public final static String EQUIPMENT = "equipment";
+
+        // Columns names
+        public final static String _ID = ID;
+        public final static String NAME = "name";
+        public final static String IMAGE = "image";
+        public final static String MAIN_MUSCLE_ID = MAIN_MUSCLE + ID;
+        public final static String MECHANICS_TYPE_ID = MECHANICS_TYPE + ID;
+        public final static String EXERCISE_TYPE_ID = EXERCISE_TYPE + ID;
+        public final static String EQUIPMENT_ID = EQUIPMENT + ID;
+        public final static String DESCRIPTION = "description";
+        public final static String TECHNIQUE = "technique";
     }
 
-    public static final class MusclesEntry implements BaseColumns {
+    public static class MusclesEntry implements BaseColumns {
         public final static String TABLE_NAME = "muscles";
 
-        public final static String _ID = BaseColumns._ID;
-        public final static String COLUMN_NAME ="name";
-        public final static String COLUMN_IMAGE ="image";
+        public final static String _ID = ID;
+        public final static String NAME = "name";
+        public final static String IMAGE = "image";
     }
 
-    public static final class TargetedMusclesEntry implements BaseColumns {
+    public static class TargetedMusclesEntry implements BaseColumns {
         public final static String TABLE_NAME = "targeted_muscles";
 
-        public final static String COLUMN_EXERCISE_ID ="exercise_id";
-        public final static String COLUMN_MUSCLE_ID ="muscle_id";
-        public final static String COLUMN_TYPE ="type";
+        public final static String EXERCISE_ID = "exercise_id";
+        public final static String MUSCLE_ID = "muscle_id";
+        public final static String TYPE = "type";
     }
 
-    public static final class ExerciseTypesEntry implements BaseColumns {
+    public static class MechanicsTypesEntry implements BaseColumns {
+        public final static String TABLE_NAME = "mechanics_types";
+
+        public final static String _ID = ID;
+        public final static String NAME = "name";
+    }
+
+    public static class ExerciseTypesEntry implements BaseColumns {
         public final static String TABLE_NAME = "exercise_types";
 
-        public final static String _ID = BaseColumns._ID;
-        public final static String COLUMN_NAME ="name";
+        public final static String _ID = ID;
+        public final static String NAME = "name";
     }
 
-    public static final class EquipmentEntry implements BaseColumns {
+    public static class EquipmentEntry implements BaseColumns {
         public final static String TABLE_NAME = "equipment";
 
-        public final static String _ID = BaseColumns._ID;
-        public final static String COLUMN_NAME ="name";
+        public final static String _ID = ID;
+        public final static String NAME = "name";
     }
 }

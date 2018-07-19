@@ -10,12 +10,17 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.dmitry_simakov.gymlab.database.DbContract.ExercisesEntry;
 import com.dmitry_simakov.gymlab.database.DbHelper;
 
 public class ExerciseDescriptionActivity extends AppCompatActivity {
 
     private static final String LOG_TAG = ExerciseDescriptionActivity.class.getSimpleName();
+
+    private static class ExE extends com.dmitry_simakov.gymlab.database.DbContract.ExercisesEntry{}
+    private static class ME extends com.dmitry_simakov.gymlab.database.DbContract.MusclesEntry{}
+    private static class MTE extends com.dmitry_simakov.gymlab.database.DbContract.MechanicsTypesEntry{}
+    private static class ETE extends com.dmitry_simakov.gymlab.database.DbContract.ExerciseTypesEntry{}
+    private static class EqE extends com.dmitry_simakov.gymlab.database.DbContract.EquipmentEntry{}
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,44 +33,47 @@ public class ExerciseDescriptionActivity extends AppCompatActivity {
         ImageView mImageView = findViewById(R.id.images);
         TextView mMainMuscleTextView = findViewById(R.id.main_muscle);
         TextView mMechanicsTypeTextView = findViewById(R.id.mechanics_type);
+        TextView mExerciseTypeTextView = findViewById(R.id.exercise_type);
+        TextView mEquipmentTextView = findViewById(R.id.equipment);
         TextView mDescriptionTextView = findViewById(R.id.description);
         TextView mTechniqueTextView = findViewById(R.id.technique);
 
 
-        int exerciseId = (Integer)getIntent().getExtras().get(ExercisesEntry._ID);
+        int exerciseId = (Integer)getIntent().getExtras().get(ExE._ID);
 
         try {
             DbHelper mDbHelper = new DbHelper(this);
             SQLiteDatabase db = mDbHelper.getWritableDatabase();
 
-            String[] projection = {
-                    ExercisesEntry.COLUMN_NAME,
-                    ExercisesEntry.COLUMN_IMAGE,
-                    ExercisesEntry.COLUMN_MAIN_MUSCLE_ID,
-                    ExercisesEntry.COLUMN_MECHANICS_TYPE,
-                    ExercisesEntry.COLUMN_DESCRIPTION,
-                    ExercisesEntry.COLUMN_TECHNIQUE };
-
-            Cursor cursor = db.query(ExercisesEntry.TABLE_NAME,
-                    projection,
-                    "_id = ?",
-                    new String[]{Integer.toString(exerciseId)},
-                    null,
-                    null,
-                    null);
+            Cursor cursor = db.rawQuery(
+                    "SELECT "+ ExE.NAME +", "+
+                            ExE.IMAGE +", "+
+                            "(SELECT "+ ME.NAME  +" FROM "+ ME.TABLE_NAME  +" WHERE "+ ME._ID  +" = "+ ExE.MAIN_MUSCLE_ID    +") AS "+ ExE.MAIN_MUSCLE    +", "+
+                            "(SELECT "+ MTE.NAME +" FROM "+ MTE.TABLE_NAME +" WHERE "+ MTE._ID +" = "+ ExE.MECHANICS_TYPE_ID +") AS "+ ExE.MECHANICS_TYPE +", "+
+                            "(SELECT "+ ETE.NAME +" FROM "+ ETE.TABLE_NAME +" WHERE "+ ETE._ID +" = "+ ExE.EXERCISE_TYPE_ID  +") AS "+ ExE.EXERCISE_TYPE  +", "+
+                            "(SELECT "+ EqE.NAME +" FROM "+ EqE.TABLE_NAME +" WHERE "+ EqE._ID +" = "+ ExE.EQUIPMENT_ID      +") AS "+ ExE.EQUIPMENT      +", "+
+                            ExE.DESCRIPTION +", "+
+                            ExE.TECHNIQUE +" "+
+                            "FROM "+ ExE.TABLE_NAME +" "+
+                            "WHERE "+ ExE._ID +" = ?",
+                    new String[]{Integer.toString(exerciseId)});
 
             if (cursor.moveToFirst()) {
-                int nameColumnIndex = cursor.getColumnIndex(ExercisesEntry.COLUMN_NAME);
-                int imageColumnIndex = cursor.getColumnIndex(ExercisesEntry.COLUMN_IMAGE);
-                int majorMusclesColumnIndex = cursor.getColumnIndex(ExercisesEntry.COLUMN_MAIN_MUSCLE_ID);
-                int mechanicsTypeColumnIndex = cursor.getColumnIndex(ExercisesEntry.COLUMN_MECHANICS_TYPE);
-                int descriptionColumnIndex = cursor.getColumnIndex(ExercisesEntry.COLUMN_DESCRIPTION);
-                int techniqueColumnIndex = cursor.getColumnIndex(ExercisesEntry.COLUMN_TECHNIQUE);
+                int nameColumnIndex = cursor.getColumnIndex(ExE.NAME);
+                int imageColumnIndex = cursor.getColumnIndex(ExE.IMAGE);
+                int mainMuscleColumnIndex = cursor.getColumnIndex(ExE.MAIN_MUSCLE);
+                int mechanicsTypeColumnIndex = cursor.getColumnIndex(ExE.MECHANICS_TYPE);
+                int exerciseTypeColumnIndex = cursor.getColumnIndex(ExE.EXERCISE_TYPE);
+                int equipmentColumnIndex = cursor.getColumnIndex(ExE.EQUIPMENT);
+                int descriptionColumnIndex = cursor.getColumnIndex(ExE.DESCRIPTION);
+                int techniqueColumnIndex = cursor.getColumnIndex(ExE.TECHNIQUE);
 
                 String name = cursor.getString(nameColumnIndex);
                 String imageName = cursor.getString(imageColumnIndex);
-                int majorMuscles = cursor.getInt(majorMusclesColumnIndex);
-                int mechanicsType = cursor.getInt(mechanicsTypeColumnIndex);
+                String mainMuscle = cursor.getString(mainMuscleColumnIndex);
+                String mechanicsType = cursor.getString(mechanicsTypeColumnIndex);
+                String exerciseType = cursor.getString(exerciseTypeColumnIndex);
+                String equipment = cursor.getString(equipmentColumnIndex);
                 String description = cursor.getString(descriptionColumnIndex);
                 String technique = cursor.getString(techniqueColumnIndex);
 
@@ -78,9 +86,10 @@ public class ExerciseDescriptionActivity extends AppCompatActivity {
                         mImageView.setImageDrawable(getApplicationContext().getResources().getDrawable(resID));
                     }
                 }
-                mMainMuscleTextView.setText(Integer.toString(majorMuscles));
-                if (mechanicsType == 1) mMechanicsTypeTextView.setText("Базовое");
-                else if (mechanicsType == 0) mMechanicsTypeTextView.setText("Изолирующее");
+                mMainMuscleTextView.setText(mainMuscle);
+                mMechanicsTypeTextView.setText(mechanicsType);
+                mExerciseTypeTextView.setText(exerciseType);
+                mEquipmentTextView.setText(equipment);
                 mDescriptionTextView.setText(description);
                 mTechniqueTextView.setText(technique);
             }

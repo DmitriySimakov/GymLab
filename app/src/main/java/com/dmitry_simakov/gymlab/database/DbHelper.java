@@ -37,9 +37,9 @@ public class DbHelper extends SQLiteOpenHelper {
     private static void insertExercise(
             SQLiteDatabase db, String name, int majorMuscles, String description) {
         ContentValues contentValues = new ContentValues();
-        contentValues.put(ExercisesEntry.COLUMN_NAME, name);
-        contentValues.put(ExercisesEntry.COLUMN_MAIN_MUSCLE_ID, majorMuscles);
-        contentValues.put(ExercisesEntry.COLUMN_DESCRIPTION, description);
+        contentValues.put(ExercisesEntry.NAME, name);
+        contentValues.put(ExercisesEntry.MAIN_MUSCLE_ID, majorMuscles);
+        contentValues.put(ExercisesEntry.DESCRIPTION, description);
 
         db.insert(ExercisesEntry.TABLE_NAME, null, contentValues);
     }
