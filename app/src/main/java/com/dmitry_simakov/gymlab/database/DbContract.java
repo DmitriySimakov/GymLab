@@ -32,6 +32,7 @@ public class DbContract {
     public static class MusclesEntry implements BaseColumns {
         public final static String TABLE_NAME = "muscles";
 
+        // Columns names
         public final static String _ID = ID;
         public final static String NAME = "name";
         public final static String IMAGE = "image";
@@ -40,13 +41,18 @@ public class DbContract {
     public static class TargetedMusclesEntry implements BaseColumns {
         public final static String TABLE_NAME = "targeted_muscles";
 
+        // Names for external keys
+        public final static String MUSCLE = "muscle";
+
+        // Columns names
         public final static String EXERCISE_ID = "exercise_id";
-        public final static String MUSCLE_ID = "muscle_id";
+        public final static String MUSCLE_ID = MUSCLE + ID;
     }
 
     public static class MechanicsTypesEntry implements BaseColumns {
         public final static String TABLE_NAME = "mechanics_types";
 
+        // Columns names
         public final static String _ID = ID;
         public final static String NAME = "name";
     }
@@ -54,6 +60,7 @@ public class DbContract {
     public static class ExerciseTypesEntry implements BaseColumns {
         public final static String TABLE_NAME = "exercise_types";
 
+        // Columns names
         public final static String _ID = ID;
         public final static String NAME = "name";
     }
@@ -61,6 +68,7 @@ public class DbContract {
     public static class EquipmentEntry implements BaseColumns {
         public final static String TABLE_NAME = "equipment";
 
+        // Columns names
         public final static String _ID = ID;
         public final static String NAME = "name";
     }

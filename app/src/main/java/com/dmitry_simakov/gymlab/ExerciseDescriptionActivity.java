@@ -99,13 +99,13 @@ public class ExerciseDescriptionActivity extends AppCompatActivity {
                 mTechniqueTextView.setText(technique);
             }
 
-            cursor = db.rawQuery("SELECT (SELECT name FROM muscles WHERE _id = targeted_muscles.muscle_id) AS muscle " +
-                            "FROM targeted_muscles " +
-                            "WHERE exercise_id = ?",
+            cursor = db.rawQuery("SELECT (SELECT "+ ME.NAME +" FROM "+ ME.TABLE_NAME +" WHERE "+ ME._ID +" = "+ TME.MUSCLE_ID +") AS "+ TME.MUSCLE +" " +
+                            "FROM "+ TME.TABLE_NAME +" " +
+                            "WHERE "+ TME.EXERCISE_ID +" = ?",
                     new String[]{Integer.toString(exerciseId)});
 
             if (cursor.moveToFirst()) {
-                int muscleColumnIndex = cursor.getColumnIndex("muscle");
+                int muscleColumnIndex = cursor.getColumnIndex(TME.MUSCLE);
                 StringBuilder sb = new StringBuilder();
                 do {
                     sb.append(cursor.getString(muscleColumnIndex));
