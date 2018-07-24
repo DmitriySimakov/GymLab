@@ -1,53 +1,64 @@
 package com.dmitry_simakov.gymlab;
 
+import android.content.Context;
+import android.content.res.Resources;
+import android.support.annotation.NonNull;
+import android.support.v4.app.Fragment;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.dmitry_simakov.gymlab.database.DbHelper;
 
-import java.util.ArrayList;
-import java.util.StringJoiner;
+public class ExerciseDescriptionFragment extends Fragment {
 
-public class ExerciseDescriptionActivity extends AppCompatActivity {
-
-    private static final String LOG_TAG = ExerciseDescriptionActivity.class.getSimpleName();
+    private static final String LOG_TAG = ExerciseDescriptionFragment.class.getSimpleName();
 
     private static class ExE extends com.dmitry_simakov.gymlab.database.DbContract.ExercisesEntry{}
-    private static class ME extends com.dmitry_simakov.gymlab.database.DbContract.MusclesEntry{}
+    private static class ME  extends com.dmitry_simakov.gymlab.database.DbContract.MusclesEntry{}
     private static class TME extends com.dmitry_simakov.gymlab.database.DbContract.TargetedMusclesEntry{}
     private static class MTE extends com.dmitry_simakov.gymlab.database.DbContract.MechanicsTypesEntry{}
     private static class ETE extends com.dmitry_simakov.gymlab.database.DbContract.ExerciseTypesEntry{}
     private static class EqE extends com.dmitry_simakov.gymlab.database.DbContract.EquipmentEntry{}
 
+    private Context mContext;
+
+    public ExerciseDescriptionFragment() {}
+
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        Log.d(LOG_TAG, "onCreate");
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        mContext = context;
+    }
 
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_exercise_description);
+    @Override
+    public View onCreateView(@NonNull final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        Log.d(LOG_TAG, "onCreateView");
 
-        TextView mExerciseNameTextView = findViewById(R.id.exercise_name);
-        ImageView mImageView = findViewById(R.id.images);
-        TextView mMainMuscleTextView = findViewById(R.id.main_muscle);
-        TextView mTargetedMusclesTextView = findViewById(R.id.targeted_muscles);
-        TextView mMechanicsTypeTextView = findViewById(R.id.mechanics_type);
-        TextView mExerciseTypeTextView = findViewById(R.id.exercise_type);
-        TextView mEquipmentTextView = findViewById(R.id.equipment);
-        TextView mDescriptionTextView = findViewById(R.id.description);
-        TextView mTechniqueTextView = findViewById(R.id.technique);
+        View view = inflater.inflate(R.layout.activity_exercise_description, container, false);
 
+        TextView mExerciseNameTextView    = view.findViewById(R.id.exercise_name);
+        ImageView mImageView              = view.findViewById(R.id.images);
+        TextView mMainMuscleTextView      = view.findViewById(R.id.main_muscle);
+        TextView mTargetedMusclesTextView = view.findViewById(R.id.targeted_muscles);
+        TextView mMechanicsTypeTextView   = view.findViewById(R.id.mechanics_type);
+        TextView mExerciseTypeTextView    = view.findViewById(R.id.exercise_type);
+        TextView mEquipmentTextView       = view.findViewById(R.id.equipment);
+        TextView mDescriptionTextView     = view.findViewById(R.id.description);
+        TextView mTechniqueTextView       = view.findViewById(R.id.technique);
 
-        int exerciseId = (Integer)getIntent().getExtras().get(ExE._ID);
+        int exerciseId = getArguments().getInt(ExE._ID);
 
         try {
-            DbHelper mDbHelper = new DbHelper(this);
+            DbHelper mDbHelper = new DbHelper(mContext);
             SQLiteDatabase db = mDbHelper.getWritableDatabase();
 
             Cursor cursor = db.rawQuery(
@@ -64,31 +75,32 @@ public class ExerciseDescriptionActivity extends AppCompatActivity {
                     new String[]{Integer.toString(exerciseId)});
 
             if (cursor.moveToFirst()) {
-                int nameColumnIndex = cursor.getColumnIndex(ExE.NAME);
-                int imageColumnIndex = cursor.getColumnIndex(ExE.IMAGE);
-                int mainMuscleColumnIndex = cursor.getColumnIndex(ExE.MAIN_MUSCLE);
+                int nameColumnIndex          = cursor.getColumnIndex(ExE.NAME);
+                int imageColumnIndex         = cursor.getColumnIndex(ExE.IMAGE);
+                int mainMuscleColumnIndex    = cursor.getColumnIndex(ExE.MAIN_MUSCLE);
                 int mechanicsTypeColumnIndex = cursor.getColumnIndex(ExE.MECHANICS_TYPE);
-                int exerciseTypeColumnIndex = cursor.getColumnIndex(ExE.EXERCISE_TYPE);
-                int equipmentColumnIndex = cursor.getColumnIndex(ExE.EQUIPMENT);
-                int descriptionColumnIndex = cursor.getColumnIndex(ExE.DESCRIPTION);
-                int techniqueColumnIndex = cursor.getColumnIndex(ExE.TECHNIQUE);
+                int exerciseTypeColumnIndex  = cursor.getColumnIndex(ExE.EXERCISE_TYPE);
+                int equipmentColumnIndex     = cursor.getColumnIndex(ExE.EQUIPMENT);
+                int descriptionColumnIndex   = cursor.getColumnIndex(ExE.DESCRIPTION);
+                int techniqueColumnIndex     = cursor.getColumnIndex(ExE.TECHNIQUE);
 
-                String name = cursor.getString(nameColumnIndex);
-                String imageName = cursor.getString(imageColumnIndex);
-                String mainMuscle = cursor.getString(mainMuscleColumnIndex);
+                String name          = cursor.getString(nameColumnIndex);
+                String imageName     = cursor.getString(imageColumnIndex);
+                String mainMuscle    = cursor.getString(mainMuscleColumnIndex);
                 String mechanicsType = cursor.getString(mechanicsTypeColumnIndex);
-                String exerciseType = cursor.getString(exerciseTypeColumnIndex);
-                String equipment = cursor.getString(equipmentColumnIndex);
-                String description = cursor.getString(descriptionColumnIndex);
-                String technique = cursor.getString(techniqueColumnIndex);
+                String exerciseType  = cursor.getString(exerciseTypeColumnIndex);
+                String equipment     = cursor.getString(equipmentColumnIndex);
+                String description   = cursor.getString(descriptionColumnIndex);
+                String technique     = cursor.getString(techniqueColumnIndex);
 
-                setTitle(name);
+                getActivity().setTitle(name);
 
                 mExerciseNameTextView.setText(name);
                 if (imageName != null) {
-                    int resID = getApplicationContext().getResources().getIdentifier(imageName, "drawable", getApplicationContext().getPackageName());
+                    Resources res = mContext.getResources();
+                    int resID = res.getIdentifier(imageName, "drawable", mContext.getPackageName());
                     if (resID != 0) {
-                        mImageView.setImageDrawable(getApplicationContext().getResources().getDrawable(resID));
+                        mImageView.setImageDrawable(res.getDrawable(resID));
                     }
                 }
                 mMainMuscleTextView.setText(mainMuscle);
@@ -119,8 +131,9 @@ public class ExerciseDescriptionActivity extends AppCompatActivity {
             cursor.close();
             db.close();
         } catch(SQLiteException e) {
-            Toast.makeText(this, "Database unavailable", Toast.LENGTH_SHORT).show();
+            Toast.makeText(mContext, "Database unavailable", Toast.LENGTH_SHORT).show();
         }
+        return view;
     }
 }
 

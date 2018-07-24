@@ -1,37 +1,34 @@
 package com.dmitry_simakov.gymlab;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.design.widget.NavigationView;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.View;
-import android.widget.ExpandableListView;
-import android.widget.ImageView;
-import android.widget.ProgressBar;
-import android.widget.SimpleCursorTreeAdapter;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.Toast;
 
-import com.dmitry_simakov.gymlab.database.DbContract.*;
 import com.dmitry_simakov.gymlab.database.DbHelper;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity
+        implements NavigationView.OnNavigationItemSelectedListener {
 
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
-
-    private SQLiteDatabase mDatabase;
-    private DbHelper mDbHelper;
-    private Cursor mCursor;
-    private ExerciseCursorTreeAdapter mCursorAdapter;
-    private ExpandableListView mExerciseElv;
 
     public static final String APP_PREFERENCES = "AppPreferences";
     public static final String IS_DB_COPIED = "isDbCopied";
     SharedPreferences mPreferences;
+
+    private DrawerLayout mDrawer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,112 +37,107 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Init Toolbar
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        // Init DrawerLayout
+        mDrawer = findViewById(R.id.drawer_layout);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, mDrawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        mDrawer.addDrawerListener(toggle);
+        toggle.syncState();
+
+        // Init NavigationView
+        NavigationView navigationView = findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
+
         mPreferences = getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
 
-        initElv();
-        new LoadExercisesTask().execute();
+        initDB();
+
+        setFragment(new ExerciseListFragment(), navigationView.getMenu().findItem(R.id.nav_exercises));
     }
 
-    private void initElv() {
-        mExerciseElv = findViewById(R.id.elv);
+    private void initDB() {
+        Log.d(LOG_TAG, "initDB");
 
-        ProgressBar progressBar = findViewById(R.id.progressBar);
-        mExerciseElv.setEmptyView(progressBar);
-
-        mExerciseElv.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
-            @Override
-            public boolean onChildClick(ExpandableListView parent, View v,int groupPosition, int childPosition, long id) {
-                Intent intent = new Intent(MainActivity.this, ExerciseDescriptionActivity.class);
-                intent.putExtra(ExercisesEntry._ID, (int)id);
-                startActivity(intent);
-                /* Если мы возвращаем true – это значит, мы сообщаем, что сами полностью обработали
-                событие и оно не пойдет в дальнейшие обработчики (если они есть).
-                Если возвращаем false – значит, мы позволяем событию идти дальше. */
-                return true;
+        //Копируем базу данных при первом запуске приложение
+        if(!mPreferences.contains(IS_DB_COPIED)) {
+            DbHelper dbHelper = new DbHelper(this);
+            SQLiteDatabase database = dbHelper.getReadableDatabase();
+            boolean success = dbHelper.copyDatabase(this);
+            if(success) {
+                SharedPreferences.Editor editor = mPreferences.edit();
+                editor.putBoolean(IS_DB_COPIED, true);
+                editor.apply();
+            } else {
+                Toast.makeText(this, "Проблемы с загрузкой базы данных", Toast.LENGTH_SHORT).show();
             }
-        });
+            database.close();
+        }
     }
 
     @Override
-    public void onDestroy(){
-        super.onDestroy();
+    public void onBackPressed() {
+        Log.d(LOG_TAG, "onBackPressed");
 
-        if (mCursor != null) mCursor.close();
-        if (mDbHelper != null) mDatabase.close();
+        mDrawer = findViewById(R.id.drawer_layout);
+        if (mDrawer.isDrawerOpen(GravityCompat.START)) {
+            mDrawer.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
     }
 
-    private class LoadExercisesTask extends AsyncTask<Void, Void, Boolean> {
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        Log.d(LOG_TAG, "onCreateOptionsMenu");
 
-        @Override
-        protected Boolean doInBackground(Void... params) {
-            Log.d(LOG_TAG, "doInBackground");
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
 
-            mDbHelper = new DbHelper(MainActivity.this);
-            mDatabase = mDbHelper.getReadableDatabase();
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        Log.d(LOG_TAG, "onOptionsItemSelected");
 
-            //Копируем базу данных при первом запуске приложение
-            if(!mPreferences.contains(IS_DB_COPIED)) {
-                boolean success = mDbHelper.copyDatabase(MainActivity.this);
-                if(success) {
-                    SharedPreferences.Editor editor = mPreferences.edit();
-                    editor.putBoolean(IS_DB_COPIED, true);
-                    editor.apply();
-                } else {
-                    return false;
-                }
-            }
+        switch (item.getItemId()) {
+            case R.id.action_settings:
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
 
-            String[] columns = {
-                    MusclesEntry._ID,
-                    MusclesEntry.NAME,
-                    MusclesEntry.IMAGE};
+    @Override
+    public boolean onNavigationItemSelected(MenuItem item) {
+        Log.d(LOG_TAG, "onNavigationItemSelected");
 
-            mCursor = mDatabase.query(MusclesEntry.TABLE_NAME, columns,
-                    null, null, null, null, null);
-
-            return true;
+        switch (item.getItemId()) {
+            case R.id.nav_exercises:
+                setFragment(new ExerciseListFragment(), item);
+                break;
+            case R.id.nav_training_programs:
+                setFragment(new TrainingProgramsFragment(), item);
+                break;
+            case R.id.nav_measures:
+                setFragment(new MeasuresFragment(), item);
+                break;
+            case R.id.nav_share:
+                break;
+            case R.id.nav_send:
+                break;
         }
 
-        protected void onPostExecute(Boolean param) {
-            Log.d(LOG_TAG, "onPostExecute");
+        mDrawer = findViewById(R.id.drawer_layout);
+        mDrawer.closeDrawer(GravityCompat.START);
+        return true;
+    }
 
-            super.onPostExecute(param);
-            if(param) {
-                String[] groupFrom = { MusclesEntry.NAME, MusclesEntry.IMAGE};
-                int[] groupTo = { R.id.muscle_name, R.id.muscle_image };
-                String[] childFrom = { ExercisesEntry.NAME, ExercisesEntry.IMAGE};
-                int[] childTo = { R.id.exercise_name, R.id.exercise_image };
-
-                mCursorAdapter = new ExerciseCursorTreeAdapter(MainActivity.this, mDatabase, mCursor,
-                        R.layout.exercise_expandable_list_item, groupFrom, groupTo,
-                        R.layout.exercise_list_item, childFrom, childTo);
-
-                mCursorAdapter.setViewBinder(new SimpleCursorTreeAdapter.ViewBinder() {
-                    @Override
-                    public boolean setViewValue(View view, Cursor cursor, int columnIndex) {
-                        if (view.getId() == R.id.muscle_image || view.getId() == R.id.exercise_image) {
-                            ImageView imageView = (ImageView) view;
-                            //String name = cursor.getString(1);
-                            String imageName = cursor.getString(columnIndex);
-                            if (imageName != null) {
-                                int resID = getApplicationContext().getResources().getIdentifier(imageName, "drawable", getApplicationContext().getPackageName());
-                                if (resID != 0) {
-                                    imageView.setImageDrawable(getApplicationContext().getResources().getDrawable(resID));
-                                    return true;
-                                }
-                            }
-
-                            imageView.setImageResource(R.drawable.no_image);
-                            return true;
-                        }
-                        return false;
-                    }
-                });
-
-                mExerciseElv.setAdapter(mCursorAdapter);
-            } else {
-                Toast.makeText(MainActivity.this, "Проблемы с загрузкой базы данных", Toast.LENGTH_SHORT).show();
-            }
-        }
+    private void setFragment(Fragment fragment, MenuItem item) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction().replace(R.id.fragment_container, fragment).commit();
+        item.setChecked(true); // Выделяем выбранный пункт меню в шторке
+        setTitle(item.getTitle()); // Выводим выбранный пункт в заголовке
     }
 }
