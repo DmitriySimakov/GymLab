@@ -62,7 +62,8 @@ public class ExerciseDescriptionFragment extends Fragment {
             SQLiteDatabase db = mDbHelper.getWritableDatabase();
 
             Cursor cursor = db.rawQuery(
-                    "SELECT "+ ExE.NAME +", "+
+                    "SELECT "+
+                            ExE.NAME +", "+
                             ExE.IMAGE +", "+
                             "(SELECT "+ ME.NAME  +" FROM "+ ME.TABLE_NAME  +" WHERE "+ ME._ID  +" = "+ ExE.MAIN_MUSCLE_ID    +") AS "+ ExE.MAIN_MUSCLE    +", "+
                             "(SELECT "+ MTE.NAME +" FROM "+ MTE.TABLE_NAME +" WHERE "+ MTE._ID +" = "+ ExE.MECHANICS_TYPE_ID +") AS "+ ExE.MECHANICS_TYPE +", "+
@@ -111,7 +112,9 @@ public class ExerciseDescriptionFragment extends Fragment {
                 mTechniqueTextView.setText(technique);
             }
 
-            cursor = db.rawQuery("SELECT (SELECT "+ ME.NAME +" FROM "+ ME.TABLE_NAME +" WHERE "+ ME._ID +" = "+ TME.MUSCLE_ID +") AS "+ TME.MUSCLE +" " +
+            cursor = db.rawQuery(
+                    "SELECT " +
+                            "(SELECT "+ ME.NAME +" FROM "+ ME.TABLE_NAME +" WHERE "+ ME._ID +" = "+ TME.MUSCLE_ID +") AS "+ TME.MUSCLE +" " +
                             "FROM "+ TME.TABLE_NAME +" " +
                             "WHERE "+ TME.EXERCISE_ID +" = ?",
                     new String[]{Integer.toString(exerciseId)});
@@ -131,7 +134,7 @@ public class ExerciseDescriptionFragment extends Fragment {
             cursor.close();
             db.close();
         } catch(SQLiteException e) {
-            Toast.makeText(mContext, "Database unavailable", Toast.LENGTH_SHORT).show();
+            Toast.makeText(mContext, "Ошибка при обращении к базе данных", Toast.LENGTH_SHORT).show();
         }
         return view;
     }

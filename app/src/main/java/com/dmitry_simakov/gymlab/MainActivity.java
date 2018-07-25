@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -15,12 +16,14 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Toast;
 
 import com.dmitry_simakov.gymlab.database.DbHelper;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener,
+        FragmentManager.OnBackStackChangedListener {
 
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
@@ -29,6 +32,9 @@ public class MainActivity extends AppCompatActivity
     SharedPreferences mPreferences;
 
     private DrawerLayout mDrawer;
+    private Toolbar mToolbar;
+    private ActionBarDrawerToggle mToggle;
+    private FragmentManager mFragmentManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,15 +44,15 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
 
         // Init Toolbar
-        Toolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        mToolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(mToolbar);
 
         // Init DrawerLayout
         mDrawer = findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, mDrawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        mDrawer.addDrawerListener(toggle);
-        toggle.syncState();
+        mToggle = new ActionBarDrawerToggle(
+                this, mDrawer, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        mDrawer.addDrawerListener(mToggle);
+        mToggle.syncState();
 
         // Init NavigationView
         NavigationView navigationView = findViewById(R.id.nav_view);
@@ -56,6 +62,8 @@ public class MainActivity extends AppCompatActivity
 
         initDB();
 
+        mFragmentManager = getSupportFragmentManager();
+        mFragmentManager.addOnBackStackChangedListener(this);
         setFragment(new ExerciseListFragment(), navigationView.getMenu().findItem(R.id.nav_exercises));
     }
 
@@ -79,18 +87,6 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onBackPressed() {
-        Log.d(LOG_TAG, "onBackPressed");
-
-        mDrawer = findViewById(R.id.drawer_layout);
-        if (mDrawer.isDrawerOpen(GravityCompat.START)) {
-            mDrawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
-    }
-
-    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         Log.d(LOG_TAG, "onCreateOptionsMenu");
 
@@ -110,7 +106,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         Log.d(LOG_TAG, "onNavigationItemSelected");
 
         switch (item.getItemId()) {
@@ -135,9 +131,46 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void setFragment(Fragment fragment, MenuItem item) {
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction().replace(R.id.fragment_container, fragment).commit();
+        Log.d(LOG_TAG, "setFragment");
+
+        mFragmentManager.beginTransaction().replace(R.id.fragment_container, fragment).commit();
         item.setChecked(true); // Выделяем выбранный пункт меню в шторке
         setTitle(item.getTitle()); // Выводим выбранный пункт в заголовке
+    }
+
+    @Override
+    public void onBackStackChanged() {
+        Log.d(LOG_TAG, "onBackStackChanged");
+
+        if (mFragmentManager.getBackStackEntryCount() > 0) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true); // show back button
+            mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    onBackPressed();
+                }
+            });
+        } else {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(false); //show hamburger
+            mToggle.syncState();
+            mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mDrawer.openDrawer(GravityCompat.START);
+                }
+            });
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        Log.d(LOG_TAG, "onBackPressed");
+
+        mDrawer = findViewById(R.id.drawer_layout);
+        if (mDrawer.isDrawerOpen(GravityCompat.START)) {
+            mDrawer.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
     }
 }

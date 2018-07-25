@@ -53,8 +53,11 @@ public class ExerciseListFragment extends Fragment {
                 Bundle bundle = new Bundle();
                 bundle.putInt(DbContract.ExercisesEntry._ID, (int)id);
                 fragment.setArguments(bundle);
-                FragmentManager fragmentManager = getFragmentManager();
-                fragmentManager.beginTransaction().replace(R.id.fragment_container,  fragment).commit();
+                getFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit();
 
                 /* Если мы возвращаем true – это значит, мы сообщаем, что сами полностью обработали
                 событие и оно не пойдет в дальнейшие обработчики (если они есть).
@@ -80,9 +83,9 @@ public class ExerciseListFragment extends Fragment {
         mCursor = mDatabase.query(DbContract.MusclesEntry.TABLE_NAME, columns,
                 null, null, null, null, null);
 
-        String[] groupFrom = { DbContract.MusclesEntry.NAME, DbContract.MusclesEntry.IMAGE};
+        String[] groupFrom = { DbContract.MusclesEntry.NAME, DbContract.MusclesEntry.IMAGE };
         int[] groupTo = { R.id.muscle_name, R.id.muscle_image };
-        String[] childFrom = { DbContract.ExercisesEntry.NAME, DbContract.ExercisesEntry.IMAGE};
+        String[] childFrom = { DbContract.ExercisesEntry.NAME, DbContract.ExercisesEntry.IMAGE };
         int[] childTo = { R.id.exercise_name, R.id.exercise_image };
 
         mCursorAdapter = new ExerciseCursorTreeAdapter(mContext, mDatabase, mCursor,
@@ -94,7 +97,7 @@ public class ExerciseListFragment extends Fragment {
             public boolean setViewValue(View view, Cursor cursor, int columnIndex) {
                 if (view.getId() == R.id.muscle_image || view.getId() == R.id.exercise_image) {
                     ImageView imageView = (ImageView) view;
-                    //String name = cursor.getString(1);
+
                     String imageName = cursor.getString(columnIndex);
                     if (imageName != null) {
                         Resources res = mContext.getResources();
