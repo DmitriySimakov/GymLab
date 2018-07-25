@@ -3,15 +3,10 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="?android:attr/listPreferredItemHeight" >
-
-    <ImageView
-        android:id="@+id/exercise_image"
-        android:layout_width="?android:attr/listPreferredItemHeight"
-        android:layout_height="match_parent" />
+    android:layout_height="?android:attr/listPreferredItemHeightSmall">
 
     <TextView
-        android:id="@+id/exercise_name"
+        android:id="@+id/measure_parameter"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
@@ -19,6 +14,16 @@
         android:paddingRight="?android:attr/listPreferredItemPaddingRight"
         android:gravity="center_vertical"
         android:textAppearance="?android:attr/textAppearanceListItemSmall"
-        tools:text="Упражнение" />
+        tools:text="Параметр тела" />
+
+    <TextView
+        android:id="@+id/measure_value"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:paddingLeft="?android:attr/listPreferredItemPaddingLeft"
+        android:paddingRight="?android:attr/listPreferredItemPaddingRight"
+        android:gravity="center"
+        android:textAppearance="?android:attr/textAppearanceListItemSmall"
+        tools:text="175" />
 
 </LinearLayout>

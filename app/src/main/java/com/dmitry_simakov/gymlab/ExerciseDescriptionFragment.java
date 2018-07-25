@@ -3,6 +3,7 @@ package com.dmitry_simakov.gymlab;
 import android.content.Context;
 import android.content.res.Resources;
 import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -16,11 +17,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.dmitry_simakov.gymlab.database.DbHelper;
+import com.dmitry_simakov.gymlab.database.GymLabDbHelper;
 
 public class ExerciseDescriptionFragment extends Fragment {
 
-    private static final String LOG_TAG = ExerciseDescriptionFragment.class.getSimpleName();
+    public static final String CLASS_NAME = ExerciseDescriptionFragment.class.getSimpleName();
 
     private static class ExE extends com.dmitry_simakov.gymlab.database.DbContract.ExercisesEntry{}
     private static class ME  extends com.dmitry_simakov.gymlab.database.DbContract.MusclesEntry{}
@@ -36,12 +37,16 @@ public class ExerciseDescriptionFragment extends Fragment {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
+
         mContext = context;
+
+        FloatingActionButton fab = getActivity().findViewById(R.id.fab);
+        fab.setVisibility(View.GONE);
     }
 
     @Override
     public View onCreateView(@NonNull final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        Log.d(LOG_TAG, "onCreateView");
+        Log.d(CLASS_NAME, "onCreateView");
 
         View view = inflater.inflate(R.layout.activity_exercise_description, container, false);
 
@@ -58,7 +63,7 @@ public class ExerciseDescriptionFragment extends Fragment {
         int exerciseId = getArguments().getInt(ExE._ID);
 
         try {
-            DbHelper mDbHelper = new DbHelper(mContext);
+            GymLabDbHelper mDbHelper = new GymLabDbHelper(mContext);
             SQLiteDatabase db = mDbHelper.getWritableDatabase();
 
             Cursor cursor = db.rawQuery(

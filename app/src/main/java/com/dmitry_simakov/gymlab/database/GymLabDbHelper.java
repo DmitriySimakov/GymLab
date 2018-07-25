@@ -13,9 +13,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class DbHelper extends SQLiteOpenHelper {
+public class GymLabDbHelper extends SQLiteOpenHelper {
 
-    private static final String LOG_TAG = DbHelper.class.getSimpleName();
+    private static final String LOG_TAG = GymLabDbHelper.class.getSimpleName();
 
     public static final String DB_NAME = "gymlab.db";
     private static final int DB_VERSION = 1;
@@ -23,7 +23,7 @@ public class DbHelper extends SQLiteOpenHelper {
 
     private Context mContext;
 
-    public DbHelper(Context context) {
+    public GymLabDbHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
         Log.d(LOG_TAG, "constructor");
         mContext = context;

@@ -19,13 +19,13 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
-import com.dmitry_simakov.gymlab.database.DbHelper;
+import com.dmitry_simakov.gymlab.database.GymLabDbHelper;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
         FragmentManager.OnBackStackChangedListener {
 
-    private static final String LOG_TAG = MainActivity.class.getSimpleName();
+    public static final String CLASS_NAME = MainActivity.class.getSimpleName();
 
     public static final String APP_PREFERENCES = "AppPreferences";
     public static final String IS_DB_COPIED = "isDbCopied";
@@ -38,7 +38,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.d(LOG_TAG, "onCreate");
+        Log.d(CLASS_NAME, "onCreate");
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -64,15 +64,15 @@ public class MainActivity extends AppCompatActivity
 
         mFragmentManager = getSupportFragmentManager();
         mFragmentManager.addOnBackStackChangedListener(this);
-        setFragment(new ExerciseListFragment(), navigationView.getMenu().findItem(R.id.nav_exercises));
+        setFragment(new ExercisesListFragment(), navigationView.getMenu().findItem(R.id.nav_exercises));
     }
 
     private void initDB() {
-        Log.d(LOG_TAG, "initDB");
+        Log.d(CLASS_NAME, "initDB");
 
         //Копируем базу данных при первом запуске приложение
         if(!mPreferences.contains(IS_DB_COPIED)) {
-            DbHelper dbHelper = new DbHelper(this);
+            GymLabDbHelper dbHelper = new GymLabDbHelper(this);
             SQLiteDatabase database = dbHelper.getReadableDatabase();
             boolean success = dbHelper.copyDatabase(this);
             if(success) {
@@ -88,7 +88,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        Log.d(LOG_TAG, "onCreateOptionsMenu");
+        Log.d(CLASS_NAME, "onCreateOptionsMenu");
 
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
@@ -96,7 +96,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        Log.d(LOG_TAG, "onOptionsItemSelected");
+        Log.d(CLASS_NAME, "onOptionsItemSelected");
 
         switch (item.getItemId()) {
             case R.id.action_settings:
@@ -107,17 +107,17 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-        Log.d(LOG_TAG, "onNavigationItemSelected");
+        Log.d(CLASS_NAME, "onNavigationItemSelected");
 
         switch (item.getItemId()) {
             case R.id.nav_exercises:
-                setFragment(new ExerciseListFragment(), item);
+                setFragment(new ExercisesListFragment(), item);
                 break;
             case R.id.nav_training_programs:
                 setFragment(new TrainingProgramsFragment(), item);
                 break;
             case R.id.nav_measures:
-                setFragment(new MeasuresFragment(), item);
+                setFragment(new MeasurementDaysListFragment(), item);
                 break;
             case R.id.nav_share:
                 break;
@@ -131,7 +131,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void setFragment(Fragment fragment, MenuItem item) {
-        Log.d(LOG_TAG, "setFragment");
+        Log.d(CLASS_NAME, "setFragment");
 
         mFragmentManager.beginTransaction().replace(R.id.fragment_container, fragment).commit();
         item.setChecked(true); // Выделяем выбранный пункт меню в шторке
@@ -140,7 +140,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onBackStackChanged() {
-        Log.d(LOG_TAG, "onBackStackChanged");
+        Log.d(CLASS_NAME, "onBackStackChanged");
 
         if (mFragmentManager.getBackStackEntryCount() > 0) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true); // show back button
@@ -164,7 +164,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onBackPressed() {
-        Log.d(LOG_TAG, "onBackPressed");
+        Log.d(CLASS_NAME, "onBackPressed");
 
         mDrawer = findViewById(R.id.drawer_layout);
         if (mDrawer.isDrawerOpen(GravityCompat.START)) {

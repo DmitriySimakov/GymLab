@@ -5,8 +5,10 @@ import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,30 +17,41 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.SimpleCursorTreeAdapter;
 
-import com.dmitry_simakov.gymlab.database.DbContract;
-import com.dmitry_simakov.gymlab.database.DbHelper;
+import com.dmitry_simakov.gymlab.database.GymLabDbHelper;
 
-public class ExerciseListFragment extends Fragment {
+public class ExercisesListFragment extends Fragment {
+
+    public static final String CLASS_NAME = ExercisesListFragment.class.getSimpleName();
+
+    private static class ExE extends com.dmitry_simakov.gymlab.database.DbContract.ExercisesEntry{}
+    private static class ME extends com.dmitry_simakov.gymlab.database.DbContract.MusclesEntry{}
 
     private Context mContext;
 
-    private DbHelper mDbHelper;
+    private GymLabDbHelper mDbHelper;
     private SQLiteDatabase mDatabase;
     private Cursor mCursor;
     private ExerciseCursorTreeAdapter mCursorAdapter;
     private ExpandableListView mExerciseElv;
 
 
-    public ExerciseListFragment() {}
+    public ExercisesListFragment() {}
 
     @Override
     public void onAttach(Context context) {
+        Log.d(CLASS_NAME, "onAttach");
         super.onAttach(context);
+
         mContext = context;
+
+        FloatingActionButton fab = getActivity().findViewById(R.id.fab);
+        fab.setVisibility(View.GONE);
     }
 
     @Override
-    public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        Log.d(CLASS_NAME, "onCreateView");
+
         View view = inflater.inflate(R.layout.fragment_exercise_list, container, false);
 
         mExerciseElv = view.findViewById(R.id.elv);
@@ -51,7 +64,7 @@ public class ExerciseListFragment extends Fragment {
             public boolean onChildClick(ExpandableListView parent, View v,int groupPosition, int childPosition, long id) {
                 Fragment fragment = new ExerciseDescriptionFragment();
                 Bundle bundle = new Bundle();
-                bundle.putInt(DbContract.ExercisesEntry._ID, (int)id);
+                bundle.putInt(ExE._ID, (int)id);
                 fragment.setArguments(bundle);
                 getFragmentManager()
                         .beginTransaction()
@@ -70,22 +83,20 @@ public class ExerciseListFragment extends Fragment {
 
     @Override
     public void onStart() {
+        Log.d(CLASS_NAME, "onStart");
         super.onStart();
 
-        mDbHelper = new DbHelper(mContext);
+        mDbHelper = new GymLabDbHelper(mContext);
         mDatabase = mDbHelper.getReadableDatabase();
 
-        String[] columns = {
-                DbContract.MusclesEntry._ID,
-                DbContract.MusclesEntry.NAME,
-                DbContract.MusclesEntry.IMAGE};
+        String[] columns = { ME._ID, ME.NAME, ME.IMAGE };
 
-        mCursor = mDatabase.query(DbContract.MusclesEntry.TABLE_NAME, columns,
+        mCursor = mDatabase.query(ME.TABLE_NAME, columns,
                 null, null, null, null, null);
 
-        String[] groupFrom = { DbContract.MusclesEntry.NAME, DbContract.MusclesEntry.IMAGE };
+        String[] groupFrom = { ME.NAME, ME.IMAGE };
         int[] groupTo = { R.id.muscle_name, R.id.muscle_image };
-        String[] childFrom = { DbContract.ExercisesEntry.NAME, DbContract.ExercisesEntry.IMAGE };
+        String[] childFrom = { ExE.NAME, ExE.IMAGE };
         int[] childTo = { R.id.exercise_name, R.id.exercise_image };
 
         mCursorAdapter = new ExerciseCursorTreeAdapter(mContext, mDatabase, mCursor,
@@ -120,6 +131,7 @@ public class ExerciseListFragment extends Fragment {
 
     @Override
     public void onDestroy() {
+        Log.d(CLASS_NAME, "onDestroy");
         super.onDestroy();
 
         if (mCursor != null) mCursor.close();

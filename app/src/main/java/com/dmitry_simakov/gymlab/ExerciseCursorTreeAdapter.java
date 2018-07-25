@@ -9,6 +9,8 @@ import com.dmitry_simakov.gymlab.database.DbContract.*;
 
 public class ExerciseCursorTreeAdapter extends SimpleCursorTreeAdapter {
 
+    public static final String CLASS_NAME = ExerciseCursorTreeAdapter.class.getSimpleName();
+
     private SQLiteDatabase mDatabase;
 
     public ExerciseCursorTreeAdapter(

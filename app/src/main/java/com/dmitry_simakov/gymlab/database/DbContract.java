@@ -8,6 +8,8 @@ public class DbContract {
 
     private DbContract() {};
 
+    // gymlab.db
+
     public static class ExercisesEntry implements BaseColumns {
         public final static String TABLE_NAME = "exercises";
 
@@ -67,6 +69,29 @@ public class DbContract {
 
     public static class EquipmentEntry implements BaseColumns {
         public final static String TABLE_NAME = "equipment";
+
+        // Columns names
+        public final static String _ID = ID;
+        public final static String NAME = "name";
+    }
+
+    // body_measures.db
+
+    public static class BodyMeasurementsEntry implements BaseColumns {
+        public final static String TABLE_NAME = "body_measurements";
+
+        // Names for external keys
+        public final static String BODY_PARAMETER = "body_parameter";
+
+        // Columns names
+        public final static String _ID = ID;
+        public final static String DATE = "date";
+        public final static String BODY_PARAMETER_ID = BODY_PARAMETER + ID;
+        public final static String VALUE = "value";
+    }
+
+    public static class BodyParametersEntry implements BaseColumns {
+        public final static String TABLE_NAME = "body_parameters";
 
         // Columns names
         public final static String _ID = ID;
