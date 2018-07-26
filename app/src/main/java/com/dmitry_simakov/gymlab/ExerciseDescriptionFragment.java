@@ -74,7 +74,7 @@ public class ExerciseDescriptionFragment extends Fragment {
                             Ex.TECHNIQUE +" "+
                             "FROM "+ Ex.TABLE_NAME +" AS Ex "+
                             "WHERE "+ Ex._ID +" = ?",
-                    new String[]{Integer.toString(exerciseId)});
+                    new String[]{ String.valueOf(exerciseId) });
 
             if (cursor.moveToFirst()) {
                 int nameColumnIndex          = cursor.getColumnIndex(Ex.NAME);
@@ -118,7 +118,7 @@ public class ExerciseDescriptionFragment extends Fragment {
                             "(SELECT "+ M.NAME +" FROM "+ M.TABLE_NAME +" WHERE "+ M._ID +" = TM."+ TM.MUSCLE_ID +") AS "+ TM.MUSCLE +" " +
                             "FROM "+ TM.TABLE_NAME +" AS TM " +
                             "WHERE "+ TM.EXERCISE_ID +" = ?",
-                    new String[]{Integer.toString(exerciseId)});
+                    new String[]{ String.valueOf(exerciseId) });
 
             if (cursor.moveToFirst()) {
                 int muscleColumnIndex = cursor.getColumnIndex(TM.MUSCLE);

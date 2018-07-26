@@ -35,7 +35,7 @@ public class ExerciseCursorTreeAdapter extends SimpleCursorTreeAdapter {
         return mDatabase.query(ExercisesEntry.TABLE_NAME,
                 columns,
                 ExercisesEntry.MAIN_MUSCLE_ID + " = ?",
-                new String[]{Integer.toString(id)},
+                new String[]{ String.valueOf(id) },
                 null, null, null);
     }
 }

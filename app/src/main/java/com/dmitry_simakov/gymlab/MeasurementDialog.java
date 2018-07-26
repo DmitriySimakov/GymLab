@@ -2,10 +2,10 @@ package com.dmitry_simakov.gymlab;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -41,14 +41,17 @@ public class MeasurementDialog extends AppCompatDialogFragment {
     private Context mContext;
 
     private AlertDialog.Builder mBuilder;
+
+    private TextView mDateTextView;
     private ImageView mImageView;
     private TextView mInstructionTextView;
-    private DatePicker mDatePicker;
     private EditText mValueEditText;
 
     private MeasuresDbHelper mDbHelper;
     private SQLiteDatabase mDatabase;
     private Cursor mCursor;
+
+    private int mYear, mMonth, mDay;
 
     public MeasurementDialog() {}
 
@@ -68,9 +71,28 @@ public class MeasurementDialog extends AppCompatDialogFragment {
         LayoutInflater inflater = activity.getLayoutInflater();
         View view = inflater.inflate(R.layout.fragment_measurement_dialog, null);
 
+        mDateTextView = view.findViewById(R.id.date);
+        mDateTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                DatePickerDialog dialog = new DatePickerDialog(mContext, R.style.DialogTheme, new DatePickerDialog.OnDateSetListener() {
+                    public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
+                        mYear = year;
+                        mMonth = monthOfYear;
+                        mDay = dayOfMonth;
+                        mDateTextView.setText(mYear +"-"+ mMonth +"-"+ mDay);
+                    }
+                }, mYear, mMonth, mDay);
+
+                DatePicker datePicker = dialog.getDatePicker();
+                datePicker.setMinDate(0);
+                datePicker.setMaxDate(new Date().getTime());
+                dialog.show();
+            }
+        });
+
         mImageView = view.findViewById(R.id.image);
         mInstructionTextView = view.findViewById(R.id.description);
-        mDatePicker = view.findViewById(R.id.date_picker);
         mValueEditText = view.findViewById(R.id.value);
 
         mDbHelper = new MeasuresDbHelper(mContext);
@@ -96,38 +118,54 @@ public class MeasurementDialog extends AppCompatDialogFragment {
                         BP.INSTRUCTION +" " +
                         "FROM "+ BP.TABLE_NAME +" " +
                         "WHERE "+ BP._ID +" = ?",
-                new String[]{ Integer.toString(parameterId) });
+                new String[]{ String.valueOf(parameterId) });
 
         if (mCursor.moveToFirst()) {
             int nameColumnIndex        = mCursor.getColumnIndex(BP.NAME);
             int imageColumnIndex       = mCursor.getColumnIndex(BP.IMAGE);
             int instructionColumnIndex = mCursor.getColumnIndex(BP.INSTRUCTION);
-            String name        = mCursor.getString(nameColumnIndex);
-            String imageName   = mCursor.getString(imageColumnIndex);
+            final String name        = mCursor.getString(nameColumnIndex);
+            int image          = mCursor.getInt(imageColumnIndex);
             String instruction = mCursor.getString(instructionColumnIndex);
 
+            Calendar calendar = Calendar.getInstance();
+            mYear = calendar.get(Calendar.YEAR);
+            mMonth = calendar.get(Calendar.MONTH);
+            mDay = calendar.get(Calendar.DAY_OF_MONTH);
+            mDateTextView.setText(getISO8601(mYear, mMonth, mDay));
+
             mBuilder.setTitle(name);
-            if (imageName != null) {
-                Resources res = mContext.getResources();
-                int resID = res.getIdentifier(imageName, "drawable", mContext.getPackageName());
-                if (resID != 0) {
-                    mImageView.setImageDrawable(res.getDrawable(resID));
-                }
-            }
+            mImageView.setImageResource(image);
             mInstructionTextView.setText(instruction);
 
             mBuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
-
+                    double value;
                     try {
-                        int value = Integer.parseInt(String.valueOf(mValueEditText.getText()));
-                        String date = getISO8601FromDatePicker(mDatePicker);
-                        MeasuresDbHelper.insertMeasurement(mDatabase, date, parameterId, value);
+                        value = Double.parseDouble(String.valueOf(mValueEditText.getText()));
                     } catch(Exception e){
-                        Toast.makeText(mContext, "Неверно введено значение", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(mContext, "Неверно введено значение", Toast.LENGTH_LONG).show();
+                        return;
                     }
+
+                    String date = getISO8601(mYear, mMonth, mDay);
+                    Cursor cursor = mDatabase.rawQuery("SELECT COUNT("+ BM._ID +") " +
+                                    "FROM "+ BM.TABLE_NAME +" " +
+                                    "WHERE "+ BM.DATE +" = ? AND "+ BM.BODY_PARAMETER_ID +" = ?",
+                            new String[]{ date, String.valueOf(parameterId) });
+                    if (cursor.moveToFirst()) {
+                        if (cursor.getInt(0) > 0) {
+                            Toast.makeText(mContext,date +" уже задан параметр "+ name, Toast.LENGTH_LONG).show();
+                            cursor.close();
+                            return;
+                        }
+                    }
+                    cursor.close();
+
+                    MeasuresDbHelper.insertMeasurement(mDatabase, date, parameterId, value);
+
+                    dialog.dismiss();
                 }
             });
             mBuilder.setNegativeButton("Отмена", new DialogInterface.OnClickListener() {
@@ -139,20 +177,87 @@ public class MeasurementDialog extends AppCompatDialogFragment {
         }
     }
 
-    private static String getISO8601FromDatePicker(DatePicker datePicker){
-        int day = datePicker.getDayOfMonth();
-        int month = datePicker.getMonth();
-        int year =  datePicker.getYear();
+    private void editMeasurementInit(final int measurementId) {
+        mCursor = mDatabase.rawQuery(
+                "SELECT "+
+                        "(SELECT "+ BP.NAME        +" FROM "+ BP.TABLE_NAME +" WHERE "+ BP._ID +" = BM."+ BM.BODY_PARAMETER_ID +") AS "+ BM.BODY_PARAMETER +", "+
+                        BM.DATE +", "+
+                        "(SELECT "+ BP.IMAGE       +" FROM "+ BP.TABLE_NAME +" WHERE "+ BP._ID +" = BM."+ BM.BODY_PARAMETER_ID +") AS "+ BP.IMAGE +", "+
+                        "(SELECT "+ BP.INSTRUCTION +" FROM "+ BP.TABLE_NAME +" WHERE "+ BP._ID +" = BM."+ BM.BODY_PARAMETER_ID +") AS "+ BP.INSTRUCTION +", "+
+                        BM.BODY_PARAMETER_ID +", "+
+                        BM.VALUE +" "+
+                        "FROM "+ BM.TABLE_NAME +" AS BM "+
+                        "WHERE "+ BM._ID +" = ?",
+                new String[]{ String.valueOf(measurementId) });
 
+        if (mCursor.moveToFirst()) {
+            int nameColumnIndex        = mCursor.getColumnIndex(BM.BODY_PARAMETER);
+            int dateColumnIndex        = mCursor.getColumnIndex(BM.DATE);
+            int imageColumnIndex       = mCursor.getColumnIndex(BP.IMAGE);
+            int instructionColumnIndex = mCursor.getColumnIndex(BP.INSTRUCTION);
+            int parameterIdColumnIndex = mCursor.getColumnIndex(BM.BODY_PARAMETER_ID);
+            int valueColumnIndex       = mCursor.getColumnIndex(BM.VALUE);
+            final String name        = mCursor.getString(nameColumnIndex);
+            String date        = mCursor.getString(dateColumnIndex);
+            int image          = mCursor.getInt(imageColumnIndex);
+            String instruction = mCursor.getString(instructionColumnIndex);
+            final int parameterId    = mCursor.getInt(parameterIdColumnIndex);
+            double value       = mCursor.getDouble(valueColumnIndex);
+
+            mYear  = Integer.parseInt(date.substring(0, 4));
+            mMonth = Integer.parseInt(date.substring(6, 7));
+            mDay   = Integer.parseInt(date.substring(9));
+
+            mBuilder.setTitle(name);
+            mDateTextView.setText(date);
+            mImageView.setImageResource(image);
+            mInstructionTextView.setText(instruction);
+            mValueEditText.setText(String.valueOf(value));
+
+            mBuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    double value;
+                    try {
+                        value = Double.parseDouble(String.valueOf(mValueEditText.getText()));
+                    } catch(Exception e){
+                        Toast.makeText(mContext, "Неверно введено значение", Toast.LENGTH_LONG).show();
+                        return;
+                    }
+
+                    String date = getISO8601(mYear, mMonth, mDay);
+                    Cursor cursor = mDatabase.rawQuery("SELECT COUNT("+ BM._ID +") " +
+                                    "FROM "+ BM.TABLE_NAME +" " +
+                                    "WHERE "+ BM.DATE +" = ? AND "+ BM.BODY_PARAMETER_ID +" = ?",
+                            new String[]{ date, String.valueOf(parameterId) });
+                    if (cursor.moveToFirst()) {
+                        if (cursor.getInt(0) > 0) {
+                            Toast.makeText(mContext,date +" уже задан параметр "+ name, Toast.LENGTH_LONG).show();
+                            cursor.close();
+                            return;
+                        }
+                    }
+                    cursor.close();
+                    MeasuresDbHelper.updateMeasurement(mDatabase, measurementId, date, parameterId, value);
+
+                    dialog.dismiss();
+                }
+            });
+            mBuilder.setNegativeButton("Отмена", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            });
+        }
+    }
+
+    private static String getISO8601(int year, int month, int day) {
         Calendar calendar = Calendar.getInstance();
         calendar.set(year, month, day);
         Date date = calendar.getTime();
 
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
         return df.format(date);
-    }
-
-    private void editMeasurementInit(int measurementId) {
-
     }
 }

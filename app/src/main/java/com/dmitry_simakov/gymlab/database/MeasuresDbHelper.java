@@ -6,6 +6,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import com.dmitry_simakov.gymlab.R;
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -35,7 +37,7 @@ public class MeasuresDbHelper extends SQLiteOpenHelper {
         db.execSQL("CREATE TABLE "+ BP.TABLE_NAME +" ("+
                 BP._ID +" INTEGER PRIMARY KEY AUTOINCREMENT, "+
                 BP.NAME +" TEXT NOT NULL UNIQUE, "+
-                BP.IMAGE +" TEXT, "+
+                BP.IMAGE +" INTEGER, "+
                 BP.INSTRUCTION +" TEXT);"
         );
 
@@ -43,21 +45,21 @@ public class MeasuresDbHelper extends SQLiteOpenHelper {
                 BM._ID +" INTEGER PRIMARY KEY AUTOINCREMENT, "+
                 BM.DATE +" TEXT NOT NULL, "+
                 BM.BODY_PARAMETER_ID +" INTEGER NOT NULL, " +
-                BM.VALUE +" INTEGER NOT NULL, " +
+                BM.VALUE +" REAL NOT NULL, " +
                 "FOREIGN KEY("+ BM.BODY_PARAMETER_ID +") " +
                 "REFERENCES "+ BP.TABLE_NAME +"("+ BP._ID +"));"
         );
 
-        insertBodyParameter(db, "Рост", null, null);
-        insertBodyParameter(db, "Вес", null, null);
-        insertBodyParameter(db, "Шея", null, null);
-        insertBodyParameter(db, "Бицепс", null, "Согните руку в локте на 90 градусов. Максимально напрягите бицепс. Измерьте самую выступающую часть.");
-        insertBodyParameter(db, "Предплечье", null, null);
-        insertBodyParameter(db, "Грудь", null, null);
-        insertBodyParameter(db, "Талия", null, null);
-        insertBodyParameter(db, "Таз", null, null);
-        insertBodyParameter(db, "Бедро", null, null);
-        insertBodyParameter(db, "Голень", null, null);
+        insertBodyParameter(db, "Рост", R.drawable.no_image, null);
+        insertBodyParameter(db, "Вес", R.drawable.weighing, null);
+        insertBodyParameter(db, "Шея", R.drawable.no_image, null);
+        insertBodyParameter(db, "Бицепс", R.drawable.no_image, "Согните руку в локте на 90 градусов. Максимально напрягите бицепс. Измерьте самую выступающую часть.");
+        insertBodyParameter(db, "Предплечье", R.drawable.no_image, null);
+        insertBodyParameter(db, "Грудь", R.drawable.no_image, null);
+        insertBodyParameter(db, "Талия", R.drawable.no_image, null);
+        insertBodyParameter(db, "Таз", R.drawable.no_image, null);
+        insertBodyParameter(db, "Бедро", R.drawable.no_image, null);
+        insertBodyParameter(db, "Голень", R.drawable.no_image, null);
 
         String date = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
         insertMeasurement(db, date, 1, 175);
@@ -69,7 +71,7 @@ public class MeasuresDbHelper extends SQLiteOpenHelper {
 
     }
 
-    public static void insertMeasurement(SQLiteDatabase db, String date, int body_parameter_id, int value) {
+    public static void insertMeasurement(SQLiteDatabase db, String date, int body_parameter_id, double value) {
         ContentValues contentValues = new ContentValues();
         contentValues.put(BM.DATE, date);
         contentValues.put(BM.BODY_PARAMETER_ID, body_parameter_id);
@@ -77,12 +79,19 @@ public class MeasuresDbHelper extends SQLiteOpenHelper {
         db.insert(BM.TABLE_NAME, null, contentValues);
     }
 
-    private static void insertBodyParameter(SQLiteDatabase db, String name, String image, String instruction) {
+    public static void updateMeasurement(SQLiteDatabase db, int id, String date, int body_parameter_id, double value) {
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(BM.DATE, date);
+        contentValues.put(BM.BODY_PARAMETER_ID, body_parameter_id);
+        contentValues.put(BM.VALUE, value);
+        db.update(BM.TABLE_NAME, contentValues, BM._ID +" = ?", new String[]{ String.valueOf(id) });
+    }
+
+    private static void insertBodyParameter(SQLiteDatabase db, String name, int image, String instruction) {
         ContentValues contentValues = new ContentValues();
         contentValues.put(BP.NAME, name);
         contentValues.put(BP.IMAGE, image);
         contentValues.put(BP.INSTRUCTION, instruction);
         db.insert(BP.TABLE_NAME, null, contentValues);
     }
-
 }
