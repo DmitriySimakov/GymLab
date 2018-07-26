@@ -3,7 +3,6 @@ package com.dmitry_simakov.gymlab;
 import android.content.Context;
 import android.content.res.Resources;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -17,18 +16,19 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.dmitry_simakov.gymlab.database.DbContract;
 import com.dmitry_simakov.gymlab.database.GymLabDbHelper;
 
 public class ExerciseDescriptionFragment extends Fragment {
 
     public static final String CLASS_NAME = ExerciseDescriptionFragment.class.getSimpleName();
 
-    private static class ExE extends com.dmitry_simakov.gymlab.database.DbContract.ExercisesEntry{}
-    private static class ME  extends com.dmitry_simakov.gymlab.database.DbContract.MusclesEntry{}
-    private static class TME extends com.dmitry_simakov.gymlab.database.DbContract.TargetedMusclesEntry{}
-    private static class MTE extends com.dmitry_simakov.gymlab.database.DbContract.MechanicsTypesEntry{}
-    private static class ETE extends com.dmitry_simakov.gymlab.database.DbContract.ExerciseTypesEntry{}
-    private static class EqE extends com.dmitry_simakov.gymlab.database.DbContract.EquipmentEntry{}
+    private static class Ex extends DbContract.ExercisesEntry{}
+    private static class M extends DbContract.MusclesEntry{}
+    private static class TM extends DbContract.TargetedMusclesEntry{}
+    private static class MT extends DbContract.MechanicsTypesEntry{}
+    private static class ET extends DbContract.ExerciseTypesEntry{}
+    private static class Eq extends DbContract.EquipmentEntry{}
 
     private Context mContext;
 
@@ -56,7 +56,7 @@ public class ExerciseDescriptionFragment extends Fragment {
         TextView mDescriptionTextView     = view.findViewById(R.id.description);
         TextView mTechniqueTextView       = view.findViewById(R.id.technique);
 
-        int exerciseId = getArguments().getInt(ExE._ID);
+        int exerciseId = getArguments().getInt(Ex._ID);
 
         try {
             GymLabDbHelper mDbHelper = new GymLabDbHelper(mContext);
@@ -64,27 +64,27 @@ public class ExerciseDescriptionFragment extends Fragment {
 
             Cursor cursor = db.rawQuery(
                     "SELECT "+
-                            ExE.NAME +", "+
-                            ExE.IMAGE +", "+
-                            "(SELECT "+ ME.NAME  +" FROM "+ ME.TABLE_NAME  +" WHERE "+ ME._ID  +" = "+ ExE.MAIN_MUSCLE_ID    +") AS "+ ExE.MAIN_MUSCLE    +", "+
-                            "(SELECT "+ MTE.NAME +" FROM "+ MTE.TABLE_NAME +" WHERE "+ MTE._ID +" = "+ ExE.MECHANICS_TYPE_ID +") AS "+ ExE.MECHANICS_TYPE +", "+
-                            "(SELECT "+ ETE.NAME +" FROM "+ ETE.TABLE_NAME +" WHERE "+ ETE._ID +" = "+ ExE.EXERCISE_TYPE_ID  +") AS "+ ExE.EXERCISE_TYPE  +", "+
-                            "(SELECT "+ EqE.NAME +" FROM "+ EqE.TABLE_NAME +" WHERE "+ EqE._ID +" = "+ ExE.EQUIPMENT_ID      +") AS "+ ExE.EQUIPMENT      +", "+
-                            ExE.DESCRIPTION +", "+
-                            ExE.TECHNIQUE +" "+
-                            "FROM "+ ExE.TABLE_NAME +" "+
-                            "WHERE "+ ExE._ID +" = ?",
+                            Ex.NAME +", "+
+                            Ex.IMAGE +", "+
+                            "(SELECT "+ M.NAME  +" FROM "+ M.TABLE_NAME  +" WHERE "+ M._ID  +" = Ex."+ Ex.MAIN_MUSCLE_ID    +") AS "+ Ex.MAIN_MUSCLE    +", "+
+                            "(SELECT "+ MT.NAME +" FROM "+ MT.TABLE_NAME +" WHERE "+ MT._ID +" = Ex."+ Ex.MECHANICS_TYPE_ID +") AS "+ Ex.MECHANICS_TYPE +", "+
+                            "(SELECT "+ ET.NAME +" FROM "+ ET.TABLE_NAME +" WHERE "+ ET._ID +" = Ex."+ Ex.EXERCISE_TYPE_ID  +") AS "+ Ex.EXERCISE_TYPE  +", "+
+                            "(SELECT "+ Eq.NAME +" FROM "+ Eq.TABLE_NAME +" WHERE "+ Eq._ID +" = Ex."+ Ex.EQUIPMENT_ID      +") AS "+ Ex.EQUIPMENT      +", "+
+                            Ex.DESCRIPTION +", "+
+                            Ex.TECHNIQUE +" "+
+                            "FROM "+ Ex.TABLE_NAME +" AS Ex "+
+                            "WHERE "+ Ex._ID +" = ?",
                     new String[]{Integer.toString(exerciseId)});
 
             if (cursor.moveToFirst()) {
-                int nameColumnIndex          = cursor.getColumnIndex(ExE.NAME);
-                int imageColumnIndex         = cursor.getColumnIndex(ExE.IMAGE);
-                int mainMuscleColumnIndex    = cursor.getColumnIndex(ExE.MAIN_MUSCLE);
-                int mechanicsTypeColumnIndex = cursor.getColumnIndex(ExE.MECHANICS_TYPE);
-                int exerciseTypeColumnIndex  = cursor.getColumnIndex(ExE.EXERCISE_TYPE);
-                int equipmentColumnIndex     = cursor.getColumnIndex(ExE.EQUIPMENT);
-                int descriptionColumnIndex   = cursor.getColumnIndex(ExE.DESCRIPTION);
-                int techniqueColumnIndex     = cursor.getColumnIndex(ExE.TECHNIQUE);
+                int nameColumnIndex          = cursor.getColumnIndex(Ex.NAME);
+                int imageColumnIndex         = cursor.getColumnIndex(Ex.IMAGE);
+                int mainMuscleColumnIndex    = cursor.getColumnIndex(Ex.MAIN_MUSCLE);
+                int mechanicsTypeColumnIndex = cursor.getColumnIndex(Ex.MECHANICS_TYPE);
+                int exerciseTypeColumnIndex  = cursor.getColumnIndex(Ex.EXERCISE_TYPE);
+                int equipmentColumnIndex     = cursor.getColumnIndex(Ex.EQUIPMENT);
+                int descriptionColumnIndex   = cursor.getColumnIndex(Ex.DESCRIPTION);
+                int techniqueColumnIndex     = cursor.getColumnIndex(Ex.TECHNIQUE);
 
                 String name          = cursor.getString(nameColumnIndex);
                 String imageName     = cursor.getString(imageColumnIndex);
@@ -115,13 +115,13 @@ public class ExerciseDescriptionFragment extends Fragment {
 
             cursor = db.rawQuery(
                     "SELECT " +
-                            "(SELECT "+ ME.NAME +" FROM "+ ME.TABLE_NAME +" WHERE "+ ME._ID +" = "+ TME.MUSCLE_ID +") AS "+ TME.MUSCLE +" " +
-                            "FROM "+ TME.TABLE_NAME +" " +
-                            "WHERE "+ TME.EXERCISE_ID +" = ?",
+                            "(SELECT "+ M.NAME +" FROM "+ M.TABLE_NAME +" WHERE "+ M._ID +" = TM."+ TM.MUSCLE_ID +") AS "+ TM.MUSCLE +" " +
+                            "FROM "+ TM.TABLE_NAME +" AS TM " +
+                            "WHERE "+ TM.EXERCISE_ID +" = ?",
                     new String[]{Integer.toString(exerciseId)});
 
             if (cursor.moveToFirst()) {
-                int muscleColumnIndex = cursor.getColumnIndex(TME.MUSCLE);
+                int muscleColumnIndex = cursor.getColumnIndex(TM.MUSCLE);
                 StringBuilder sb = new StringBuilder();
                 do {
                     sb.append(cursor.getString(muscleColumnIndex));

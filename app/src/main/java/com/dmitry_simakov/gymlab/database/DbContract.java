@@ -96,5 +96,7 @@ public class DbContract {
         // Columns names
         public final static String _ID = ID;
         public final static String NAME = "name";
+        public final static String IMAGE = "image";
+        public final static String INSTRUCTION = "instruction";
     }
 }

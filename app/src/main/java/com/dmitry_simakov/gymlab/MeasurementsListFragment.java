@@ -4,8 +4,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ListFragment;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.Log;
@@ -19,10 +17,12 @@ public class MeasurementsListFragment extends ListFragment {
 
     public static final String CLASS_NAME = MeasurementsListFragment.class.getSimpleName();
 
-    private static class BME extends com.dmitry_simakov.gymlab.database.DbContract.BodyMeasurementsEntry {}
-    private static class BPE extends DbContract.BodyParametersEntry {}
+    private static class BM extends DbContract.BodyMeasurementsEntry {}
+    private static class BP extends DbContract.BodyParametersEntry {}
 
     private Context mContext;
+
+    private boolean isOneDay;
 
     private MeasuresDbHelper mDbHelper;
     private SQLiteDatabase mDatabase;
@@ -48,31 +48,34 @@ public class MeasurementsListFragment extends ListFragment {
         String date = null;
         Bundle args = getArguments();
         if (args != null) {
-            date = getArguments().getString(BME.DATE);
+            date = getArguments().getString(BM.DATE);
         }
 
         if (date == null) {
+            isOneDay = false;
             mCursor = mDatabase.rawQuery(
                     "SELECT " +
-                            BME._ID + ", " +
-                            "(SELECT " + BPE.NAME + " FROM " + BPE.TABLE_NAME + " WHERE " + BPE._ID + " = " + BME.BODY_PARAMETER_ID + ") AS " + BME.BODY_PARAMETER + ", " +
-                            BME.VALUE + " " +
-                            "FROM " + BME.TABLE_NAME,
+                            BP._ID + ", " +
+                            BP.NAME +" AS "+ BM.BODY_PARAMETER + ", " +
+                            "(SELECT " + BM.VALUE + " FROM " + BM.TABLE_NAME + " WHERE " + BM.BODY_PARAMETER_ID + " = BP." + BP._ID + ") AS " + BM.VALUE + " " +
+                            "FROM " + BP.TABLE_NAME + " AS BP " +
+                            "ORDER BY " + BP._ID,
                     null
             );
         } else {
+            isOneDay = true;
             mCursor = mDatabase.rawQuery(
                     "SELECT " +
-                            BME._ID + ", " +
-                            "(SELECT " + BPE.NAME + " FROM " + BPE.TABLE_NAME + " WHERE " + BPE._ID + " = " + BME.BODY_PARAMETER_ID + ") AS " + BME.BODY_PARAMETER + ", " +
-                            BME.VALUE + " " +
-                            "FROM " + BME.TABLE_NAME + " " +
-                            "WHERE " + BME.DATE + " = '" + date + "'",
+                            BM._ID + ", " +
+                            "(SELECT " + BP.NAME + " FROM " + BP.TABLE_NAME + " WHERE " + BP._ID + " = BM." + BM.BODY_PARAMETER_ID + ") AS " + BM.BODY_PARAMETER + ", " +
+                            BM.VALUE + " " +
+                            "FROM " + BM.TABLE_NAME + " AS BM " +
+                            "WHERE " + BM.DATE + " = '" + date + "'",
                     null
             );
         }
 
-        String[] groupFrom = { BME.BODY_PARAMETER, BME.VALUE };
+        String[] groupFrom = { BM.BODY_PARAMETER, BM.VALUE };
         int[] groupTo = { R.id.measure_parameter, R.id.measure_value };
         SimpleCursorAdapter adapter = new SimpleCursorAdapter(mContext,
                 R.layout.day_measurement_list_item, mCursor, groupFrom, groupTo, 0);
@@ -83,6 +86,17 @@ public class MeasurementsListFragment extends ListFragment {
     public void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
         Log.d(CLASS_NAME, "onListItemClick");
+
+        MeasurementDialog dialog = new MeasurementDialog();
+        Bundle args = new Bundle();
+        if (isOneDay) {
+            args.putInt(MeasurementDialog.MEASUREMENT_ID, (int)id);
+        } else {
+            // Put position+1 cuz SQL counts from 1 while the position in list is counted from 0
+            args.putInt(MeasurementDialog.PARAMETER_ID, position+1);
+        }
+        dialog.setArguments(args);
+        dialog.show(getChildFragmentManager(), "MEASUREMENT_DIALOG");
 
     }
 }

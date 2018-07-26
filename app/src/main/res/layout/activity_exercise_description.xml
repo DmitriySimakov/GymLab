@@ -26,8 +26,7 @@
     <ImageView
         android:id="@+id/images"
         android:layout_width="match_parent"
-        android:layout_height="100dp"
-        android:src="@drawable/no_image"/>
+        android:layout_height="100dp" />
 
     <View style="@style/DividerStyle" />
 

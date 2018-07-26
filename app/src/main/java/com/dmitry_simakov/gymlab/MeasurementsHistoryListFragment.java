@@ -4,24 +4,21 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.ListFragment;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
 
+import com.dmitry_simakov.gymlab.database.DbContract;
 import com.dmitry_simakov.gymlab.database.MeasuresDbHelper;
 
 public class MeasurementsHistoryListFragment extends ListFragment {
 
     public static final String CLASS_NAME = MeasurementsHistoryListFragment.class.getSimpleName();
 
-    private static class BME extends com.dmitry_simakov.gymlab.database.DbContract.BodyMeasurementsEntry{}
+    private static class BM extends DbContract.BodyMeasurementsEntry{}
 
     private Context mContext;
 
@@ -46,14 +43,14 @@ public class MeasurementsHistoryListFragment extends ListFragment {
 
         mCursor = mDatabase.rawQuery(
                 "SELECT "+
-                        BME._ID +", "+
-                        BME.DATE +" "+
-                        "FROM "+ BME.TABLE_NAME +" "+
-                        "GROUP BY "+ BME.DATE,
+                        BM._ID +", "+
+                        BM.DATE +" "+
+                        "FROM "+ BM.TABLE_NAME +" "+
+                        "GROUP BY "+ BM.DATE,
                 null
         );
 
-        String[] groupFrom = { BME.DATE };
+        String[] groupFrom = { BM.DATE };
         int[] groupTo = { android.R.id.text1 };
         SimpleCursorAdapter adapter = new SimpleCursorAdapter(mContext,
                 android.R.layout.simple_list_item_1, mCursor, groupFrom, groupTo, 0);
@@ -67,8 +64,8 @@ public class MeasurementsHistoryListFragment extends ListFragment {
 
         Fragment fragment = new MeasurementsListFragment();
         Bundle bundle = new Bundle();
-        String date = mCursor.getString(mCursor.getColumnIndex(BME.DATE));
-        bundle.putString(BME.DATE, date);
+        String date = mCursor.getString(mCursor.getColumnIndex(BM.DATE));
+        bundle.putString(BM.DATE, date);
         bundle.putString("class_name", CLASS_NAME);
         fragment.setArguments(bundle);
 

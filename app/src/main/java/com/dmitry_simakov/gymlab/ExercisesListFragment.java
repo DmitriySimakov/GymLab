@@ -6,7 +6,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -17,14 +16,15 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.SimpleCursorTreeAdapter;
 
+import com.dmitry_simakov.gymlab.database.DbContract;
 import com.dmitry_simakov.gymlab.database.GymLabDbHelper;
 
 public class ExercisesListFragment extends Fragment {
 
     public static final String CLASS_NAME = ExercisesListFragment.class.getSimpleName();
 
-    private static class ExE extends com.dmitry_simakov.gymlab.database.DbContract.ExercisesEntry{}
-    private static class ME extends com.dmitry_simakov.gymlab.database.DbContract.MusclesEntry{}
+    private static class Ex extends DbContract.ExercisesEntry{}
+    private static class M extends DbContract.MusclesEntry{}
 
     private Context mContext;
 
@@ -60,7 +60,7 @@ public class ExercisesListFragment extends Fragment {
             public boolean onChildClick(ExpandableListView parent, View v,int groupPosition, int childPosition, long id) {
                 Fragment fragment = new ExerciseDescriptionFragment();
                 Bundle bundle = new Bundle();
-                bundle.putInt(ExE._ID, (int)id);
+                bundle.putInt(Ex._ID, (int)id);
                 fragment.setArguments(bundle);
                 getFragmentManager()
                         .beginTransaction()
@@ -85,14 +85,14 @@ public class ExercisesListFragment extends Fragment {
         mDbHelper = new GymLabDbHelper(mContext);
         mDatabase = mDbHelper.getReadableDatabase();
 
-        String[] columns = { ME._ID, ME.NAME, ME.IMAGE };
+        String[] columns = { M._ID, M.NAME, M.IMAGE };
 
-        mCursor = mDatabase.query(ME.TABLE_NAME, columns,
+        mCursor = mDatabase.query(M.TABLE_NAME, columns,
                 null, null, null, null, null);
 
-        String[] groupFrom = { ME.NAME, ME.IMAGE };
+        String[] groupFrom = { M.NAME, M.IMAGE };
         int[] groupTo = { R.id.muscle_name, R.id.muscle_image };
-        String[] childFrom = { ExE.NAME, ExE.IMAGE };
+        String[] childFrom = { Ex.NAME, Ex.IMAGE };
         int[] childTo = { R.id.exercise_name, R.id.exercise_image };
 
         mCursorAdapter = new ExerciseCursorTreeAdapter(mContext, mDatabase, mCursor,
@@ -111,11 +111,8 @@ public class ExercisesListFragment extends Fragment {
                         int resID = res.getIdentifier(imageName, "drawable", mContext.getPackageName());
                         if (resID != 0) {
                             imageView.setImageDrawable(res.getDrawable(resID));
-                            return true;
                         }
                     }
-
-                    imageView.setImageResource(R.drawable.no_image);
                     return true;
                 }
                 return false;
