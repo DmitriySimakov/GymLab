@@ -41,11 +41,7 @@ public class ExercisesListFragment extends Fragment {
     public void onAttach(Context context) {
         Log.d(CLASS_NAME, "onAttach");
         super.onAttach(context);
-
         mContext = context;
-
-        FloatingActionButton fab = getActivity().findViewById(R.id.fab);
-        fab.setVisibility(View.GONE);
     }
 
     @Override

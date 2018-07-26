@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <color name="red900">#b71c1c</color>
+    <color name="white">#ffffff</color>
+
     <color name="red800">#c62828</color>
-    <color name="red700">#d32f2f</color>
     <color name="red600">#e53935</color>
-    <color name="red500">#f44336</color>
     <color name="red400">#ef5350</color>
+    <color name="red200">#ef9a9a</color>
 
 </resources>

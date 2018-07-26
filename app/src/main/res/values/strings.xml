@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">GymLab</string>
 
-
+    <!-- ExerciseDescription -->
     <string name="exercise">Упражнение</string>
 
     <string name="exercise_name">Название упражнения</string>
@@ -14,15 +14,18 @@
     <string name="description">Описание</string>
     <string name="technique">Техника выполнения</string>
 
+    <!-- NavigationView -->
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="nav_header_title">Android Studio</string>
     <string name="nav_header_subtitle">android.studio@android.com</string>
     <string name="nav_header_desc">Navigation header</string>
 
+    <!-- Settings -->
     <string name="action_settings">Settings</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <!-- Tabs -->
+    <string name="add_measurement">Добавить</string>
+    <string name="measurement_history">История</string>
 
 </resources>

@@ -38,9 +38,9 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         Log.d(CLASS_NAME, "onCreate");
 
-        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         // Init Toolbar
@@ -117,7 +117,7 @@ public class MainActivity extends AppCompatActivity
                 setFragment(new TrainingProgramsFragment(), item);
                 break;
             case R.id.nav_measures:
-                setFragment(new MeasurementDaysListFragment(), item);
+                setFragment(new MeasurementsTabFragment(), item);
                 break;
             case R.id.nav_share:
                 break;

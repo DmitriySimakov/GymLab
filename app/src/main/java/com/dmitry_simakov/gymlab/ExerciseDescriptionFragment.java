@@ -37,11 +37,7 @@ public class ExerciseDescriptionFragment extends Fragment {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-
         mContext = context;
-
-        FloatingActionButton fab = getActivity().findViewById(R.id.fab);
-        fab.setVisibility(View.GONE);
     }
 
     @Override

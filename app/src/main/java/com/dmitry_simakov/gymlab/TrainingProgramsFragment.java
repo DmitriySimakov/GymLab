@@ -20,10 +20,15 @@ public class TrainingProgramsFragment extends Fragment {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-
         mContext = context;
+    }
 
-        FloatingActionButton fab = getActivity().findViewById(R.id.fab);
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+
+        View view = inflater.inflate(R.layout.fragment_training_programs, container, false);
+
+        FloatingActionButton fab = view.findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -31,11 +36,7 @@ public class TrainingProgramsFragment extends Fragment {
                         .setAction("Action", null).show();
             }
         });
-        fab.setVisibility(View.VISIBLE);
-    }
 
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_training_programs, container, false);
+        return view;
     }
 }

@@ -8,6 +8,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ListFragment;
 import android.support.v4.widget.SimpleCursorAdapter;
+import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
 
@@ -32,28 +33,23 @@ public class MeasurementsListFragment extends ListFragment {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-
+        Log.d(CLASS_NAME, "onAttach");
         mContext = context;
-
-        FloatingActionButton fab = getActivity().findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
-        fab.setVisibility(View.VISIBLE);
     }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        Log.d(CLASS_NAME, "onActivityCreated");
 
         mDbHelper = new MeasuresDbHelper(mContext);
         mDatabase = mDbHelper.getWritableDatabase();
 
-        String date = getArguments().getString(BME.DATE);
+        String date = null;
+        Bundle args = getArguments();
+        if (args != null) {
+            date = getArguments().getString(BME.DATE);
+        }
 
         if (date == null) {
             mCursor = mDatabase.rawQuery(
@@ -86,7 +82,7 @@ public class MeasurementsListFragment extends ListFragment {
     @Override
     public void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
-
+        Log.d(CLASS_NAME, "onListItemClick");
 
     }
 }
