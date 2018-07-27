@@ -97,6 +97,14 @@ public class MeasurementsListFragment extends ListFragment {
         }
         dialog.setArguments(args);
         dialog.show(getChildFragmentManager(), "MEASUREMENT_DIALOG");
+    }
 
+    @Override
+    public void onDestroy() {
+        Log.d(CLASS_NAME, "onDestroy");
+        super.onDestroy();
+
+        if (mCursor != null) mCursor.close();
+        if (mDatabase != null) mDatabase.close();
     }
 }

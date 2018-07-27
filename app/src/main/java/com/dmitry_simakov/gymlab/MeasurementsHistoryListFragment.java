@@ -75,4 +75,13 @@ public class MeasurementsHistoryListFragment extends ListFragment {
                 .addToBackStack(null)
                 .commit();
     }
+
+    @Override
+    public void onDestroy() {
+        Log.d(CLASS_NAME, "onDestroy");
+        super.onDestroy();
+
+        if (mCursor != null) mCursor.close();
+        if (mDatabase != null) mDatabase.close();
+    }
 }

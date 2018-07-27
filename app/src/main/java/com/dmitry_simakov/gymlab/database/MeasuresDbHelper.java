@@ -67,9 +67,7 @@ public class MeasuresDbHelper extends SQLiteOpenHelper {
     }
 
     @Override
-    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-
-    }
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {}
 
     public static void insertMeasurement(SQLiteDatabase db, String date, int body_parameter_id, double value) {
         ContentValues contentValues = new ContentValues();
@@ -79,12 +77,15 @@ public class MeasuresDbHelper extends SQLiteOpenHelper {
         db.insert(BM.TABLE_NAME, null, contentValues);
     }
 
-    public static void updateMeasurement(SQLiteDatabase db, int id, String date, int body_parameter_id, double value) {
+    public static void updateMeasurement(SQLiteDatabase db, int id, String date, double value) {
         ContentValues contentValues = new ContentValues();
         contentValues.put(BM.DATE, date);
-        contentValues.put(BM.BODY_PARAMETER_ID, body_parameter_id);
         contentValues.put(BM.VALUE, value);
         db.update(BM.TABLE_NAME, contentValues, BM._ID +" = ?", new String[]{ String.valueOf(id) });
+    }
+
+    public static void deleteMeasurement(SQLiteDatabase db, int id) {
+        db.delete(BM.TABLE_NAME,BM._ID +" = ?", new String[]{ String.valueOf(id) });
     }
 
     private static void insertBodyParameter(SQLiteDatabase db, String name, int image, String instruction) {
