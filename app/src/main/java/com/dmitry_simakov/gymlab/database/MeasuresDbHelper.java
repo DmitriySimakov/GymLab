@@ -13,7 +13,7 @@ import java.util.Date;
 
 public class MeasuresDbHelper extends SQLiteOpenHelper {
 
-    private static final String LOG_TAG = GymLabDbHelper.class.getSimpleName();
+    private static final String LOG_TAG = MeasuresDbHelper.class.getSimpleName();
 
     private static class BM extends DbContract.BodyMeasurementsEntry{}
     private static class BP extends DbContract.BodyParametersEntry {}

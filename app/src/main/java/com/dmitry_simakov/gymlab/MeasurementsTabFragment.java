@@ -13,6 +13,8 @@ import android.view.ViewGroup;
 
 public class MeasurementsTabFragment extends Fragment {
 
+    public static final String CLASS_NAME = MeasurementsTabFragment.class.getSimpleName();
+
     TabLayout mTabLayout;
     ViewPager mViewPager;
 

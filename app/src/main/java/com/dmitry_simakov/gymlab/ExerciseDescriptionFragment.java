@@ -62,8 +62,7 @@ public class ExerciseDescriptionFragment extends Fragment {
             GymLabDbHelper mDbHelper = new GymLabDbHelper(mContext);
             SQLiteDatabase db = mDbHelper.getWritableDatabase();
 
-            Cursor cursor = db.rawQuery(
-                    "SELECT "+
+            Cursor cursor = db.rawQuery("SELECT "+
                             Ex.NAME +", "+
                             Ex.IMAGE +", "+
                             "(SELECT "+ M.NAME  +" FROM "+ M.TABLE_NAME  +" WHERE "+ M._ID  +" = Ex."+ Ex.MAIN_MUSCLE_ID    +") AS "+ Ex.MAIN_MUSCLE    +", "+
@@ -113,15 +112,14 @@ public class ExerciseDescriptionFragment extends Fragment {
                 mTechniqueTextView.setText(technique);
             }
 
-            cursor = db.rawQuery(
-                    "SELECT " +
-                            "(SELECT "+ M.NAME +" FROM "+ M.TABLE_NAME +" WHERE "+ M._ID +" = TM."+ TM.MUSCLE_ID +") AS "+ TM.MUSCLE +" " +
-                            "FROM "+ TM.TABLE_NAME +" AS TM " +
-                            "WHERE "+ TM.EXERCISE_ID +" = ?",
+            cursor = db.rawQuery("SELECT m."+ M.NAME +
+                            " FROM "+ TM.TABLE_NAME +" AS tm LEFT JOIN "+ M.TABLE_NAME +" AS m"+
+                            " ON tm."+ TM.MUSCLE_ID +" = m."+ M._ID +
+                            " WHERE tm."+ TM.EXERCISE_ID +" = ?",
                     new String[]{ String.valueOf(exerciseId) });
 
             if (cursor.moveToFirst()) {
-                int muscleColumnIndex = cursor.getColumnIndex(TM.MUSCLE);
+                int muscleColumnIndex = cursor.getColumnIndex(M.NAME);
                 StringBuilder sb = new StringBuilder();
                 do {
                     sb.append(cursor.getString(muscleColumnIndex));

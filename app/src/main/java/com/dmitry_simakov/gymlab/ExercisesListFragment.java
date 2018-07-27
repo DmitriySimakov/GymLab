@@ -85,10 +85,9 @@ public class ExercisesListFragment extends Fragment {
         mDbHelper = new GymLabDbHelper(mContext);
         mDatabase = mDbHelper.getReadableDatabase();
 
-        String[] columns = { M._ID, M.NAME, M.IMAGE };
-
-        mCursor = mDatabase.query(M.TABLE_NAME, columns,
-                null, null, null, null, null);
+        mCursor = mDatabase.rawQuery("SELECT "+ M._ID +", "+ M.NAME +", "+ M.IMAGE +
+                " FROM "+ M.TABLE_NAME +
+                " ORDER BY "+ M._ID, null);
 
         String[] groupFrom = { M.NAME, M.IMAGE };
         int[] groupTo = { R.id.muscle_name, R.id.muscle_image };

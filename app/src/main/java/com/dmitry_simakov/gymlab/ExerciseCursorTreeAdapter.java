@@ -5,11 +5,14 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.widget.SimpleCursorTreeAdapter;
 
-import com.dmitry_simakov.gymlab.database.DbContract.*;
+import com.dmitry_simakov.gymlab.database.DbContract;
+import com.dmitry_simakov.gymlab.database.DbContract.MusclesEntry;
 
 public class ExerciseCursorTreeAdapter extends SimpleCursorTreeAdapter {
 
     public static final String CLASS_NAME = ExerciseCursorTreeAdapter.class.getSimpleName();
+
+    private static class Ex extends DbContract.ExercisesEntry{}
 
     private SQLiteDatabase mDatabase;
 
@@ -27,15 +30,8 @@ public class ExerciseCursorTreeAdapter extends SimpleCursorTreeAdapter {
         int idColumn = groupCursor.getColumnIndex(MusclesEntry._ID);
         int id = groupCursor.getInt(idColumn);
 
-        String[] columns = {
-                ExercisesEntry._ID,
-                ExercisesEntry.NAME,
-                ExercisesEntry.IMAGE};
-
-        return mDatabase.query(ExercisesEntry.TABLE_NAME,
-                columns,
-                ExercisesEntry.MAIN_MUSCLE_ID + " = ?",
-                new String[]{ String.valueOf(id) },
-                null, null, null);
+        return mDatabase.rawQuery("SELECT "+ Ex._ID +", "+ Ex.NAME +", "+ Ex.IMAGE +
+                " FROM "+ Ex.TABLE_NAME +" WHERE "+ Ex.MAIN_MUSCLE_ID +" = ?",
+                new String[]{ String.valueOf(id) });
     }
 }

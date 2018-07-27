@@ -41,12 +41,10 @@ public class MeasurementsHistoryListFragment extends ListFragment {
         mDbHelper = new MeasuresDbHelper(mContext);
         mDatabase = mDbHelper.getWritableDatabase();
 
-        mCursor = mDatabase.rawQuery(
-                "SELECT "+
-                        BM._ID +", "+
-                        BM.DATE +" "+
-                        "FROM "+ BM.TABLE_NAME +" "+
-                        "GROUP BY "+ BM.DATE,
+        mCursor = mDatabase.rawQuery("SELECT "+ BM._ID +", "+ BM.DATE +" "+
+                        " FROM "+ BM.TABLE_NAME +
+                        " GROUP BY "+ BM.DATE +
+                        " ORDER BY "+ BM.DATE +" DESC",
                 null
         );
 

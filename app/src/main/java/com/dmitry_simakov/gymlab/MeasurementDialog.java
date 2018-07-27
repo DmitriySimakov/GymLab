@@ -131,6 +131,7 @@ public class MeasurementDialog extends AppCompatDialogFragment {
                 editMeasurementInit(args.getInt(MEASUREMENT_ID));
             }
         }
+        if (mCursor != null) mCursor.close();
     }
 
     @Override
@@ -145,13 +146,9 @@ public class MeasurementDialog extends AppCompatDialogFragment {
     private void newMeasurementInit(final int parameterId) {
         Log.d(CLASS_NAME, "newMeasurementInit");
 
-        mCursor = mDatabase.rawQuery(
-                "SELECT "+
-                        BP.NAME +", " +
-                        BP.IMAGE +", " +
-                        BP.INSTRUCTION +" " +
-                        "FROM "+ BP.TABLE_NAME +" " +
-                        "WHERE "+ BP._ID +" = ?",
+        mCursor = mDatabase.rawQuery("SELECT "+ BP.NAME +", "+ BP.IMAGE +", "+ BP.INSTRUCTION +
+                        " FROM "+ BP.TABLE_NAME +
+                        " WHERE "+ BP._ID +" = ?",
                 new String[]{ String.valueOf(parameterId) });
 
         if (mCursor.moveToFirst()) {
@@ -181,21 +178,23 @@ public class MeasurementDialog extends AppCompatDialogFragment {
                         final double value;
                         try {
                             value = Double.parseDouble(String.valueOf(mValueEditText.getText()));
+                            if (value == 0) {
+                                Toast.makeText(mContext, "Параметр не может быть равен 0", Toast.LENGTH_LONG).show();
+                                return;
+                            }
                         } catch(Exception e){
                             Toast.makeText(mContext, "Неверно введено значение", Toast.LENGTH_LONG).show();
                             return;
                         }
 
                         final String date = getISO8601(mYear, mMonth, mDay);
-                        Cursor cursor = mDatabase.rawQuery("SELECT "+ BM._ID +" " +
-                                        "FROM "+ BM.TABLE_NAME +" " +
-                                        "WHERE "+ BM.DATE +" = ? " +
-                                        "AND "+ BM.BODY_PARAMETER_ID +" = ?",
+
+                        Cursor cursor = mDatabase.rawQuery("SELECT "+ BM._ID +" FROM "+ BM.TABLE_NAME +
+                                        " WHERE "+ BM.DATE +" = ? AND "+ BM.BODY_PARAMETER_ID +" = ?",
                                 new String[]{ date, String.valueOf(parameterId) });
 
                         if (cursor.moveToFirst()) {
                             final int id = cursor.getInt(0);
-                            cursor.close();
 
                             AlertDialog.Builder alert = getParamAlreadyExistAlert(date, name);
                             alert.setPositiveButton("Да", new DialogInterface.OnClickListener() {
@@ -208,45 +207,40 @@ public class MeasurementDialog extends AppCompatDialogFragment {
                             });
                             alert.show();
                         } else {
-                            cursor.close();
                             MeasuresDbHelper.insertMeasurement(mDatabase, date, parameterId, value);
                             mDialog.dismiss();
                         }
+                        cursor.close();
                     }
                 });
             }
         }
-        mCursor.close();
     }
 
     private void editMeasurementInit(final int measurementId) {
         Log.d(CLASS_NAME, "editMeasurementInit");
 
-        mCursor = mDatabase.rawQuery(
-                "SELECT "+
-                        "(SELECT "+ BP.NAME        +" FROM "+ BP.TABLE_NAME +" WHERE "+ BP._ID +" = BM."+ BM.BODY_PARAMETER_ID +") AS "+ BM.BODY_PARAMETER +", "+
-                        BM.DATE +", "+
-                        "(SELECT "+ BP.IMAGE       +" FROM "+ BP.TABLE_NAME +" WHERE "+ BP._ID +" = BM."+ BM.BODY_PARAMETER_ID +") AS "+ BP.IMAGE +", "+
-                        "(SELECT "+ BP.INSTRUCTION +" FROM "+ BP.TABLE_NAME +" WHERE "+ BP._ID +" = BM."+ BM.BODY_PARAMETER_ID +") AS "+ BP.INSTRUCTION +", "+
-                        BM.BODY_PARAMETER_ID +", "+
-                        BM.VALUE +" "+
-                        "FROM "+ BM.TABLE_NAME +" AS BM "+
-                        "WHERE "+ BM._ID +" = ?",
+        mCursor = mDatabase.rawQuery("SELECT" +
+                        " bp."+ BP.NAME +", bm."+ BM.DATE +", bp."+ BP.IMAGE +"," +
+                        " bp."+ BP.INSTRUCTION +", bm."+ BM.VALUE +", bm."+ BM.BODY_PARAMETER_ID +
+                        " FROM "+ BM.TABLE_NAME +" AS bm LEFT JOIN "+ BP.TABLE_NAME +" AS bp" +
+                        " ON bm."+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                        " WHERE bm."+ BM._ID +" = ?",
                 new String[]{ String.valueOf(measurementId) });
 
         if (mCursor.moveToFirst()) {
-            int nameColumnIndex        = mCursor.getColumnIndex(BM.BODY_PARAMETER);
+            int nameColumnIndex        = mCursor.getColumnIndex(BP.NAME);
             int dateColumnIndex        = mCursor.getColumnIndex(BM.DATE);
             int imageColumnIndex       = mCursor.getColumnIndex(BP.IMAGE);
             int instructionColumnIndex = mCursor.getColumnIndex(BP.INSTRUCTION);
-            int parameterIdColumnIndex = mCursor.getColumnIndex(BM.BODY_PARAMETER_ID);
             int valueColumnIndex       = mCursor.getColumnIndex(BM.VALUE);
+            int parameterIdColumnIndex = mCursor.getColumnIndex(BM.BODY_PARAMETER_ID);
             final String name     = mCursor.getString(nameColumnIndex);
             String date           = mCursor.getString(dateColumnIndex);
             int image             = mCursor.getInt(imageColumnIndex);
             String instruction    = mCursor.getString(instructionColumnIndex);
-            final int parameterId = mCursor.getInt(parameterIdColumnIndex);
             double value          = mCursor.getDouble(valueColumnIndex);
+            final int parameterId = mCursor.getInt(parameterIdColumnIndex);
 
             mYear  = Integer.parseInt(date.substring(0, 4));
             mMonth = Integer.parseInt(date.substring(6, 7));
@@ -267,21 +261,24 @@ public class MeasurementDialog extends AppCompatDialogFragment {
                         final double value;
                         try {
                             value = Double.parseDouble(String.valueOf(mValueEditText.getText()));
+                            if (value == 0) {
+                                Toast.makeText(mContext, "Параметр не может быть равен 0", Toast.LENGTH_LONG).show();
+                                return;
+                            }
                         } catch(Exception e){
                             Toast.makeText(mContext, "Неверно введено значение", Toast.LENGTH_LONG).show();
                             return;
                         }
 
                         final String date = getISO8601(mYear, mMonth, mDay);
-                        Cursor cursor = mDatabase.rawQuery("SELECT "+ BM._ID +" " +
-                                        "FROM "+ BM.TABLE_NAME +" " +
-                                        "WHERE "+ BM.DATE +" = ? " +
-                                        "AND "+ BM.BODY_PARAMETER_ID +" = ? " +
-                                        "AND "+ BM._ID +" <> ?",
+                        Cursor cursor = mDatabase.rawQuery("SELECT "+ BM._ID +
+                                        " FROM "+ BM.TABLE_NAME +
+                                        " WHERE "+ BM.DATE +" = ?"+
+                                        " AND "+ BM.BODY_PARAMETER_ID +" = ?"+
+                                        " AND "+ BM._ID +" <> ?",
                                 new String[]{ date, String.valueOf(parameterId), String.valueOf(measurementId) });
                         if (cursor.moveToFirst()) {
                             final int id = cursor.getInt(0);
-                            cursor.close();
 
                             AlertDialog.Builder alert = getParamAlreadyExistAlert(date, name);
                             alert.setPositiveButton("Да", new DialogInterface.OnClickListener() {
@@ -295,15 +292,14 @@ public class MeasurementDialog extends AppCompatDialogFragment {
                             });
                             alert.show();
                         } else {
-                            cursor.close();
                             MeasuresDbHelper.updateMeasurement(mDatabase, measurementId, date, value);
                             mDialog.dismiss();
                         }
+                        cursor.close();
                     }
                 });
             }
         }
-        mCursor.close();
     }
 
     private static String getISO8601(int year, int month, int day) {
