@@ -10,11 +10,11 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatDialogFragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -46,12 +46,21 @@ public class MeasurementDialog extends AppCompatDialogFragment {
     private TextView mInstructionTextView;
     private EditText mValueEditText;
 
+    private String mName, mDate, mInstruction;
+    private int mImage, mParameterId, mMeasurementId;
+    private double mValue;
+
+    private int mYear, mMonth, mDay;
+
     private MeasuresDbHelper mDbHelper;
     private SQLiteDatabase mDatabase;
     private Cursor mCursor;
 
     private AlertDialog mDialog;
-    private int mYear, mMonth, mDay;
+
+    private onDatabaseChangeListener mListener;
+
+    public interface onDatabaseChangeListener { void onDatabaseChange(); }
 
     public MeasurementDialog() {}
 
@@ -60,6 +69,14 @@ public class MeasurementDialog extends AppCompatDialogFragment {
         super.onAttach(context);
         Log.d(CLASS_NAME, "onAttach");
         mContext = context;
+
+        Fragment fragment = getParentFragment();
+        try {
+            mListener = (onDatabaseChangeListener) fragment;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(fragment.toString()
+                    + " must implement MeasurementDialog.onDatabaseChangeListener");
+        }
     }
 
     @NonNull
@@ -74,28 +91,6 @@ public class MeasurementDialog extends AppCompatDialogFragment {
         builder.setView(view);
 
         mDateTextView = view.findViewById(R.id.date);
-        mDateTextView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.d(CLASS_NAME, "mDateTextView onClick");
-
-                DatePickerDialog dialog = new DatePickerDialog(mContext, R.style.DialogTheme, new DatePickerDialog.OnDateSetListener() {
-                    public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
-                        Log.d(CLASS_NAME, "DatePickerDialog onDateSet");
-
-                        mYear = year;
-                        mMonth = monthOfYear;
-                        mDay = dayOfMonth;
-                        mDateTextView.setText(mYear +"-"+ mMonth +"-"+ mDay);
-                    }
-                }, mYear, mMonth, mDay);
-
-                DatePicker datePicker = dialog.getDatePicker();
-                datePicker.setMinDate(0);
-                datePicker.setMaxDate(new Date().getTime());
-                dialog.show();
-            }
-        });
 
         mImageView = view.findViewById(R.id.image);
         mInstructionTextView = view.findViewById(R.id.description);
@@ -126,9 +121,11 @@ public class MeasurementDialog extends AppCompatDialogFragment {
         Bundle args = getArguments();
         if (args != null) {
             if (args.containsKey(PARAMETER_ID)) {
-                newMeasurementInit(args.getInt(PARAMETER_ID));
+                mParameterId = args.getInt(PARAMETER_ID);
+                newMeasurementInit();
             } else {
-                editMeasurementInit(args.getInt(MEASUREMENT_ID));
+                mMeasurementId = args.getInt(MEASUREMENT_ID);
+                editMeasurementInit();
             }
         }
         if (mCursor != null) mCursor.close();
@@ -143,81 +140,104 @@ public class MeasurementDialog extends AppCompatDialogFragment {
         if (mDatabase != null) mDatabase.close();
     }
 
-    private void newMeasurementInit(final int parameterId) {
+    private void newMeasurementInit() {
         Log.d(CLASS_NAME, "newMeasurementInit");
 
         mCursor = mDatabase.rawQuery("SELECT "+ BP.NAME +", "+ BP.IMAGE +", "+ BP.INSTRUCTION +
                         " FROM "+ BP.TABLE_NAME +
                         " WHERE "+ BP._ID +" = ?",
-                new String[]{ String.valueOf(parameterId) });
+                new String[]{ String.valueOf(mParameterId) });
 
         if (mCursor.moveToFirst()) {
             int nameColumnIndex        = mCursor.getColumnIndex(BP.NAME);
             int imageColumnIndex       = mCursor.getColumnIndex(BP.IMAGE);
             int instructionColumnIndex = mCursor.getColumnIndex(BP.INSTRUCTION);
-            final String name  = mCursor.getString(nameColumnIndex);
-            int image          = mCursor.getInt(imageColumnIndex);
-            String instruction = mCursor.getString(instructionColumnIndex);
+            mName        = mCursor.getString(nameColumnIndex);
+            mImage       = mCursor.getInt(imageColumnIndex);
+            mInstruction = mCursor.getString(instructionColumnIndex);
 
-            if(mDialog != null) {
-                Calendar calendar = Calendar.getInstance();
-                mYear = calendar.get(Calendar.YEAR);
-                mMonth = calendar.get(Calendar.MONTH);
-                mDay = calendar.get(Calendar.DAY_OF_MONTH);
-                mDateTextView.setText(getISO8601(mYear, mMonth, mDay));
+            Calendar calendar = Calendar.getInstance();
+            mYear  = calendar.get(Calendar.YEAR);
+            mMonth = calendar.get(Calendar.MONTH) + 1; //  month = monthOfYear + 1
+            mDay   = calendar.get(Calendar.DAY_OF_MONTH);
 
-                mDialog.setTitle(name);
-                mImageView.setImageResource(image);
-                mInstructionTextView.setText(instruction);
+            mDate = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime());
+            mDateTextView.setText(mDate);
+            mDateTextView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Log.d(CLASS_NAME, "mDateTextView onClick");
 
-                mDialog.getButton(Dialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Log.d(CLASS_NAME, "positiveButton onClick");
+                    DatePickerDialog dialog = new DatePickerDialog(mContext, R.style.DialogTheme, new DatePickerDialog.OnDateSetListener() {
+                        public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
+                            Log.d(CLASS_NAME, "DatePickerDialog onDateSet");
 
-                        final double value;
-                        try {
-                            value = Double.parseDouble(String.valueOf(mValueEditText.getText()));
-                            if (value == 0) {
-                                Toast.makeText(mContext, "Параметр не может быть равен 0", Toast.LENGTH_LONG).show();
-                                return;
-                            }
-                        } catch(Exception e){
-                            Toast.makeText(mContext, "Неверно введено значение", Toast.LENGTH_LONG).show();
+                            mYear  = year;
+                            mMonth = monthOfYear + 1; //  month = monthOfYear + 1
+                            mDay   = dayOfMonth;
+
+                            mDate = getISO8601(mYear, mMonth, mDay);
+                            mDateTextView.setText(mDate);
+                        }
+                    }, mYear, mMonth - 1, mDay); // monthOfYear = month - 1
+
+                    DatePicker datePicker = dialog.getDatePicker();
+                    datePicker.setMinDate(0);
+                    datePicker.setMaxDate(new Date().getTime() + 60*60*1000);
+                    dialog.show();
+                }
+            });
+
+            mDialog.setTitle(mName);
+            mImageView.setImageResource(mImage);
+            mInstructionTextView.setText(mInstruction);
+
+            mDialog.getButton(Dialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Log.d(CLASS_NAME, "positiveButton onClick");
+
+                    try {
+                        mValue = Double.parseDouble(String.valueOf(mValueEditText.getText()));
+                        if (mValue == 0) {
+                            Toast.makeText(mContext, "Параметр не может быть равен 0", Toast.LENGTH_LONG).show();
                             return;
                         }
-
-                        final String date = getISO8601(mYear, mMonth, mDay);
-
-                        Cursor cursor = mDatabase.rawQuery("SELECT "+ BM._ID +" FROM "+ BM.TABLE_NAME +
-                                        " WHERE "+ BM.DATE +" = ? AND "+ BM.BODY_PARAMETER_ID +" = ?",
-                                new String[]{ date, String.valueOf(parameterId) });
-
-                        if (cursor.moveToFirst()) {
-                            final int id = cursor.getInt(0);
-
-                            AlertDialog.Builder alert = getParamAlreadyExistAlert(date, name);
-                            alert.setPositiveButton("Да", new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface d, int arg1) {
-                                    Log.d(CLASS_NAME, "alertDialog positiveButton onClick");
-
-                                    MeasuresDbHelper.updateMeasurement(mDatabase, id, date, value);
-                                    mDialog.dismiss();
-                                }
-                            });
-                            alert.show();
-                        } else {
-                            MeasuresDbHelper.insertMeasurement(mDatabase, date, parameterId, value);
-                            mDialog.dismiss();
-                        }
-                        cursor.close();
+                    } catch(Exception e){
+                        Toast.makeText(mContext, "Неверно введено значение", Toast.LENGTH_LONG).show();
+                        return;
                     }
-                });
-            }
+
+                    Cursor cursor = mDatabase.rawQuery("SELECT "+ BM._ID +" FROM "+ BM.TABLE_NAME +
+                                    " WHERE "+ BM.DATE +" = ? AND "+ BM.BODY_PARAMETER_ID +" = ?",
+                            new String[]{ mDate, String.valueOf(mParameterId) });
+
+                    if (cursor.moveToFirst()) {
+                        mMeasurementId = cursor.getInt(0);
+
+                        AlertDialog.Builder alert = getParamAlreadyExistAlert(mDate, mName);
+                        alert.setPositiveButton("Да", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface d, int arg1) {
+                                Log.d(CLASS_NAME, "alertDialog positiveButton onClick");
+
+                                MeasuresDbHelper.updateMeasurement(mDatabase, mMeasurementId, mDate, mValue);
+                                mListener.onDatabaseChange();
+                                mDialog.dismiss();
+                            }
+                        });
+                        alert.show();
+                    } else {
+                        MeasuresDbHelper.insertMeasurement(mDatabase, mDate, mParameterId, mValue);
+                        mListener.onDatabaseChange();
+                        mDialog.dismiss();
+                    }
+                    cursor.close();
+                }
+            });
         }
     }
 
-    private void editMeasurementInit(final int measurementId) {
+    private void editMeasurementInit() {
         Log.d(CLASS_NAME, "editMeasurementInit");
 
         mCursor = mDatabase.rawQuery("SELECT" +
@@ -226,7 +246,7 @@ public class MeasurementDialog extends AppCompatDialogFragment {
                         " FROM "+ BM.TABLE_NAME +" AS bm LEFT JOIN "+ BP.TABLE_NAME +" AS bp" +
                         " ON bm."+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
                         " WHERE bm."+ BM._ID +" = ?",
-                new String[]{ String.valueOf(measurementId) });
+                new String[]{ String.valueOf(mMeasurementId) });
 
         if (mCursor.moveToFirst()) {
             int nameColumnIndex        = mCursor.getColumnIndex(BP.NAME);
@@ -235,70 +255,94 @@ public class MeasurementDialog extends AppCompatDialogFragment {
             int instructionColumnIndex = mCursor.getColumnIndex(BP.INSTRUCTION);
             int valueColumnIndex       = mCursor.getColumnIndex(BM.VALUE);
             int parameterIdColumnIndex = mCursor.getColumnIndex(BM.BODY_PARAMETER_ID);
-            final String name     = mCursor.getString(nameColumnIndex);
-            String date           = mCursor.getString(dateColumnIndex);
-            int image             = mCursor.getInt(imageColumnIndex);
-            String instruction    = mCursor.getString(instructionColumnIndex);
-            double value          = mCursor.getDouble(valueColumnIndex);
-            final int parameterId = mCursor.getInt(parameterIdColumnIndex);
+            mName        = mCursor.getString(nameColumnIndex);
+            mDate        = mCursor.getString(dateColumnIndex);
+            mImage       = mCursor.getInt(imageColumnIndex);
+            mInstruction = mCursor.getString(instructionColumnIndex);
+            mValue       = mCursor.getDouble(valueColumnIndex);
+            mParameterId = mCursor.getInt(parameterIdColumnIndex);
 
-            mYear  = Integer.parseInt(date.substring(0, 4));
-            mMonth = Integer.parseInt(date.substring(6, 7));
-            mDay   = Integer.parseInt(date.substring(9));
+            mYear  = Integer.parseInt(mDate.substring(0, 4));
+            mMonth = Integer.parseInt(mDate.substring(5, 7));
+            mDay   = Integer.parseInt(mDate.substring(8, 10));
 
-            if(mDialog != null) {
-                mDialog.setTitle(name);
-                mDateTextView.setText(date);
-                mImageView.setImageResource(image);
-                mInstructionTextView.setText(instruction);
-                mValueEditText.setText(String.valueOf(value));
+            mDateTextView.setText(mDate);
+            mDateTextView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Log.d(CLASS_NAME, "mDateTextView onClick");
 
-                mDialog.getButton(Dialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Log.d(CLASS_NAME, "positiveButton onClick");
+                    DatePickerDialog dialog = new DatePickerDialog(mContext, R.style.DialogTheme, new DatePickerDialog.OnDateSetListener() {
+                        public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
+                            Log.d(CLASS_NAME, "DatePickerDialog onDateSet");
 
-                        final double value;
-                        try {
-                            value = Double.parseDouble(String.valueOf(mValueEditText.getText()));
-                            if (value == 0) {
-                                Toast.makeText(mContext, "Параметр не может быть равен 0", Toast.LENGTH_LONG).show();
-                                return;
-                            }
-                        } catch(Exception e){
-                            Toast.makeText(mContext, "Неверно введено значение", Toast.LENGTH_LONG).show();
+                            mYear  = year;
+                            mMonth = monthOfYear + 1; //  month = monthOfYear + 1
+                            mDay   = dayOfMonth;
+
+                            mDate = getISO8601(mYear, mMonth, mDay);
+                            mDateTextView.setText(mDate);
+                        }
+                    }, mYear, mMonth - 1, mDay); // monthOfYear = month - 1
+
+                    DatePicker datePicker = dialog.getDatePicker();
+                    datePicker.setMinDate(0);
+                    datePicker.setMaxDate(new Date().getTime() + 60*60*1000);
+                    dialog.show();
+                }
+            });
+
+            mDialog.setTitle(mName);
+            mImageView.setImageResource(mImage);
+            mInstructionTextView.setText(mInstruction);
+            mValueEditText.setText(String.valueOf(mValue));
+
+            mDialog.getButton(Dialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Log.d(CLASS_NAME, "positiveButton onClick");
+
+                    try {
+                        mValue = Double.parseDouble(String.valueOf(mValueEditText.getText()));
+                        if (mValue == 0) {
+                            Toast.makeText(mContext, "Параметр не может быть равен 0", Toast.LENGTH_LONG).show();
                             return;
                         }
-
-                        final String date = getISO8601(mYear, mMonth, mDay);
-                        Cursor cursor = mDatabase.rawQuery("SELECT "+ BM._ID +
-                                        " FROM "+ BM.TABLE_NAME +
-                                        " WHERE "+ BM.DATE +" = ?"+
-                                        " AND "+ BM.BODY_PARAMETER_ID +" = ?"+
-                                        " AND "+ BM._ID +" <> ?",
-                                new String[]{ date, String.valueOf(parameterId), String.valueOf(measurementId) });
-                        if (cursor.moveToFirst()) {
-                            final int id = cursor.getInt(0);
-
-                            AlertDialog.Builder alert = getParamAlreadyExistAlert(date, name);
-                            alert.setPositiveButton("Да", new DialogInterface.OnClickListener() {
-                                public void onClick(DialogInterface d, int arg1) {
-                                    Log.d(CLASS_NAME, "alertDialog positiveButton onClick");
-
-                                    MeasuresDbHelper.updateMeasurement(mDatabase, id, date, value);
-                                    MeasuresDbHelper.deleteMeasurement(mDatabase, measurementId);
-                                    mDialog.dismiss();
-                                }
-                            });
-                            alert.show();
-                        } else {
-                            MeasuresDbHelper.updateMeasurement(mDatabase, measurementId, date, value);
-                            mDialog.dismiss();
-                        }
-                        cursor.close();
+                    } catch(Exception e){
+                        Toast.makeText(mContext, "Неверно введено значение", Toast.LENGTH_LONG).show();
+                        return;
                     }
-                });
-            }
+
+                    Cursor cursor = mDatabase.rawQuery("SELECT "+ BM._ID +
+                                    " FROM "+ BM.TABLE_NAME +
+                                    " WHERE "+ BM.DATE +" = ?"+
+                                    " AND "+ BM.BODY_PARAMETER_ID +" = ?"+
+                                    " AND "+ BM._ID +" <> ?",
+                            new String[]{ mDate, String.valueOf(mParameterId), String.valueOf(mMeasurementId) });
+                    if (cursor.moveToFirst()) {
+                        final int id = cursor.getInt(0);
+
+                        AlertDialog.Builder alert = getParamAlreadyExistAlert(mDate, mName);
+                        alert.setPositiveButton("Да", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface d, int arg1) {
+                                Log.d(CLASS_NAME, "alertDialog positiveButton onClick");
+
+                                MeasuresDbHelper.updateMeasurement(mDatabase, id, mDate, mValue);
+                                MeasuresDbHelper.deleteMeasurement(mDatabase, mMeasurementId);
+                                mListener.onDatabaseChange();
+                                mDialog.dismiss();
+                            }
+                        });
+                        alert.show();
+                    } else {
+                        MeasuresDbHelper.updateMeasurement(mDatabase, mMeasurementId, mDate, mValue);
+                        mListener.onDatabaseChange();
+                        mDialog.dismiss();
+                    }
+                    cursor.close();
+                }
+            });
+
         }
     }
 
@@ -306,11 +350,8 @@ public class MeasurementDialog extends AppCompatDialogFragment {
         Log.d(CLASS_NAME, "getISO8601");
 
         Calendar calendar = Calendar.getInstance();
-        calendar.set(year, month, day);
-        Date date = calendar.getTime();
-
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
-        return df.format(date);
+        calendar.set(year, month - 1, day); // monthOfYear = month - 1
+        return new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime());
     }
 
     private AlertDialog.Builder getParamAlreadyExistAlert(String date, String param) {

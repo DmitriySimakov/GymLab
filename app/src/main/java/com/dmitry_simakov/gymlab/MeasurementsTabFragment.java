@@ -25,11 +25,10 @@ public class MeasurementsTabFragment extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_measurements_tab, container, false);
 
-        mTabLayout = view.findViewById(R.id.tabs);
         mViewPager = view.findViewById(R.id.view_pager);
+        mTabLayout = view.findViewById(R.id.tabs);
 
         mViewPager.setAdapter(new MeasurementsPagerAdapter(getChildFragmentManager()));
-
         mTabLayout.post(new Runnable() {
             @Override
             public void run() {

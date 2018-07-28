@@ -4,7 +4,7 @@ import android.provider.BaseColumns;
 
 public class DbContract {
 
-    private final static String ID = BaseColumns._ID;
+    private static final String ID = BaseColumns._ID;
 
     private DbContract() {};
 

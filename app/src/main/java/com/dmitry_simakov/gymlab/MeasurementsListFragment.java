@@ -1,7 +1,6 @@
 package com.dmitry_simakov.gymlab;
 
 import android.content.Context;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
@@ -23,7 +22,8 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-public class MeasurementsListFragment extends ListFragment {
+public class MeasurementsListFragment extends ListFragment
+        implements MeasurementDialog.onDatabaseChangeListener {
 
     public static final String CLASS_NAME = MeasurementsListFragment.class.getSimpleName();
 
@@ -32,11 +32,12 @@ public class MeasurementsListFragment extends ListFragment {
 
     private Context mContext;
 
-    private boolean isOneDay;
+    private String mDate;
 
     private MeasuresDbHelper mDbHelper;
     private SQLiteDatabase mDatabase;
     private Cursor mCursor;
+    private SimpleCursorAdapter mAdapter;
 
     public MeasurementsListFragment() {}
 
@@ -55,57 +56,19 @@ public class MeasurementsListFragment extends ListFragment {
         mDbHelper = new MeasuresDbHelper(mContext);
         mDatabase = mDbHelper.getWritableDatabase();
 
-        String date = null;
         Bundle args = getArguments();
         if (args != null) {
-            date = getArguments().getString(BM.DATE);
+            mDate = getArguments().getString(BM.DATE);
         }
 
-        if (date == null) {
-            isOneDay = false;
-            mCursor = mDatabase.rawQuery("SELECT "+ BP._ID +", "+ BP.NAME +"," +
-                            " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
-                                " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
-                                " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.VALUE +"," +
-                            " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
-                                " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
-                                " ORDER BY "+ BM.DATE +" DESC LIMIT 1, 1) AS prevVal,"+
-                            " (SELECT "+ BM.DATE +" FROM "+ BM.TABLE_NAME +
-                                " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
-                                " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.DATE +", "+
-                            " (SELECT "+ BM.DATE +" FROM "+ BM.TABLE_NAME +
-                                " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
-                                " ORDER BY "+ BM.DATE +" DESC LIMIT 1, 1) AS prevDate"+
-                            " FROM "+ BP.TABLE_NAME +" AS bp"+
-                            " ORDER BY "+ BP._ID,
-                    null
-            );
-        } else {
-            isOneDay = true;
-            mCursor = mDatabase.rawQuery("SELECT bm."+ BM._ID +", bp."+ BP.NAME +", bm."+ BM.VALUE +","+
-                            " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
-                                " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
-                                " AND julianday("+ BM.DATE +") < julianday(?)"+
-                                " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS prevVal, "+
-                            BM.DATE +"," +
-                            " (SELECT "+ BM.DATE +" FROM "+ BM.TABLE_NAME +
-                                " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
-                                " AND julianday("+ BM.DATE +") < julianday(?)"+
-                                " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS prevDate"+
-                            " FROM "+ BM.TABLE_NAME +" AS bm LEFT JOIN "+ BP.TABLE_NAME +" AS bp" +
-                            " ON bm."+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
-                            " WHERE bm."+ BM.DATE +" = ?"+
-                            " ORDER BY bp."+ BP._ID,
-                    new String[]{ date, date, date }
-            );
-        }
+        changeCursor();
 
         String[] groupFrom = { BP.NAME, BM.VALUE, "prevVal", BM.DATE, "prevDate" };
         int[] groupTo = { R.id.measure_parameter, R.id.measure_value,
                 R.id.measure_difference, R.id.measure_difference, R.id.measure_difference, };
-        SimpleCursorAdapter adapter = new Custom_Adapter(mContext,
-                R.layout.day_measurement_list_item, mCursor, groupFrom, groupTo, 0);
-        setListAdapter(adapter);
+        mAdapter = new MeasurementsCursorAdapter(mContext,
+                R.layout.measurement_list_item, mCursor, groupFrom, groupTo, 0);
+        setListAdapter(mAdapter);
     }
 
     @Override
@@ -115,11 +78,11 @@ public class MeasurementsListFragment extends ListFragment {
 
         MeasurementDialog dialog = new MeasurementDialog();
         Bundle args = new Bundle();
-        if (isOneDay) {
-            args.putInt(MeasurementDialog.MEASUREMENT_ID, (int)id);
-        } else {
+        if (mDate == null) {
             // Put position+1 cuz SQL counts from 1 while the position in list is counted from 0
             args.putInt(MeasurementDialog.PARAMETER_ID, position+1);
+        } else {
+            args.putInt(MeasurementDialog.MEASUREMENT_ID, (int)id);
         }
         dialog.setArguments(args);
         dialog.show(getChildFragmentManager(), "MEASUREMENT_DIALOG");
@@ -134,14 +97,64 @@ public class MeasurementsListFragment extends ListFragment {
         if (mDatabase != null) mDatabase.close();
     }
 
-    private class Custom_Adapter extends SimpleCursorAdapter {
+    @Override
+    public void onDatabaseChange() {
+        Log.d(CLASS_NAME, "onDatabaseChange");
+        changeCursor();
+        mAdapter.swapCursor(mCursor);
+    }
+
+    private void changeCursor() {
+        Log.d(CLASS_NAME, "changeCursor");
+        if (mDate == null) {
+            mCursor = mDatabase.rawQuery("SELECT "+ BP._ID +", "+ BP.NAME +"," +
+                            " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
+                            " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                            " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.VALUE +"," +
+                            " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
+                            " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                            " ORDER BY "+ BM.DATE +" DESC LIMIT 1, 1) AS prevVal,"+
+                            " (SELECT "+ BM.DATE +" FROM "+ BM.TABLE_NAME +
+                            " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                            " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.DATE +", "+
+                            " (SELECT "+ BM.DATE +" FROM "+ BM.TABLE_NAME +
+                            " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                            " ORDER BY "+ BM.DATE +" DESC LIMIT 1, 1) AS prevDate"+
+                            " FROM "+ BP.TABLE_NAME +" AS bp"+
+                            " ORDER BY "+ BP._ID,
+                    null
+            );
+        } else {
+            mCursor = mDatabase.rawQuery("SELECT bm."+ BM._ID +", bp."+ BP.NAME +", bm."+ BM.VALUE +","+
+                            " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
+                            " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                            " AND julianday("+ BM.DATE +") < julianday(?)"+
+                            " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS prevVal, "+
+                            BM.DATE +"," +
+                            " (SELECT "+ BM.DATE +" FROM "+ BM.TABLE_NAME +
+                            " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                            " AND julianday("+ BM.DATE +") < julianday(?)"+
+                            " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS prevDate"+
+                            " FROM "+ BM.TABLE_NAME +" AS bm LEFT JOIN "+ BP.TABLE_NAME +" AS bp" +
+                            " ON bm."+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                            " WHERE bm."+ BM.DATE +" = ?"+
+                            " ORDER BY bp."+ BP._ID,
+                    new String[]{ mDate, mDate, mDate }
+            );
+        }
+    }
+
+
+    private class MeasurementsCursorAdapter extends SimpleCursorAdapter {
+
+        public final String CLASS_NAME = MeasurementsListFragment.class.getSimpleName();
 
         private Context context;
         private int layout;
         private Cursor cursor;
         private final LayoutInflater inflater;
 
-        public Custom_Adapter(Context context, int layout, Cursor cursor, String[] from, int[] to, int flags) {
+        MeasurementsCursorAdapter(Context context, int layout, Cursor cursor, String[] from, int[] to, int flags) {
             super(context, layout, cursor, from, to, flags);
             this.layout = layout;
             this.context = context;
@@ -157,6 +170,8 @@ public class MeasurementsListFragment extends ListFragment {
         @Override
         public void bindView(View view, Context context, Cursor cursor) {
             super.bindView(view, context, cursor);
+            Log.d(CLASS_NAME, "bindView");
+
             TextView differenceTextView = view.findViewById(R.id.measure_difference);
 
             int prevValColumnIndex = cursor.getColumnIndexOrThrow("prevVal");
@@ -183,7 +198,7 @@ public class MeasurementsListFragment extends ListFragment {
                 prevDate.setTime(date);
                 date = sdf.parse(curDateISO);
                 curDate.setTime(date);
-                dateDiff = (int)((curDate.getTimeInMillis() - prevDate.getTimeInMillis()) / (1000 * 60 * 60 * 24));
+                dateDiff = (int)((curDate.getTimeInMillis() - prevDate.getTimeInMillis())/(1000*60*60*24));
             } catch (ParseException e) {
                 e.printStackTrace();
             }

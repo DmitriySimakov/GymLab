@@ -25,6 +25,7 @@ public class MeasurementsHistoryListFragment extends ListFragment {
     private MeasuresDbHelper mDbHelper;
     private SQLiteDatabase mDatabase;
     private Cursor mCursor;
+    SimpleCursorAdapter mAdapter;
 
     public MeasurementsHistoryListFragment() {}
 
@@ -41,18 +42,22 @@ public class MeasurementsHistoryListFragment extends ListFragment {
         mDbHelper = new MeasuresDbHelper(mContext);
         mDatabase = mDbHelper.getWritableDatabase();
 
+        changeCursor();
+
+        String[] groupFrom = { BM.DATE };
+        int[] groupTo = { android.R.id.text1 };
+        mAdapter = new SimpleCursorAdapter(mContext,
+                android.R.layout.simple_list_item_1, mCursor, groupFrom, groupTo, 0);
+        setListAdapter(mAdapter);
+    }
+
+    private void changeCursor() {
         mCursor = mDatabase.rawQuery("SELECT "+ BM._ID +", "+ BM.DATE +" "+
                         " FROM "+ BM.TABLE_NAME +
                         " GROUP BY "+ BM.DATE +
                         " ORDER BY "+ BM.DATE +" DESC",
                 null
         );
-
-        String[] groupFrom = { BM.DATE };
-        int[] groupTo = { android.R.id.text1 };
-        SimpleCursorAdapter adapter = new SimpleCursorAdapter(mContext,
-                android.R.layout.simple_list_item_1, mCursor, groupFrom, groupTo, 0);
-        setListAdapter(adapter);
     }
 
     @Override
