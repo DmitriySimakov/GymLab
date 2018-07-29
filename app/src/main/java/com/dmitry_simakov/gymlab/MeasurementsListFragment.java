@@ -4,13 +4,17 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ListFragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -23,7 +27,7 @@ import java.util.Calendar;
 import java.util.Date;
 
 public class MeasurementsListFragment extends ListFragment
-        implements MeasurementDialog.onDatabaseChangeListener {
+        implements LoaderManager.LoaderCallbacks<Cursor> {
 
     public static final String CLASS_NAME = MeasurementsListFragment.class.getSimpleName();
 
@@ -32,12 +36,11 @@ public class MeasurementsListFragment extends ListFragment
 
     private Context mContext;
 
-    private String mDate;
-
     private MeasuresDbHelper mDbHelper;
     private SQLiteDatabase mDatabase;
-    private Cursor mCursor;
-    private SimpleCursorAdapter mAdapter;
+    private SimpleCursorAdapter mCursorAdapter;
+
+    private String mDate;
 
     public MeasurementsListFragment() {}
 
@@ -61,14 +64,10 @@ public class MeasurementsListFragment extends ListFragment
             mDate = getArguments().getString(BM.DATE);
         }
 
-        changeCursor();
+        mCursorAdapter = new MyCursorAdapter(mContext);
+        setListAdapter(mCursorAdapter);
 
-        String[] groupFrom = { BP.NAME, BM.VALUE, "prevVal", BM.DATE, "prevDate" };
-        int[] groupTo = { R.id.measure_parameter, R.id.measure_value,
-                R.id.measure_difference, R.id.measure_difference, R.id.measure_difference, };
-        mAdapter = new MeasurementsCursorAdapter(mContext,
-                R.layout.measurement_list_item, mCursor, groupFrom, groupTo, 0);
-        setListAdapter(mAdapter);
+        getLoaderManager().initLoader(0, null, this);
     }
 
     @Override
@@ -88,83 +87,91 @@ public class MeasurementsListFragment extends ListFragment
         dialog.show(getChildFragmentManager(), "MEASUREMENT_DIALOG");
     }
 
+    @NonNull
     @Override
-    public void onDestroy() {
-        Log.d(CLASS_NAME, "onDestroy");
-        super.onDestroy();
-
-        if (mCursor != null) mCursor.close();
-        if (mDatabase != null) mDatabase.close();
+    public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
+        return new MyCursorLoader(mContext, mDatabase, mDate);
     }
 
     @Override
-    public void onDatabaseChange() {
-        Log.d(CLASS_NAME, "onDatabaseChange");
-        changeCursor();
-        mAdapter.swapCursor(mCursor);
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
+        mCursorAdapter.swapCursor(cursor);
     }
 
-    private void changeCursor() {
-        Log.d(CLASS_NAME, "changeCursor");
-        if (mDate == null) {
-            mCursor = mDatabase.rawQuery("SELECT "+ BP._ID +", "+ BP.NAME +"," +
-                            " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
-                            " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
-                            " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.VALUE +"," +
-                            " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
-                            " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
-                            " ORDER BY "+ BM.DATE +" DESC LIMIT 1, 1) AS prevVal,"+
-                            " (SELECT "+ BM.DATE +" FROM "+ BM.TABLE_NAME +
-                            " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
-                            " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.DATE +", "+
-                            " (SELECT "+ BM.DATE +" FROM "+ BM.TABLE_NAME +
-                            " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
-                            " ORDER BY "+ BM.DATE +" DESC LIMIT 1, 1) AS prevDate"+
-                            " FROM "+ BP.TABLE_NAME +" AS bp"+
-                            " ORDER BY "+ BP._ID,
-                    null
-            );
-        } else {
-            mCursor = mDatabase.rawQuery("SELECT bm."+ BM._ID +", bp."+ BP.NAME +", bm."+ BM.VALUE +","+
-                            " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
-                            " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
-                            " AND julianday("+ BM.DATE +") < julianday(?)"+
-                            " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS prevVal, "+
-                            BM.DATE +"," +
-                            " (SELECT "+ BM.DATE +" FROM "+ BM.TABLE_NAME +
-                            " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
-                            " AND julianday("+ BM.DATE +") < julianday(?)"+
-                            " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS prevDate"+
-                            " FROM "+ BM.TABLE_NAME +" AS bm LEFT JOIN "+ BP.TABLE_NAME +" AS bp" +
-                            " ON bm."+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
-                            " WHERE bm."+ BM.DATE +" = ?"+
-                            " ORDER BY bp."+ BP._ID,
-                    new String[]{ mDate, mDate, mDate }
-            );
-        }
-    }
+    @Override
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {}
 
+    private static class MyCursorLoader extends CursorLoader {
 
-    private class MeasurementsCursorAdapter extends SimpleCursorAdapter {
+        private final ForceLoadContentObserver mObserver = new ForceLoadContentObserver();
 
-        public final String CLASS_NAME = MeasurementsListFragment.class.getSimpleName();
+        private SQLiteDatabase mDatabase;
+        private String mDate;
 
-        private Context context;
-        private int layout;
-        private Cursor cursor;
-        private final LayoutInflater inflater;
-
-        MeasurementsCursorAdapter(Context context, int layout, Cursor cursor, String[] from, int[] to, int flags) {
-            super(context, layout, cursor, from, to, flags);
-            this.layout = layout;
-            this.context = context;
-            this.inflater = LayoutInflater.from(context);
-            this.cursor = cursor;
+        public MyCursorLoader(Context context, SQLiteDatabase db, String date) {
+            super(context);
+            mDatabase = db;
+            mDate = date;
+            setUri(Uri.parse("content://measurements"));
         }
 
         @Override
-        public View newView (Context context, Cursor cursor, ViewGroup parent) {
-            return inflater.inflate(layout, null);
+        public Cursor loadInBackground() {
+            Cursor cursor;
+            if (mDate == null) {
+                cursor = mDatabase.rawQuery("SELECT "+ BP._ID +", "+ BP.NAME +","+
+                                " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
+                                " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                                " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.VALUE +","+
+                                " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
+                                " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                                " ORDER BY "+ BM.DATE +" DESC LIMIT 1, 1) AS prevVal,"+
+                                " (SELECT "+ BM.DATE +" FROM "+ BM.TABLE_NAME +
+                                " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                                " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.DATE +", "+
+                                " (SELECT "+ BM.DATE +" FROM "+ BM.TABLE_NAME +
+                                " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                                " ORDER BY "+ BM.DATE +" DESC LIMIT 1, 1) AS prevDate"+
+                                " FROM "+ BP.TABLE_NAME +" AS bp"+
+                                " ORDER BY "+ BP._ID,
+                        null
+                );
+            } else {
+                cursor = mDatabase.rawQuery("SELECT bm."+ BM._ID +", bp."+ BP.NAME +", bm."+ BM.VALUE +","+
+                                " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
+                                " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                                " AND julianday("+ BM.DATE +") < julianday(?)"+
+                                " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS prevVal, "+
+                                BM.DATE +"," +
+                                " (SELECT "+ BM.DATE +" FROM "+ BM.TABLE_NAME +
+                                " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                                " AND julianday("+ BM.DATE +") < julianday(?)"+
+                                " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS prevDate"+
+                                " FROM "+ BM.TABLE_NAME +" AS bm LEFT JOIN "+ BP.TABLE_NAME +" AS bp" +
+                                " ON bm."+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                                " WHERE bm."+ BM.DATE +" = ?"+
+                                " ORDER BY bp."+ BP._ID,
+                        new String[]{ mDate, mDate, mDate }
+                );
+            }
+            if (cursor != null) {
+                cursor.registerContentObserver(mObserver);
+            }
+
+            cursor.setNotificationUri(getContext().getContentResolver(), getUri());
+            return cursor;
+        }
+    }
+
+    private static class MyCursorAdapter extends SimpleCursorAdapter {
+
+        private static final int LAYOUT = R.layout.measurement_list_item;
+        private static final String[] FROM = { BP.NAME, BM.VALUE, "prevVal", BM.DATE, "prevDate" };
+        private static final int[] TO = { R.id.measure_parameter, R.id.measure_value,
+                R.id.measure_difference, R.id.measure_difference, R.id.measure_difference, };
+
+        MyCursorAdapter(Context context) {
+            super(context, LAYOUT, null, FROM, TO, 0);
         }
 
         @Override

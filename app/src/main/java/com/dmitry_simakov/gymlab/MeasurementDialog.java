@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
@@ -50,17 +51,11 @@ public class MeasurementDialog extends AppCompatDialogFragment {
     private int mImage, mParameterId, mMeasurementId;
     private double mValue;
 
-    private int mYear, mMonth, mDay;
-
     private MeasuresDbHelper mDbHelper;
     private SQLiteDatabase mDatabase;
     private Cursor mCursor;
 
     private AlertDialog mDialog;
-
-    private onDatabaseChangeListener mListener;
-
-    public interface onDatabaseChangeListener { void onDatabaseChange(); }
 
     public MeasurementDialog() {}
 
@@ -69,14 +64,6 @@ public class MeasurementDialog extends AppCompatDialogFragment {
         super.onAttach(context);
         Log.d(CLASS_NAME, "onAttach");
         mContext = context;
-
-        Fragment fragment = getParentFragment();
-        try {
-            mListener = (onDatabaseChangeListener) fragment;
-        } catch (ClassCastException e) {
-            throw new ClassCastException(fragment.toString()
-                    + " must implement MeasurementDialog.onDatabaseChangeListener");
-        }
     }
 
     @NonNull
@@ -157,36 +144,13 @@ public class MeasurementDialog extends AppCompatDialogFragment {
             mInstruction = mCursor.getString(instructionColumnIndex);
 
             Calendar calendar = Calendar.getInstance();
-            mYear  = calendar.get(Calendar.YEAR);
-            mMonth = calendar.get(Calendar.MONTH) + 1; //  month = monthOfYear + 1
-            mDay   = calendar.get(Calendar.DAY_OF_MONTH);
+            int year  = calendar.get(Calendar.YEAR);
+            int month = calendar.get(Calendar.MONTH) + 1; //  month = monthOfYear + 1
+            int day   = calendar.get(Calendar.DAY_OF_MONTH);
+            setDatePickerDialog(year, month, day);
 
             mDate = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime());
             mDateTextView.setText(mDate);
-            mDateTextView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Log.d(CLASS_NAME, "mDateTextView onClick");
-
-                    DatePickerDialog dialog = new DatePickerDialog(mContext, R.style.DialogTheme, new DatePickerDialog.OnDateSetListener() {
-                        public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
-                            Log.d(CLASS_NAME, "DatePickerDialog onDateSet");
-
-                            mYear  = year;
-                            mMonth = monthOfYear + 1; //  month = monthOfYear + 1
-                            mDay   = dayOfMonth;
-
-                            mDate = getISO8601(mYear, mMonth, mDay);
-                            mDateTextView.setText(mDate);
-                        }
-                    }, mYear, mMonth - 1, mDay); // monthOfYear = month - 1
-
-                    DatePicker datePicker = dialog.getDatePicker();
-                    datePicker.setMinDate(0);
-                    datePicker.setMaxDate(new Date().getTime() + 60*60*1000);
-                    dialog.show();
-                }
-            });
 
             mDialog.setTitle(mName);
             mImageView.setImageResource(mImage);
@@ -197,16 +161,7 @@ public class MeasurementDialog extends AppCompatDialogFragment {
                 public void onClick(View v) {
                     Log.d(CLASS_NAME, "positiveButton onClick");
 
-                    try {
-                        mValue = Double.parseDouble(String.valueOf(mValueEditText.getText()));
-                        if (mValue == 0) {
-                            Toast.makeText(mContext, "Параметр не может быть равен 0", Toast.LENGTH_LONG).show();
-                            return;
-                        }
-                    } catch(Exception e){
-                        Toast.makeText(mContext, "Неверно введено значение", Toast.LENGTH_LONG).show();
-                        return;
-                    }
+                    if (!validateValue()) return;
 
                     Cursor cursor = mDatabase.rawQuery("SELECT "+ BM._ID +" FROM "+ BM.TABLE_NAME +
                                     " WHERE "+ BM.DATE +" = ? AND "+ BM.BODY_PARAMETER_ID +" = ?",
@@ -221,14 +176,14 @@ public class MeasurementDialog extends AppCompatDialogFragment {
                                 Log.d(CLASS_NAME, "alertDialog positiveButton onClick");
 
                                 MeasuresDbHelper.updateMeasurement(mDatabase, mMeasurementId, mDate, mValue);
-                                mListener.onDatabaseChange();
+                                mContext.getContentResolver().notifyChange(Uri.parse("content://measurements"), null);
                                 mDialog.dismiss();
                             }
                         });
                         alert.show();
                     } else {
                         MeasuresDbHelper.insertMeasurement(mDatabase, mDate, mParameterId, mValue);
-                        mListener.onDatabaseChange();
+                        mContext.getContentResolver().notifyChange(Uri.parse("content://measurements"), null);
                         mDialog.dismiss();
                     }
                     cursor.close();
@@ -262,35 +217,12 @@ public class MeasurementDialog extends AppCompatDialogFragment {
             mValue       = mCursor.getDouble(valueColumnIndex);
             mParameterId = mCursor.getInt(parameterIdColumnIndex);
 
-            mYear  = Integer.parseInt(mDate.substring(0, 4));
-            mMonth = Integer.parseInt(mDate.substring(5, 7));
-            mDay   = Integer.parseInt(mDate.substring(8, 10));
+            int year  = Integer.parseInt(mDate.substring(0, 4));
+            int month = Integer.parseInt(mDate.substring(5, 7));
+            int day   = Integer.parseInt(mDate.substring(8, 10));
+            setDatePickerDialog(year, month, day);
 
             mDateTextView.setText(mDate);
-            mDateTextView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Log.d(CLASS_NAME, "mDateTextView onClick");
-
-                    DatePickerDialog dialog = new DatePickerDialog(mContext, R.style.DialogTheme, new DatePickerDialog.OnDateSetListener() {
-                        public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
-                            Log.d(CLASS_NAME, "DatePickerDialog onDateSet");
-
-                            mYear  = year;
-                            mMonth = monthOfYear + 1; //  month = monthOfYear + 1
-                            mDay   = dayOfMonth;
-
-                            mDate = getISO8601(mYear, mMonth, mDay);
-                            mDateTextView.setText(mDate);
-                        }
-                    }, mYear, mMonth - 1, mDay); // monthOfYear = month - 1
-
-                    DatePicker datePicker = dialog.getDatePicker();
-                    datePicker.setMinDate(0);
-                    datePicker.setMaxDate(new Date().getTime() + 60*60*1000);
-                    dialog.show();
-                }
-            });
 
             mDialog.setTitle(mName);
             mImageView.setImageResource(mImage);
@@ -302,16 +234,7 @@ public class MeasurementDialog extends AppCompatDialogFragment {
                 public void onClick(View v) {
                     Log.d(CLASS_NAME, "positiveButton onClick");
 
-                    try {
-                        mValue = Double.parseDouble(String.valueOf(mValueEditText.getText()));
-                        if (mValue == 0) {
-                            Toast.makeText(mContext, "Параметр не может быть равен 0", Toast.LENGTH_LONG).show();
-                            return;
-                        }
-                    } catch(Exception e){
-                        Toast.makeText(mContext, "Неверно введено значение", Toast.LENGTH_LONG).show();
-                        return;
-                    }
+                    if (!validateValue()) return;
 
                     Cursor cursor = mDatabase.rawQuery("SELECT "+ BM._ID +
                                     " FROM "+ BM.TABLE_NAME +
@@ -329,14 +252,14 @@ public class MeasurementDialog extends AppCompatDialogFragment {
 
                                 MeasuresDbHelper.updateMeasurement(mDatabase, id, mDate, mValue);
                                 MeasuresDbHelper.deleteMeasurement(mDatabase, mMeasurementId);
-                                mListener.onDatabaseChange();
+                                mContext.getContentResolver().notifyChange(Uri.parse("content://measurements"), null);
                                 mDialog.dismiss();
                             }
                         });
                         alert.show();
                     } else {
                         MeasuresDbHelper.updateMeasurement(mDatabase, mMeasurementId, mDate, mValue);
-                        mListener.onDatabaseChange();
+                        mContext.getContentResolver().notifyChange(Uri.parse("content://measurements"), null);
                         mDialog.dismiss();
                     }
                     cursor.close();
@@ -346,12 +269,43 @@ public class MeasurementDialog extends AppCompatDialogFragment {
         }
     }
 
-    private static String getISO8601(int year, int month, int day) {
-        Log.d(CLASS_NAME, "getISO8601");
+    private void setDatePickerDialog(final int year, final int month, final int day) {
+        mDateTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(CLASS_NAME, "mDateTextView onClick");
 
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(year, month - 1, day); // monthOfYear = month - 1
-        return new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime());
+                DatePickerDialog dialog = new DatePickerDialog(mContext, R.style.DialogTheme, new DatePickerDialog.OnDateSetListener() {
+                    public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
+                        Log.d(CLASS_NAME, "DatePickerDialog onDateSet");
+
+                        Calendar calendar = Calendar.getInstance();
+                        calendar.set(year, monthOfYear, dayOfMonth);
+                        mDate = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime());
+                        mDateTextView.setText(mDate);
+                    }
+                }, year, month - 1, day); // monthOfYear = month - 1
+
+                DatePicker datePicker = dialog.getDatePicker();
+                datePicker.setMinDate(0);
+                datePicker.setMaxDate(new Date().getTime() + 60*60*1000);
+                dialog.show();
+            }
+        });
+    }
+
+    private boolean validateValue() {
+        try {
+            mValue = Double.parseDouble(String.valueOf(mValueEditText.getText()));
+            if (mValue == 0) {
+                Toast.makeText(mContext, "Параметр не может быть равен 0", Toast.LENGTH_LONG).show();
+                return false;
+            }
+        } catch(Exception e){
+            Toast.makeText(mContext, "Неверно введено значение", Toast.LENGTH_LONG).show();
+            return false;
+        }
+        return true;
     }
 
     private AlertDialog.Builder getParamAlreadyExistAlert(String date, String param) {

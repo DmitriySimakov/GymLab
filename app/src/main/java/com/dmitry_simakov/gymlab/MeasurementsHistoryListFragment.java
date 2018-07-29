@@ -3,9 +3,15 @@ package com.dmitry_simakov.gymlab;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.ListFragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.Log;
 import android.view.View;
@@ -14,7 +20,8 @@ import android.widget.ListView;
 import com.dmitry_simakov.gymlab.database.DbContract;
 import com.dmitry_simakov.gymlab.database.MeasuresDbHelper;
 
-public class MeasurementsHistoryListFragment extends ListFragment {
+public class MeasurementsHistoryListFragment extends ListFragment
+        implements LoaderManager.LoaderCallbacks<Cursor> {
 
     public static final String CLASS_NAME = MeasurementsHistoryListFragment.class.getSimpleName();
 
@@ -25,7 +32,7 @@ public class MeasurementsHistoryListFragment extends ListFragment {
     private MeasuresDbHelper mDbHelper;
     private SQLiteDatabase mDatabase;
     private Cursor mCursor;
-    SimpleCursorAdapter mAdapter;
+    SimpleCursorAdapter mCursorAdapter;
 
     public MeasurementsHistoryListFragment() {}
 
@@ -42,22 +49,13 @@ public class MeasurementsHistoryListFragment extends ListFragment {
         mDbHelper = new MeasuresDbHelper(mContext);
         mDatabase = mDbHelper.getWritableDatabase();
 
-        changeCursor();
-
         String[] groupFrom = { BM.DATE };
         int[] groupTo = { android.R.id.text1 };
-        mAdapter = new SimpleCursorAdapter(mContext,
-                android.R.layout.simple_list_item_1, mCursor, groupFrom, groupTo, 0);
-        setListAdapter(mAdapter);
-    }
+        mCursorAdapter = new SimpleCursorAdapter(mContext,
+                android.R.layout.simple_list_item_1, null, groupFrom, groupTo, 0);
+        setListAdapter(mCursorAdapter);
 
-    private void changeCursor() {
-        mCursor = mDatabase.rawQuery("SELECT "+ BM._ID +", "+ BM.DATE +" "+
-                        " FROM "+ BM.TABLE_NAME +
-                        " GROUP BY "+ BM.DATE +
-                        " ORDER BY "+ BM.DATE +" DESC",
-                null
-        );
+        getLoaderManager().initLoader(0, null, this);
     }
 
     @Override
@@ -66,11 +64,10 @@ public class MeasurementsHistoryListFragment extends ListFragment {
         Log.d(CLASS_NAME, "onListItemClick");
 
         Fragment fragment = new MeasurementsListFragment();
-        Bundle bundle = new Bundle();
+        Bundle args = new Bundle();
         String date = mCursor.getString(mCursor.getColumnIndex(BM.DATE));
-        bundle.putString(BM.DATE, date);
-        bundle.putString("class_name", CLASS_NAME);
-        fragment.setArguments(bundle);
+        args.putString(BM.DATE, date);
+        fragment.setArguments(args);
 
         getActivity().getSupportFragmentManager()
                 .beginTransaction()
@@ -79,12 +76,47 @@ public class MeasurementsHistoryListFragment extends ListFragment {
                 .commit();
     }
 
+    @NonNull
     @Override
-    public void onDestroy() {
-        Log.d(CLASS_NAME, "onDestroy");
-        super.onDestroy();
+    public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
+        return new MyCursorLoader(mContext, mDatabase);
+    }
 
-        if (mCursor != null) mCursor.close();
-        if (mDatabase != null) mDatabase.close();
+    @Override
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
+        mCursor = cursor;
+        mCursorAdapter.swapCursor(cursor);
+    }
+
+    @Override
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {}
+
+    private static class MyCursorLoader extends CursorLoader {
+
+        private final ForceLoadContentObserver mObserver = new ForceLoadContentObserver();
+
+        private SQLiteDatabase mDatabase;
+
+        public MyCursorLoader(Context context, SQLiteDatabase db) {
+            super(context);
+            mDatabase = db;
+            setUri(Uri.parse("content://measurements"));
+        }
+
+        @Override
+        public Cursor loadInBackground() {
+            Cursor cursor = mDatabase.rawQuery("SELECT "+ BM._ID +", "+ BM.DATE +" "+
+                            " FROM "+ BM.TABLE_NAME +
+                            " GROUP BY "+ BM.DATE +
+                            " ORDER BY "+ BM.DATE +" DESC",
+                    null);
+
+            if (cursor != null) {
+                cursor.registerContentObserver(mObserver);
+            }
+
+            cursor.setNotificationUri(getContext().getContentResolver(), getUri());
+            return cursor;
+        }
     }
 }
