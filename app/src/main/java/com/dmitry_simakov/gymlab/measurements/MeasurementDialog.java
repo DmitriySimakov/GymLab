@@ -43,7 +43,9 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
     public static final String MEASUREMENT_ID = "measurement_id";
 
     public static final int NEW_MEASUREMENT_LOADER_ID = 1;
+    public static final int NEW_MEASUREMENT_CHECK_LOADER_ID = 11;
     public static final int EDIT_MEASUREMENT_LOADER_ID = 2;
+    public static final int EDIT_MEASUREMENT_CHECK_LOADER_ID = 22;
 
     private TextView mDateTextView;
     private ImageView mImageView;
@@ -130,6 +132,11 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
             case EDIT_MEASUREMENT_LOADER_ID:
                 loader = new MyCursorLoader(getContext(), mDatabase, mMeasurementId);
                 break;
+            case NEW_MEASUREMENT_CHECK_LOADER_ID:
+            case EDIT_MEASUREMENT_CHECK_LOADER_ID:
+                loader = new CheckCursorLoader(getContext(), mDatabase,
+                        String.valueOf(mMeasurementId), String.valueOf(mParameterId), mDate);
+                break;
         }
         return loader;
     }
@@ -142,6 +149,12 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
                 break;
             case EDIT_MEASUREMENT_LOADER_ID:
                 editMeasurementInit(cursor);
+                break;
+            case NEW_MEASUREMENT_CHECK_LOADER_ID:
+                newMeasurementCheck(cursor);
+                break;
+            case EDIT_MEASUREMENT_CHECK_LOADER_ID:
+                editMeasurementCheck(cursor);
                 break;
         }
     }
@@ -184,6 +197,43 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
         }
     }
 
+    private static class CheckCursorLoader extends CursorLoader {
+
+        private SQLiteDatabase mDatabase;
+        private String mMeasurementId;
+        private String mParameterId;
+        private String mDate;
+
+        CheckCursorLoader(Context context, SQLiteDatabase db, String measurementId, String parameterId, String date) {
+            super(context);
+            mDatabase = db;
+            mMeasurementId = measurementId;
+            mParameterId = parameterId;
+            mDate = date;
+        }
+
+        @Override
+        public Cursor loadInBackground() {
+            Cursor cursor = null;
+            switch (getId()) {
+                case NEW_MEASUREMENT_CHECK_LOADER_ID:
+                    cursor = mDatabase.rawQuery("SELECT "+ BM._ID +" FROM "+ BM.TABLE_NAME +
+                                    " WHERE "+ BM.DATE +" = ? AND "+ BM.BODY_PARAMETER_ID +" = ?",
+                            new String[]{ mDate, String.valueOf(mParameterId) });
+                    break;
+                case EDIT_MEASUREMENT_CHECK_LOADER_ID:
+                    cursor = mDatabase.rawQuery("SELECT "+ BM._ID +
+                                    " FROM "+ BM.TABLE_NAME +
+                                    " WHERE "+ BM.DATE +" = ?"+
+                                    " AND "+ BM.BODY_PARAMETER_ID +" = ?"+
+                                    " AND "+ BM._ID +" <> ?",
+                            new String[]{ mDate, String.valueOf(mParameterId), String.valueOf(mMeasurementId) });
+                    break;
+            }
+            return cursor;
+        }
+    }
+
     private void newMeasurementInit(Cursor c) {
         Log.d(CLASS_NAME, "newMeasurementInit");
 
@@ -205,39 +255,38 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
             mImageView.setImageResource(mImage);
             mInstructionTextView.setText(mInstruction);
 
+            final LoaderManager.LoaderCallbacks<Cursor> callback = this;
             mDialog.getButton(Dialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     Log.d(CLASS_NAME, "positiveButton onClick");
 
                     if (!validateValue()) return;
-
-                    Cursor cursor = mDatabase.rawQuery("SELECT "+ BM._ID +" FROM "+ BM.TABLE_NAME +
-                                    " WHERE "+ BM.DATE +" = ? AND "+ BM.BODY_PARAMETER_ID +" = ?",
-                            new String[]{ mDate, String.valueOf(mParameterId) });
-
-                    if (cursor.moveToFirst()) {
-                        mMeasurementId = cursor.getInt(0);
-
-                        AlertDialog.Builder alert = getParamAlreadyExistAlert(mDate, mName);
-                        alert.setPositiveButton("Да", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface d, int arg1) {
-                                Log.d(CLASS_NAME, "alertDialog positiveButton onClick");
-
-                                MeasuresDbHelper.updateMeasurement(mDatabase, mMeasurementId, mDate, mValue);
-                                getContext().getContentResolver().notifyChange(BM.CONTENT_URI, null);
-                                mDialog.dismiss();
-                            }
-                        });
-                        alert.show();
-                    } else {
-                        MeasuresDbHelper.insertMeasurement(mDatabase, mDate, mParameterId, mValue);
-                        getContext().getContentResolver().notifyChange(BM.CONTENT_URI, null);
-                        mDialog.dismiss();
-                    }
-                    cursor.close();
+                    getLoaderManager().initLoader(NEW_MEASUREMENT_CHECK_LOADER_ID, null, callback);
                 }
             });
+        }
+    }
+
+    private void newMeasurementCheck(Cursor c) {
+        if (c.moveToFirst()) {
+            mMeasurementId = c.getInt(0);
+
+            AlertDialog.Builder alert = getParamAlreadyExistAlert(mDate, mName);
+            alert.setPositiveButton("Да", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface d, int arg1) {
+                    Log.d(CLASS_NAME, "alertDialog positiveButton onClick");
+
+                    MeasuresDbHelper.updateMeasurement(mDatabase, mMeasurementId, mDate, mValue);
+                    getContext().getContentResolver().notifyChange(BM.CONTENT_URI, null);
+                    mDialog.dismiss();
+                }
+            });
+            alert.show();
+        } else {
+            MeasuresDbHelper.insertMeasurement(mDatabase, mDate, mParameterId, mValue);
+            getContext().getContentResolver().notifyChange(BM.CONTENT_URI, null);
+            mDialog.dismiss();
         }
     }
 
@@ -264,43 +313,39 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
             mInstructionTextView.setText(mInstruction);
             mValueEditText.setText(String.valueOf(mValue));
 
+            final LoaderManager.LoaderCallbacks<Cursor> callback = this;
             mDialog.getButton(Dialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     Log.d(CLASS_NAME, "positiveButton onClick");
 
                     if (!validateValue()) return;
-
-                    Cursor cursor = mDatabase.rawQuery("SELECT "+ BM._ID +
-                                    " FROM "+ BM.TABLE_NAME +
-                                    " WHERE "+ BM.DATE +" = ?"+
-                                    " AND "+ BM.BODY_PARAMETER_ID +" = ?"+
-                                    " AND "+ BM._ID +" <> ?",
-                            new String[]{ mDate, String.valueOf(mParameterId), String.valueOf(mMeasurementId) });
-                    if (cursor.moveToFirst()) {
-                        final int id = cursor.getInt(0);
-
-                        AlertDialog.Builder alert = getParamAlreadyExistAlert(mDate, mName);
-                        alert.setPositiveButton("Да", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface d, int arg1) {
-                                Log.d(CLASS_NAME, "alertDialog positiveButton onClick");
-
-                                MeasuresDbHelper.updateMeasurement(mDatabase, id, mDate, mValue);
-                                MeasuresDbHelper.deleteMeasurement(mDatabase, mMeasurementId);
-                                getContext().getContentResolver().notifyChange(BM.CONTENT_URI, null);
-                                mDialog.dismiss();
-                            }
-                        });
-                        alert.show();
-                    } else {
-                        MeasuresDbHelper.updateMeasurement(mDatabase, mMeasurementId, mDate, mValue);
-                        getContext().getContentResolver().notifyChange(BM.CONTENT_URI, null);
-                        mDialog.dismiss();
-                    }
-                    cursor.close();
+                    getLoaderManager().initLoader(EDIT_MEASUREMENT_CHECK_LOADER_ID, null, callback);
                 }
             });
+        }
+    }
 
+    private void editMeasurementCheck(Cursor c) {
+        if (c.moveToFirst()) {
+            final int id = c.getInt(0);
+
+            AlertDialog.Builder alert = getParamAlreadyExistAlert(mDate, mName);
+            alert.setPositiveButton("Да", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface d, int arg1) {
+                    Log.d(CLASS_NAME, "alertDialog positiveButton onClick");
+
+                    MeasuresDbHelper.updateMeasurement(mDatabase, id, mDate, mValue);
+                    MeasuresDbHelper.deleteMeasurement(mDatabase, mMeasurementId);
+                    getContext().getContentResolver().notifyChange(BM.CONTENT_URI, null);
+                    mDialog.dismiss();
+                }
+            });
+            alert.show();
+        } else {
+            MeasuresDbHelper.updateMeasurement(mDatabase, mMeasurementId, mDate, mValue);
+            getContext().getContentResolver().notifyChange(BM.CONTENT_URI, null);
+            mDialog.dismiss();
         }
     }
 
