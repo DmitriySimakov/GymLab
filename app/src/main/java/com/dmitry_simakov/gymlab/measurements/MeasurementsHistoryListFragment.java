@@ -1,13 +1,13 @@
-package com.dmitry_simakov.gymlab;
+package com.dmitry_simakov.gymlab.measurements;
 
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -17,6 +17,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
 
+import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.database.DbContract;
 import com.dmitry_simakov.gymlab.database.MeasuresDbHelper;
 
@@ -25,9 +26,7 @@ public class MeasurementsHistoryListFragment extends ListFragment
 
     public static final String CLASS_NAME = MeasurementsHistoryListFragment.class.getSimpleName();
 
-    private static class BM extends DbContract.BodyMeasurementsEntry{}
-
-    private Context mContext;
+    private static final class BM extends DbContract.BodyMeasurementsEntry{}
 
     private MeasuresDbHelper mDbHelper;
     private SQLiteDatabase mDatabase;
@@ -39,21 +38,21 @@ public class MeasurementsHistoryListFragment extends ListFragment
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        mContext = context;
+        Log.d(CLASS_NAME, "onAttach");
+
+        mDbHelper = new MeasuresDbHelper(context);
+        mDatabase = mDbHelper.getWritableDatabase();
+
+        String[] groupFrom = { BM.DATE };
+        int[] groupTo = { android.R.id.text1 };
+        mCursorAdapter = new SimpleCursorAdapter(context,
+                android.R.layout.simple_list_item_1, null, groupFrom, groupTo, 0);
+        setListAdapter(mCursorAdapter);
     }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-
-        mDbHelper = new MeasuresDbHelper(mContext);
-        mDatabase = mDbHelper.getWritableDatabase();
-
-        String[] groupFrom = { BM.DATE };
-        int[] groupTo = { android.R.id.text1 };
-        mCursorAdapter = new SimpleCursorAdapter(mContext,
-                android.R.layout.simple_list_item_1, null, groupFrom, groupTo, 0);
-        setListAdapter(mCursorAdapter);
 
         getLoaderManager().initLoader(0, null, this);
     }
@@ -69,17 +68,19 @@ public class MeasurementsHistoryListFragment extends ListFragment
         args.putString(BM.DATE, date);
         fragment.setArguments(args);
 
-        getActivity().getSupportFragmentManager()
+        FragmentActivity activity = getActivity();
+        activity.getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.fragment_container, fragment)
                 .addToBackStack(null)
                 .commit();
+        activity.setTitle(date);
     }
 
     @NonNull
     @Override
     public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
-        return new MyCursorLoader(mContext, mDatabase);
+        return new MyCursorLoader(getContext(), mDatabase);
     }
 
     @Override
@@ -89,7 +90,9 @@ public class MeasurementsHistoryListFragment extends ListFragment
     }
 
     @Override
-    public void onLoaderReset(@NonNull Loader<Cursor> loader) {}
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
+        mCursorAdapter.swapCursor(null);
+    }
 
     private static class MyCursorLoader extends CursorLoader {
 
@@ -97,10 +100,10 @@ public class MeasurementsHistoryListFragment extends ListFragment
 
         private SQLiteDatabase mDatabase;
 
-        public MyCursorLoader(Context context, SQLiteDatabase db) {
+        MyCursorLoader(Context context, SQLiteDatabase db) {
             super(context);
             mDatabase = db;
-            setUri(Uri.parse("content://measurements"));
+            setUri(BM.CONTENT_URI);
         }
 
         @Override
@@ -113,9 +116,9 @@ public class MeasurementsHistoryListFragment extends ListFragment
 
             if (cursor != null) {
                 cursor.registerContentObserver(mObserver);
+                cursor.setNotificationUri(getContext().getContentResolver(), getUri());
             }
 
-            cursor.setNotificationUri(getContext().getContentResolver(), getUri());
             return cursor;
         }
     }

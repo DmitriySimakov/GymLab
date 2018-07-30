@@ -20,6 +20,7 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.dmitry_simakov.gymlab.database.GymLabDbHelper;
+import com.dmitry_simakov.gymlab.measurements.MeasurementsTabFragment;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -29,7 +30,7 @@ public class MainActivity extends AppCompatActivity
 
     public static final String APP_PREFERENCES = "AppPreferences";
     public static final String IS_DB_COPIED = "isDbCopied";
-    SharedPreferences mPreferences;
+    private SharedPreferences mPreferences;
 
     private DrawerLayout mDrawer;
     private Toolbar mToolbar;
@@ -59,31 +60,11 @@ public class MainActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
         mPreferences = getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
-
         initDB();
 
         mFragmentManager = getSupportFragmentManager();
         mFragmentManager.addOnBackStackChangedListener(this);
         setFragment(new ExercisesListFragment(), navigationView.getMenu().findItem(R.id.nav_exercises));
-    }
-
-    private void initDB() {
-        Log.d(CLASS_NAME, "initDB");
-
-        //Копируем базу данных при первом запуске приложение
-        if(!mPreferences.contains(IS_DB_COPIED)) {
-            GymLabDbHelper dbHelper = new GymLabDbHelper(this);
-            SQLiteDatabase database = dbHelper.getReadableDatabase();
-            boolean success = dbHelper.copyDatabase(this);
-            if(success) {
-                SharedPreferences.Editor editor = mPreferences.edit();
-                editor.putBoolean(IS_DB_COPIED, true);
-                editor.apply();
-            } else {
-                Toast.makeText(this, "Проблемы с загрузкой базы данных", Toast.LENGTH_SHORT).show();
-            }
-            database.close();
-        }
     }
 
     @Override
@@ -130,14 +111,6 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    private void setFragment(Fragment fragment, MenuItem item) {
-        Log.d(CLASS_NAME, "setFragment");
-
-        mFragmentManager.beginTransaction().replace(R.id.fragment_container, fragment).commit();
-        item.setChecked(true); // Выделяем выбранный пункт меню в шторке
-        setTitle(item.getTitle()); // Выводим выбранный пункт в заголовке
-    }
-
     @Override
     public void onBackStackChanged() {
         Log.d(CLASS_NAME, "onBackStackChanged");
@@ -153,6 +126,7 @@ public class MainActivity extends AppCompatActivity
         } else {
             getSupportActionBar().setDisplayHomeAsUpEnabled(false); //show hamburger
             mToggle.syncState();
+            setTitle(R.string.exercises);
             mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -172,5 +146,31 @@ public class MainActivity extends AppCompatActivity
         } else {
             super.onBackPressed();
         }
+    }
+
+    private void initDB() {
+        Log.d(CLASS_NAME, "initDB");
+
+        //Копируем базу данных при первом запуске приложение
+        if(!mPreferences.contains(IS_DB_COPIED)) {
+            GymLabDbHelper dbHelper = new GymLabDbHelper(this);
+            SQLiteDatabase database = dbHelper.getReadableDatabase();
+            if(dbHelper.copyDatabase()) {
+                SharedPreferences.Editor editor = mPreferences.edit();
+                editor.putBoolean(IS_DB_COPIED, true);
+                editor.apply();
+            } else {
+                Toast.makeText(this, "Проблемы с загрузкой базы данных", Toast.LENGTH_SHORT).show();
+            }
+            database.close();
+        }
+    }
+
+    private void setFragment(Fragment fragment, MenuItem item) {
+        Log.d(CLASS_NAME, "setFragment");
+
+        mFragmentManager.beginTransaction().replace(R.id.fragment_container, fragment).commit();
+        item.setChecked(true); // Выделяем выбранный пункт меню в шторке
+        setTitle(item.getTitle()); // Выводим выбранный пункт в заголовке
     }
 }

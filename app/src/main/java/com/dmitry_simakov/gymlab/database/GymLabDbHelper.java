@@ -47,12 +47,12 @@ public class GymLabDbHelper extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.d(LOG_TAG, "onUpgrade");
-        copyDatabase(mContext);
+        copyDatabase();
     }
 
-    public boolean copyDatabase(Context context) {
+    public boolean copyDatabase() {
         try {
-            InputStream inputStream = context.getAssets().open("databases/" + DB_NAME);
+            InputStream inputStream = mContext.getAssets().open("databases/" + DB_NAME);
             String outFileName = DB_PATH + DB_NAME;
             OutputStream outputStream = new FileOutputStream(outFileName);
             byte[] buff = new byte[1024];

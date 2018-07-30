@@ -1,10 +1,9 @@
-package com.dmitry_simakov.gymlab;
+package com.dmitry_simakov.gymlab.measurements;
 
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -18,6 +17,7 @@ import android.view.View;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.database.DbContract;
 import com.dmitry_simakov.gymlab.database.MeasuresDbHelper;
 
@@ -31,10 +31,8 @@ public class MeasurementsListFragment extends ListFragment
 
     public static final String CLASS_NAME = MeasurementsListFragment.class.getSimpleName();
 
-    private static class BM extends DbContract.BodyMeasurementsEntry {}
-    private static class BP extends DbContract.BodyParametersEntry {}
-
-    private Context mContext;
+    private static final class BM extends DbContract.BodyMeasurementsEntry {}
+    private static final class BP extends DbContract.BodyParametersEntry {}
 
     private MeasuresDbHelper mDbHelper;
     private SQLiteDatabase mDatabase;
@@ -48,24 +46,23 @@ public class MeasurementsListFragment extends ListFragment
     public void onAttach(Context context) {
         super.onAttach(context);
         Log.d(CLASS_NAME, "onAttach");
-        mContext = context;
+
+        mDbHelper = new MeasuresDbHelper(context);
+        mDatabase = mDbHelper.getWritableDatabase();
+
+        Bundle args = getArguments();
+        if (args != null) {
+            mDate = args.getString(BM.DATE);
+        }
+
+        mCursorAdapter = new MyCursorAdapter(context);
+        setListAdapter(mCursorAdapter);
     }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         Log.d(CLASS_NAME, "onActivityCreated");
-
-        mDbHelper = new MeasuresDbHelper(mContext);
-        mDatabase = mDbHelper.getWritableDatabase();
-
-        Bundle args = getArguments();
-        if (args != null) {
-            mDate = getArguments().getString(BM.DATE);
-        }
-
-        mCursorAdapter = new MyCursorAdapter(mContext);
-        setListAdapter(mCursorAdapter);
 
         getLoaderManager().initLoader(0, null, this);
     }
@@ -90,7 +87,7 @@ public class MeasurementsListFragment extends ListFragment
     @NonNull
     @Override
     public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
-        return new MyCursorLoader(mContext, mDatabase, mDate);
+        return new MyCursorLoader(getContext(), mDatabase, mDate);
     }
 
     @Override
@@ -99,7 +96,9 @@ public class MeasurementsListFragment extends ListFragment
     }
 
     @Override
-    public void onLoaderReset(@NonNull Loader<Cursor> loader) {}
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
+        mCursorAdapter.swapCursor(null);
+    }
 
     private static class MyCursorLoader extends CursorLoader {
 
@@ -108,11 +107,11 @@ public class MeasurementsListFragment extends ListFragment
         private SQLiteDatabase mDatabase;
         private String mDate;
 
-        public MyCursorLoader(Context context, SQLiteDatabase db, String date) {
+        MyCursorLoader(Context context, SQLiteDatabase db, String date) {
             super(context);
             mDatabase = db;
             mDate = date;
-            setUri(Uri.parse("content://measurements"));
+            setUri(BM.CONTENT_URI);
         }
 
         @Override
@@ -156,9 +155,9 @@ public class MeasurementsListFragment extends ListFragment
             }
             if (cursor != null) {
                 cursor.registerContentObserver(mObserver);
+                cursor.setNotificationUri(getContext().getContentResolver(), getUri());
             }
 
-            cursor.setNotificationUri(getContext().getContentResolver(), getUri());
             return cursor;
         }
     }

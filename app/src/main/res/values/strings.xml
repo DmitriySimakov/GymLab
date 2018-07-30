@@ -1,6 +1,11 @@
 <resources>
     <string name="app_name">GymLab</string>
 
+    <!-- NavigationView items -->
+    <string name="exercises">Упражнения</string>
+    <string name="training_programs">Программы</string>
+    <string name="measures">Замеры</string>
+
     <!-- ExerciseDescription -->
     <string name="exercise">Упражнение</string>
 
@@ -25,6 +30,7 @@
     <string name="action_settings">Settings</string>
 
     <!-- Tabs -->
+    <string name="calculator">Калькулятор</string>
     <string name="add_measurement">Добавить</string>
     <string name="measurement_history">История</string>
 

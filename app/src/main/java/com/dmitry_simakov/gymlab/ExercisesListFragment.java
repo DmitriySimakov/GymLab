@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -30,10 +29,10 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
 
     public static final String CLASS_NAME = ExercisesListFragment.class.getSimpleName();
 
-    private static class Ex extends DbContract.ExercisesEntry{}
-    private static class M extends DbContract.MusclesEntry{}
+    private static final class Ex extends DbContract.ExercisesEntry{}
+    private static final class M extends DbContract.MusclesEntry{}
 
-    private Context mContext;
+    private static final int GROUP_LOADER_ID = -1;
 
     private GymLabDbHelper mDbHelper;
     private SQLiteDatabase mDatabase;
@@ -44,9 +43,13 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
 
     @Override
     public void onAttach(Context context) {
-        Log.d(CLASS_NAME, "onAttach");
         super.onAttach(context);
-        mContext = context;
+        Log.d(CLASS_NAME, "onAttach");
+
+        mDbHelper = new GymLabDbHelper(context);
+        mDatabase = mDbHelper.getReadableDatabase();
+
+        mCursorTreeAdapter = new MyCursorTreeAdapter(context, this);
     }
 
     @Override
@@ -56,10 +59,9 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
         View view = inflater.inflate(R.layout.fragment_exercise_list, container, false);
 
         mExerciseElv = view.findViewById(R.id.elv);
-
         ProgressBar progressBar = view.findViewById(R.id.progressBar);
         mExerciseElv.setEmptyView(progressBar);
-
+        mExerciseElv.setAdapter(mCursorTreeAdapter);
         mExerciseElv.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
             @Override
             public boolean onChildClick(ExpandableListView parent, View v,int groupPosition, int childPosition, long id) {
@@ -86,28 +88,21 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         Log.d(CLASS_NAME, "onActivityCreated");
-
-        mDbHelper = new GymLabDbHelper(mContext);
-        mDatabase = mDbHelper.getReadableDatabase();
-
-        mCursorTreeAdapter = new MyCursorTreeAdapter(mContext, this);
-        mExerciseElv.setAdapter(mCursorTreeAdapter);
-
-        getLoaderManager().initLoader(-1, null, this);
+        getLoaderManager().initLoader(GROUP_LOADER_ID, null, this);
     }
 
     @NonNull
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        Log.d(CLASS_NAME, "onCreateLoader for loader_id " + id);
-        return new MyCursorLoader(mContext, mDatabase);
+        Log.d(CLASS_NAME, "onCreateLoader id: " + id);
+        return new MyCursorLoader(getContext(), mDatabase);
     }
 
     @Override
     public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
         int id = loader.getId();
-        Log.d(CLASS_NAME, "onLoadFinished() for loader_id " + id);
-        if (id != -1) { // child loader
+        Log.d(CLASS_NAME, "onLoadFinished id: " + id);
+        if (id != GROUP_LOADER_ID) { // child loader
             if (!cursor.isClosed()) {
                 try {
                     int groupPos = mCursorTreeAdapter.getGroupMap().get(id);
@@ -124,7 +119,7 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
     @Override
     public void onLoaderReset(@NonNull Loader<Cursor> loader) {
         int id = loader.getId();
-        Log.d(CLASS_NAME, "onLoaderReset() for loader_id " + id);
+        Log.d(CLASS_NAME, "onLoaderReset id: " + id);
         if (id != -1) { // child loader
             try {
                 mCursorTreeAdapter.setChildrenCursor(id, null);
@@ -138,25 +133,24 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
 
     private static class MyCursorLoader extends CursorLoader {
 
-        private final ForceLoadContentObserver mObserver = new ForceLoadContentObserver();
+        public static final String CLASS_NAME = ExercisesListFragment.CLASS_NAME +"."+ MyCursorLoader.class.getSimpleName();
 
+        private ForceLoadContentObserver mObserver = new ForceLoadContentObserver();
         private SQLiteDatabase mDatabase;
 
-        public MyCursorLoader(Context context, SQLiteDatabase db) {
+        MyCursorLoader(Context context, SQLiteDatabase db) { // getId() returns wrong result
             super(context);
+            Log.d(CLASS_NAME, "constructor");
             mDatabase = db;
-            if (getId() != -1) { // child loader
-                setUri(Uri.parse("content://child"));
-            } else { // group loader
-                setUri(Uri.parse("content://group"));
-            }
         }
 
         @Override
         public Cursor loadInBackground() {
-            Cursor cursor;
             int id = getId();
-            if (id != -1) { // child loader
+            Log.d(CLASS_NAME, "loadInBackground id: "+ id);
+
+            Cursor cursor;
+            if (id != GROUP_LOADER_ID) { // child loader
                 cursor = mDatabase.rawQuery("SELECT "+ Ex._ID +", "+ Ex.NAME +", "+ Ex.IMAGE +
                                 " FROM "+ Ex.TABLE_NAME +" WHERE "+ Ex.MAIN_MUSCLE_ID +" = ?",
                         new String[]{ String.valueOf(id) });
@@ -167,14 +161,16 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
 
             if (cursor != null) {
                 cursor.registerContentObserver(mObserver);
+                //cursor.setNotificationUri(getContext().getContentResolver(), getUri());
             }
 
-            cursor.setNotificationUri(getContext().getContentResolver(), getUri());
             return cursor;
         }
     }
 
     private static class MyCursorTreeAdapter extends SimpleCursorTreeAdapter {
+
+        public static final String CLASS_NAME = ExercisesListFragment.CLASS_NAME +"."+ MyCursorTreeAdapter.class.getSimpleName();
 
         private static final int GROUP_LAYOUT = R.layout.muscle_expandable_list_item;
         private static final String[] GROUP_FROM = { M.NAME, M.IMAGE };
@@ -189,6 +185,7 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
 
         MyCursorTreeAdapter(Context context, ExercisesListFragment fragment) {
             super(context, null, GROUP_LAYOUT, GROUP_FROM, GROUP_TO, CHILD_LAYOUT, CHILD_FROM, CHILD_TO);
+            Log.d(CLASS_NAME, "constructor");
 
             mContext = context;
             mFragment = fragment;
@@ -219,9 +216,18 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
         protected Cursor getChildrenCursor(Cursor groupCursor) {
             int groupPos = groupCursor.getPosition();
             int groupId = groupCursor.getInt(groupCursor.getColumnIndex(Ex._ID));
+
+            Log.d(CLASS_NAME, "getChildrenCursor groupPos: "+ groupPos +", groupId: "+ groupId);
             mGroupMap.put(groupId, groupPos);
 
-            mFragment.getLoaderManager().initLoader(groupId, null, mFragment);
+            Loader loader = mFragment.getLoaderManager().getLoader(groupId);
+            if (loader != null && !loader.isReset()) {
+                Log.d(CLASS_NAME, "restartLoader id: "+ groupId);
+                mFragment.getLoaderManager().restartLoader(groupId, null, mFragment);
+            } else {
+                Log.d(CLASS_NAME, "initLoader id: "+ groupId);
+                mFragment.getLoaderManager().initLoader(groupId, null, mFragment);
+            }
             return null;
         }
 

@@ -7,7 +7,7 @@
     android:paddingRight="?attr/dialogPreferredPadding"
     android:paddingLeft="?attr/dialogPreferredPadding"
     android:orientation="vertical"
-    tools:context=".MeasurementDialog">
+    tools:context=".measurements.MeasurementDialog">
 
     <TextView
         android:id="@+id/date"

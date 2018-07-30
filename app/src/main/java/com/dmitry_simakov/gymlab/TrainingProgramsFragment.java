@@ -15,12 +15,9 @@ public class TrainingProgramsFragment extends Fragment {
 
     public TrainingProgramsFragment() {}
 
-    private Context mContext;
-
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        mContext = context;
     }
 
     @Override

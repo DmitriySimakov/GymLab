@@ -1,4 +1,4 @@
-package com.dmitry_simakov.gymlab;
+package com.dmitry_simakov.gymlab.measurements;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -8,10 +8,12 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v4.app.Fragment;
+import android.support.annotation.Nullable;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatDialogFragment;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -22,25 +24,26 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.database.DbContract;
 import com.dmitry_simakov.gymlab.database.MeasuresDbHelper;
 
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-public class MeasurementDialog extends AppCompatDialogFragment {
+public class MeasurementDialog extends AppCompatDialogFragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
     public static final String CLASS_NAME = MeasurementDialog.class.getSimpleName();
+
+    private static final class BM extends DbContract.BodyMeasurementsEntry {}
+    private static final class BP extends DbContract.BodyParametersEntry {}
 
     public static final String PARAMETER_ID = "parameter_id";
     public static final String MEASUREMENT_ID = "measurement_id";
 
-    private static class BM extends DbContract.BodyMeasurementsEntry {}
-    private static class BP extends DbContract.BodyParametersEntry {}
-
-    private Context mContext;
+    public static final int NEW_MEASUREMENT_LOADER_ID = 1;
+    public static final int EDIT_MEASUREMENT_LOADER_ID = 2;
 
     private TextView mDateTextView;
     private ImageView mImageView;
@@ -53,7 +56,6 @@ public class MeasurementDialog extends AppCompatDialogFragment {
 
     private MeasuresDbHelper mDbHelper;
     private SQLiteDatabase mDatabase;
-    private Cursor mCursor;
 
     private AlertDialog mDialog;
 
@@ -63,13 +65,16 @@ public class MeasurementDialog extends AppCompatDialogFragment {
     public void onAttach(Context context) {
         super.onAttach(context);
         Log.d(CLASS_NAME, "onAttach");
-        mContext = context;
+
+        mDbHelper = new MeasuresDbHelper(context);
+        mDatabase = mDbHelper.getWritableDatabase();
     }
 
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         Log.d(CLASS_NAME, "onCreateDialog");
+
         Activity activity = getActivity();
         AlertDialog.Builder builder = new AlertDialog.Builder(activity);
 
@@ -100,48 +105,92 @@ public class MeasurementDialog extends AppCompatDialogFragment {
         super.onStart();
         Log.d(CLASS_NAME, "onStart");
 
-        mDbHelper = new MeasuresDbHelper(mContext);
-        mDatabase = mDbHelper.getWritableDatabase();
-
         mDialog = (AlertDialog)getDialog();
 
         Bundle args = getArguments();
         if (args != null) {
             if (args.containsKey(PARAMETER_ID)) {
                 mParameterId = args.getInt(PARAMETER_ID);
-                newMeasurementInit();
+                getLoaderManager().initLoader(NEW_MEASUREMENT_LOADER_ID, null, this);
             } else {
                 mMeasurementId = args.getInt(MEASUREMENT_ID);
-                editMeasurementInit();
+                getLoaderManager().initLoader(EDIT_MEASUREMENT_LOADER_ID, null, this);
             }
         }
-        if (mCursor != null) mCursor.close();
+    }
+
+    @NonNull
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
+        CursorLoader loader = null;
+        switch (id) {
+            case NEW_MEASUREMENT_LOADER_ID:
+                loader = new MyCursorLoader(getContext(), mDatabase, mParameterId);
+                break;
+            case EDIT_MEASUREMENT_LOADER_ID:
+                loader = new MyCursorLoader(getContext(), mDatabase, mMeasurementId);
+                break;
+        }
+        return loader;
     }
 
     @Override
-    public void onDestroy() {
-        Log.d(CLASS_NAME, "onDestroy");
-        super.onDestroy();
-
-        if (mCursor != null) mCursor.close();
-        if (mDatabase != null) mDatabase.close();
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
+        switch (loader.getId()) {
+            case NEW_MEASUREMENT_LOADER_ID:
+                newMeasurementInit(cursor);
+                break;
+            case EDIT_MEASUREMENT_LOADER_ID:
+                editMeasurementInit(cursor);
+                break;
+        }
     }
 
-    private void newMeasurementInit() {
+    @Override
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {}
+
+    private static class MyCursorLoader extends CursorLoader {
+
+        private SQLiteDatabase mDatabase;
+        private int mId;
+
+        MyCursorLoader(Context context, SQLiteDatabase db, int id) {
+            super(context);
+            mDatabase = db;
+            mId = id;
+        }
+
+        @Override
+        public Cursor loadInBackground() {
+            Cursor cursor = null;
+            switch (getId()) {
+                case NEW_MEASUREMENT_LOADER_ID:
+                    cursor = mDatabase.rawQuery("SELECT "+ BP.NAME +", "+ BP.IMAGE +", "+ BP.INSTRUCTION +
+                                    " FROM "+ BP.TABLE_NAME +
+                                    " WHERE "+ BP._ID +" = ?",
+                            new String[]{ String.valueOf(mId) });
+                    break;
+                case EDIT_MEASUREMENT_LOADER_ID:
+                    cursor = mDatabase.rawQuery("SELECT" +
+                                    " bp."+ BP.NAME +", bm."+ BM.DATE +", bp."+ BP.IMAGE +"," +
+                                    " bp."+ BP.INSTRUCTION +", bm."+ BM.VALUE +", bm."+ BM.BODY_PARAMETER_ID +
+                                    " FROM "+ BM.TABLE_NAME +" AS bm LEFT JOIN "+ BP.TABLE_NAME +" AS bp" +
+                                    " ON bm."+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                                    " WHERE bm."+ BM._ID +" = ?",
+                            new String[]{ String.valueOf(mId) });
+                    break;
+            }
+            return cursor;
+        }
+    }
+
+    private void newMeasurementInit(Cursor c) {
         Log.d(CLASS_NAME, "newMeasurementInit");
 
-        mCursor = mDatabase.rawQuery("SELECT "+ BP.NAME +", "+ BP.IMAGE +", "+ BP.INSTRUCTION +
-                        " FROM "+ BP.TABLE_NAME +
-                        " WHERE "+ BP._ID +" = ?",
-                new String[]{ String.valueOf(mParameterId) });
-
-        if (mCursor.moveToFirst()) {
-            int nameColumnIndex        = mCursor.getColumnIndex(BP.NAME);
-            int imageColumnIndex       = mCursor.getColumnIndex(BP.IMAGE);
-            int instructionColumnIndex = mCursor.getColumnIndex(BP.INSTRUCTION);
-            mName        = mCursor.getString(nameColumnIndex);
-            mImage       = mCursor.getInt(imageColumnIndex);
-            mInstruction = mCursor.getString(instructionColumnIndex);
+        if (c.moveToFirst()) {
+            mName        = c.getString(c.getColumnIndex(BP.NAME));
+            mImage       = c.getInt(c.getColumnIndex(BP.IMAGE));
+            mInstruction = c.getString(c.getColumnIndex(BP.INSTRUCTION));
 
             Calendar calendar = Calendar.getInstance();
             int year  = calendar.get(Calendar.YEAR);
@@ -176,14 +225,14 @@ public class MeasurementDialog extends AppCompatDialogFragment {
                                 Log.d(CLASS_NAME, "alertDialog positiveButton onClick");
 
                                 MeasuresDbHelper.updateMeasurement(mDatabase, mMeasurementId, mDate, mValue);
-                                mContext.getContentResolver().notifyChange(Uri.parse("content://measurements"), null);
+                                getContext().getContentResolver().notifyChange(BM.CONTENT_URI, null);
                                 mDialog.dismiss();
                             }
                         });
                         alert.show();
                     } else {
                         MeasuresDbHelper.insertMeasurement(mDatabase, mDate, mParameterId, mValue);
-                        mContext.getContentResolver().notifyChange(Uri.parse("content://measurements"), null);
+                        getContext().getContentResolver().notifyChange(BM.CONTENT_URI, null);
                         mDialog.dismiss();
                     }
                     cursor.close();
@@ -192,30 +241,16 @@ public class MeasurementDialog extends AppCompatDialogFragment {
         }
     }
 
-    private void editMeasurementInit() {
+    private void editMeasurementInit(Cursor c) {
         Log.d(CLASS_NAME, "editMeasurementInit");
 
-        mCursor = mDatabase.rawQuery("SELECT" +
-                        " bp."+ BP.NAME +", bm."+ BM.DATE +", bp."+ BP.IMAGE +"," +
-                        " bp."+ BP.INSTRUCTION +", bm."+ BM.VALUE +", bm."+ BM.BODY_PARAMETER_ID +
-                        " FROM "+ BM.TABLE_NAME +" AS bm LEFT JOIN "+ BP.TABLE_NAME +" AS bp" +
-                        " ON bm."+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
-                        " WHERE bm."+ BM._ID +" = ?",
-                new String[]{ String.valueOf(mMeasurementId) });
-
-        if (mCursor.moveToFirst()) {
-            int nameColumnIndex        = mCursor.getColumnIndex(BP.NAME);
-            int dateColumnIndex        = mCursor.getColumnIndex(BM.DATE);
-            int imageColumnIndex       = mCursor.getColumnIndex(BP.IMAGE);
-            int instructionColumnIndex = mCursor.getColumnIndex(BP.INSTRUCTION);
-            int valueColumnIndex       = mCursor.getColumnIndex(BM.VALUE);
-            int parameterIdColumnIndex = mCursor.getColumnIndex(BM.BODY_PARAMETER_ID);
-            mName        = mCursor.getString(nameColumnIndex);
-            mDate        = mCursor.getString(dateColumnIndex);
-            mImage       = mCursor.getInt(imageColumnIndex);
-            mInstruction = mCursor.getString(instructionColumnIndex);
-            mValue       = mCursor.getDouble(valueColumnIndex);
-            mParameterId = mCursor.getInt(parameterIdColumnIndex);
+        if (c.moveToFirst()) {
+            mName        = c.getString(c.getColumnIndex(BP.NAME));
+            mDate        = c.getString(c.getColumnIndex(BM.DATE));
+            mImage       = c.getInt(c.getColumnIndex(BP.IMAGE));
+            mInstruction = c.getString(c.getColumnIndex(BP.INSTRUCTION));
+            mValue       = c.getDouble(c.getColumnIndex(BM.VALUE));
+            mParameterId = c.getInt(c.getColumnIndex(BM.BODY_PARAMETER_ID));
 
             int year  = Integer.parseInt(mDate.substring(0, 4));
             int month = Integer.parseInt(mDate.substring(5, 7));
@@ -252,14 +287,14 @@ public class MeasurementDialog extends AppCompatDialogFragment {
 
                                 MeasuresDbHelper.updateMeasurement(mDatabase, id, mDate, mValue);
                                 MeasuresDbHelper.deleteMeasurement(mDatabase, mMeasurementId);
-                                mContext.getContentResolver().notifyChange(Uri.parse("content://measurements"), null);
+                                getContext().getContentResolver().notifyChange(BM.CONTENT_URI, null);
                                 mDialog.dismiss();
                             }
                         });
                         alert.show();
                     } else {
                         MeasuresDbHelper.updateMeasurement(mDatabase, mMeasurementId, mDate, mValue);
-                        mContext.getContentResolver().notifyChange(Uri.parse("content://measurements"), null);
+                        getContext().getContentResolver().notifyChange(BM.CONTENT_URI, null);
                         mDialog.dismiss();
                     }
                     cursor.close();
@@ -275,7 +310,7 @@ public class MeasurementDialog extends AppCompatDialogFragment {
             public void onClick(View v) {
                 Log.d(CLASS_NAME, "mDateTextView onClick");
 
-                DatePickerDialog dialog = new DatePickerDialog(mContext, R.style.DialogTheme, new DatePickerDialog.OnDateSetListener() {
+                DatePickerDialog dialog = new DatePickerDialog(getContext(), R.style.DialogTheme, new DatePickerDialog.OnDateSetListener() {
                     public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
                         Log.d(CLASS_NAME, "DatePickerDialog onDateSet");
 
@@ -298,11 +333,11 @@ public class MeasurementDialog extends AppCompatDialogFragment {
         try {
             mValue = Double.parseDouble(String.valueOf(mValueEditText.getText()));
             if (mValue == 0) {
-                Toast.makeText(mContext, "Параметр не может быть равен 0", Toast.LENGTH_LONG).show();
+                Toast.makeText(getContext(), "Параметр не может быть равен 0", Toast.LENGTH_LONG).show();
                 return false;
             }
         } catch(Exception e){
-            Toast.makeText(mContext, "Неверно введено значение", Toast.LENGTH_LONG).show();
+            Toast.makeText(getContext(), "Неверно введено значение", Toast.LENGTH_LONG).show();
             return false;
         }
         return true;
@@ -311,7 +346,7 @@ public class MeasurementDialog extends AppCompatDialogFragment {
     private AlertDialog.Builder getParamAlreadyExistAlert(String date, String param) {
         Log.d(CLASS_NAME, "getParamAlreadyExistAlert");
 
-        AlertDialog.Builder alert = new AlertDialog.Builder(mContext);
+        AlertDialog.Builder alert = new AlertDialog.Builder(getContext());
         alert.setTitle(date +" уже задан параметр "+ param);
         alert.setMessage("Хотите заменить его новым?"); // сообщение
         alert.setNegativeButton("Нет", new DialogInterface.OnClickListener() {

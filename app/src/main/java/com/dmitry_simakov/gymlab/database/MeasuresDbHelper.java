@@ -15,8 +15,8 @@ public class MeasuresDbHelper extends SQLiteOpenHelper {
 
     private static final String LOG_TAG = MeasuresDbHelper.class.getSimpleName();
 
-    private static class BM extends DbContract.BodyMeasurementsEntry{}
-    private static class BP extends DbContract.BodyParametersEntry {}
+    private static final class BM extends DbContract.BodyMeasurementsEntry{}
+    private static final class BP extends DbContract.BodyParametersEntry {}
 
     public static final String DB_NAME = "body_measurements.db";
     private static final int DB_VERSION = 1;
