@@ -18,17 +18,16 @@ import android.view.View;
 import android.widget.ListView;
 
 import com.dmitry_simakov.gymlab.R;
-import com.dmitry_simakov.gymlab.database.DbContract;
-import com.dmitry_simakov.gymlab.database.MeasuresDbHelper;
+import com.dmitry_simakov.gymlab.database.DatabaseContract;
+import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 
 public class MeasurementsHistoryListFragment extends ListFragment
         implements LoaderManager.LoaderCallbacks<Cursor> {
 
     public static final String CLASS_NAME = MeasurementsHistoryListFragment.class.getSimpleName();
 
-    private static final class BM extends DbContract.BodyMeasurementsEntry{}
+    private static final class BM extends DatabaseContract.BodyMeasurementsEntry{}
 
-    private MeasuresDbHelper mDbHelper;
     private SQLiteDatabase mDatabase;
     private Cursor mCursor;
     SimpleCursorAdapter mCursorAdapter;
@@ -40,8 +39,7 @@ public class MeasurementsHistoryListFragment extends ListFragment
         super.onAttach(context);
         Log.d(CLASS_NAME, "onAttach");
 
-        mDbHelper = new MeasuresDbHelper(context);
-        mDatabase = mDbHelper.getWritableDatabase();
+        mDatabase = DatabaseHelper.getInstance(context).getWritableDatabase();
 
         String[] groupFrom = { BM.DATE };
         int[] groupTo = { android.R.id.text1 };

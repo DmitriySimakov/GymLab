@@ -19,7 +19,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
-import com.dmitry_simakov.gymlab.database.GymLabDbHelper;
+import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 import com.dmitry_simakov.gymlab.measurements.MeasurementsTabFragment;
 
 public class MainActivity extends AppCompatActivity
@@ -151,10 +151,10 @@ public class MainActivity extends AppCompatActivity
     private void initDB() {
         Log.d(CLASS_NAME, "initDB");
 
-        //Копируем базу данных при первом запуске приложение
+        // Copy database at the first launch
         if(!mPreferences.contains(IS_DB_COPIED)) {
-            GymLabDbHelper dbHelper = new GymLabDbHelper(this);
-            SQLiteDatabase database = dbHelper.getReadableDatabase();
+            DatabaseHelper dbHelper = DatabaseHelper.getInstance(this);
+            dbHelper.getReadableDatabase(); // Need to open a connection
             if(dbHelper.copyDatabase()) {
                 SharedPreferences.Editor editor = mPreferences.edit();
                 editor.putBoolean(IS_DB_COPIED, true);
@@ -162,7 +162,6 @@ public class MainActivity extends AppCompatActivity
             } else {
                 Toast.makeText(this, "Проблемы с загрузкой базы данных", Toast.LENGTH_SHORT).show();
             }
-            database.close();
         }
     }
 

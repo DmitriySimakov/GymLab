@@ -3,16 +3,14 @@ package com.dmitry_simakov.gymlab.database;
 import android.net.Uri;
 import android.provider.BaseColumns;
 
-public class DbContract {
+public class DatabaseContract {
 
     private static final String ID = BaseColumns._ID;
 
-    private DbContract() {};
+    private DatabaseContract() {};
 
-    public static final String CONTENT_AUTHORITY = "com.dmitry_simakov.gymlab";
-    public static final Uri BASE_CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
-
-    // gymlab.db
+    private static final String CONTENT_AUTHORITY = "com.dmitry_simakov.gymlab";
+    private static final Uri BASE_CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
 
     public static class ExercisesEntry implements BaseColumns {
         public final static String TABLE_NAME = "exercises";
@@ -80,8 +78,6 @@ public class DbContract {
         public final static String NAME = "name";
     }
 
-    // body_measures.db
-
     public static class BodyMeasurementsEntry implements BaseColumns {
         public final static String TABLE_NAME = "body_measurements";
         public static final Uri CONTENT_URI = Uri.withAppendedPath(BASE_CONTENT_URI, TABLE_NAME);
@@ -104,5 +100,6 @@ public class DbContract {
         public final static String NAME = "name";
         public final static String IMAGE = "image";
         public final static String INSTRUCTION = "instruction";
+        public final static String COEFFICIENT = "coefficient";
     }
 }

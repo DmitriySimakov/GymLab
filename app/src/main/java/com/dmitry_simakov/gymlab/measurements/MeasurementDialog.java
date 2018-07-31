@@ -6,6 +6,7 @@ import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -25,8 +26,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.dmitry_simakov.gymlab.R;
-import com.dmitry_simakov.gymlab.database.DbContract;
-import com.dmitry_simakov.gymlab.database.MeasuresDbHelper;
+import com.dmitry_simakov.gymlab.database.DatabaseContract;
+import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -36,8 +37,8 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
 
     public static final String CLASS_NAME = MeasurementDialog.class.getSimpleName();
 
-    private static final class BM extends DbContract.BodyMeasurementsEntry {}
-    private static final class BP extends DbContract.BodyParametersEntry {}
+    private static final class BM extends DatabaseContract.BodyMeasurementsEntry {}
+    private static final class BP extends DatabaseContract.BodyParametersEntry {}
 
     public static final String PARAMETER_ID = "parameter_id";
     public static final String MEASUREMENT_ID = "measurement_id";
@@ -52,11 +53,10 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
     private TextView mInstructionTextView;
     private EditText mValueEditText;
 
-    private String mName, mDate, mInstruction;
-    private int mImage, mParameterId, mMeasurementId;
+    private String mName, mDate, mImageName, mInstruction;
+    private int mParameterId, mMeasurementId;
     private double mValue;
 
-    private MeasuresDbHelper mDbHelper;
     private SQLiteDatabase mDatabase;
 
     private AlertDialog mDialog;
@@ -68,8 +68,7 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
         super.onAttach(context);
         Log.d(CLASS_NAME, "onAttach");
 
-        mDbHelper = new MeasuresDbHelper(context);
-        mDatabase = mDbHelper.getWritableDatabase();
+        mDatabase = DatabaseHelper.getInstance(context).getWritableDatabase();
     }
 
     @NonNull
@@ -103,9 +102,9 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
     }
 
     @Override
-    public void onStart() {
-        super.onStart();
-        Log.d(CLASS_NAME, "onStart");
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        Log.d(CLASS_NAME, "onActivityCreated");
 
         mDialog = (AlertDialog)getDialog();
 
@@ -127,10 +126,10 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
         CursorLoader loader = null;
         switch (id) {
             case NEW_MEASUREMENT_LOADER_ID:
-                loader = new MyCursorLoader(getContext(), mDatabase, mParameterId);
+                loader = new InitCursorLoader(getContext(), mDatabase, mParameterId);
                 break;
             case EDIT_MEASUREMENT_LOADER_ID:
-                loader = new MyCursorLoader(getContext(), mDatabase, mMeasurementId);
+                loader = new InitCursorLoader(getContext(), mDatabase, mMeasurementId);
                 break;
             case NEW_MEASUREMENT_CHECK_LOADER_ID:
             case EDIT_MEASUREMENT_CHECK_LOADER_ID:
@@ -162,12 +161,12 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
     @Override
     public void onLoaderReset(@NonNull Loader<Cursor> loader) {}
 
-    private static class MyCursorLoader extends CursorLoader {
+    private static class InitCursorLoader extends CursorLoader {
 
         private SQLiteDatabase mDatabase;
         private int mId;
 
-        MyCursorLoader(Context context, SQLiteDatabase db, int id) {
+        InitCursorLoader(Context context, SQLiteDatabase db, int id) {
             super(context);
             mDatabase = db;
             mId = id;
@@ -239,7 +238,7 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
 
         if (c.moveToFirst()) {
             mName        = c.getString(c.getColumnIndex(BP.NAME));
-            mImage       = c.getInt(c.getColumnIndex(BP.IMAGE));
+            mImageName = c.getString(c.getColumnIndex(BP.IMAGE));
             mInstruction = c.getString(c.getColumnIndex(BP.INSTRUCTION));
 
             Calendar calendar = Calendar.getInstance();
@@ -252,7 +251,13 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
             mDateTextView.setText(mDate);
 
             mDialog.setTitle(mName);
-            mImageView.setImageResource(mImage);
+            if (mImageName != null) {
+                Resources res = getContext().getResources();
+                int resID = res.getIdentifier(mImageName, "drawable", getContext().getPackageName());
+                if (resID != 0) {
+                    mImageView.setImageDrawable(res.getDrawable(resID));
+                }
+            }
             mInstructionTextView.setText(mInstruction);
 
             final LoaderManager.LoaderCallbacks<Cursor> callback = this;
@@ -268,35 +273,13 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
         }
     }
 
-    private void newMeasurementCheck(Cursor c) {
-        if (c.moveToFirst()) {
-            mMeasurementId = c.getInt(0);
-
-            AlertDialog.Builder alert = getParamAlreadyExistAlert(mDate, mName);
-            alert.setPositiveButton("Да", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface d, int arg1) {
-                    Log.d(CLASS_NAME, "alertDialog positiveButton onClick");
-
-                    MeasuresDbHelper.updateMeasurement(mDatabase, mMeasurementId, mDate, mValue);
-                    getContext().getContentResolver().notifyChange(BM.CONTENT_URI, null);
-                    mDialog.dismiss();
-                }
-            });
-            alert.show();
-        } else {
-            MeasuresDbHelper.insertMeasurement(mDatabase, mDate, mParameterId, mValue);
-            getContext().getContentResolver().notifyChange(BM.CONTENT_URI, null);
-            mDialog.dismiss();
-        }
-    }
-
     private void editMeasurementInit(Cursor c) {
         Log.d(CLASS_NAME, "editMeasurementInit");
 
         if (c.moveToFirst()) {
             mName        = c.getString(c.getColumnIndex(BP.NAME));
             mDate        = c.getString(c.getColumnIndex(BM.DATE));
-            mImage       = c.getInt(c.getColumnIndex(BP.IMAGE));
+            mImageName   = c.getString(c.getColumnIndex(BP.IMAGE));
             mInstruction = c.getString(c.getColumnIndex(BP.INSTRUCTION));
             mValue       = c.getDouble(c.getColumnIndex(BM.VALUE));
             mParameterId = c.getInt(c.getColumnIndex(BM.BODY_PARAMETER_ID));
@@ -309,7 +292,13 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
             mDateTextView.setText(mDate);
 
             mDialog.setTitle(mName);
-            mImageView.setImageResource(mImage);
+            if (mImageName != null) {
+                Resources res = getContext().getResources();
+                int resID = res.getIdentifier(mImageName, "drawable", getContext().getPackageName());
+                if (resID != 0) {
+                    mImageView.setImageDrawable(res.getDrawable(resID));
+                }
+            }
             mInstructionTextView.setText(mInstruction);
             mValueEditText.setText(String.valueOf(mValue));
 
@@ -326,6 +315,28 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
         }
     }
 
+    private void newMeasurementCheck(Cursor c) {
+        if (c.moveToFirst()) {
+            mMeasurementId = c.getInt(0);
+
+            AlertDialog.Builder alert = getParamAlreadyExistAlert(mDate, mName);
+            alert.setPositiveButton("Да", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface d, int arg1) {
+                    Log.d(CLASS_NAME, "alertDialog positiveButton onClick");
+
+                    DatabaseHelper.updateMeasurement(mMeasurementId, mDate, mValue);
+                    getContext().getContentResolver().notifyChange(BM.CONTENT_URI, null);
+                    mDialog.dismiss();
+                }
+            });
+            alert.show();
+        } else {
+            DatabaseHelper.insertMeasurement(mDate, mParameterId, mValue);
+            getContext().getContentResolver().notifyChange(BM.CONTENT_URI, null);
+            mDialog.dismiss();
+        }
+    }
+
     private void editMeasurementCheck(Cursor c) {
         if (c.moveToFirst()) {
             final int id = c.getInt(0);
@@ -335,15 +346,15 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
                 public void onClick(DialogInterface d, int arg1) {
                     Log.d(CLASS_NAME, "alertDialog positiveButton onClick");
 
-                    MeasuresDbHelper.updateMeasurement(mDatabase, id, mDate, mValue);
-                    MeasuresDbHelper.deleteMeasurement(mDatabase, mMeasurementId);
+                    DatabaseHelper.updateMeasurement(id, mDate, mValue);
+                    DatabaseHelper.deleteMeasurement(mMeasurementId);
                     getContext().getContentResolver().notifyChange(BM.CONTENT_URI, null);
                     mDialog.dismiss();
                 }
             });
             alert.show();
         } else {
-            MeasuresDbHelper.updateMeasurement(mDatabase, mMeasurementId, mDate, mValue);
+            DatabaseHelper.updateMeasurement(mMeasurementId, mDate, mValue);
             getContext().getContentResolver().notifyChange(BM.CONTENT_URI, null);
             mDialog.dismiss();
         }

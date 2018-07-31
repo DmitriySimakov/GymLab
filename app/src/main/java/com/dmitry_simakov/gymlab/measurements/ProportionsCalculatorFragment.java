@@ -16,17 +16,16 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 
 import com.dmitry_simakov.gymlab.R;
-import com.dmitry_simakov.gymlab.database.DbContract;
-import com.dmitry_simakov.gymlab.database.MeasuresDbHelper;
+import com.dmitry_simakov.gymlab.database.DatabaseContract;
+import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 
 public class ProportionsCalculatorFragment extends Fragment {
 
     public static final String CLASS_NAME = ProportionsCalculatorFragment.class.getSimpleName();
 
-    private static final class BM extends DbContract.BodyMeasurementsEntry {}
-    private static final class BP extends DbContract.BodyParametersEntry {}
+    private static final class BM extends DatabaseContract.BodyMeasurementsEntry {}
+    private static final class BP extends DatabaseContract.BodyParametersEntry {}
 
-    private MeasuresDbHelper mDbHelper;
     private SQLiteDatabase mDatabase;
     private SimpleCursorAdapter mCursorAdapter;
     private ListView mListView;
@@ -37,8 +36,8 @@ public class ProportionsCalculatorFragment extends Fragment {
     public void onAttach(Context context) {
         super.onAttach(context);
         Log.d(CLASS_NAME, "onAttach");
-        mDbHelper = new MeasuresDbHelper(context);
-        mDatabase = mDbHelper.getWritableDatabase();
+
+        mDatabase = DatabaseHelper.getInstance(context).getWritableDatabase();
 
         Cursor cursor = mDatabase.rawQuery("SELECT "+ BP._ID +", "+ BP.NAME +","+
                         " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +

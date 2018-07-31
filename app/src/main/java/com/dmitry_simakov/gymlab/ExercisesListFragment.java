@@ -20,8 +20,8 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.SimpleCursorTreeAdapter;
 
-import com.dmitry_simakov.gymlab.database.DbContract;
-import com.dmitry_simakov.gymlab.database.GymLabDbHelper;
+import com.dmitry_simakov.gymlab.database.DatabaseContract;
+import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 
 import java.util.HashMap;
 
@@ -29,12 +29,11 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
 
     public static final String CLASS_NAME = ExercisesListFragment.class.getSimpleName();
 
-    private static final class Ex extends DbContract.ExercisesEntry{}
-    private static final class M extends DbContract.MusclesEntry{}
+    private static final class Ex extends DatabaseContract.ExercisesEntry{}
+    private static final class M extends DatabaseContract.MusclesEntry{}
 
     private static final int GROUP_LOADER_ID = -1;
 
-    private GymLabDbHelper mDbHelper;
     private SQLiteDatabase mDatabase;
     private MyCursorTreeAdapter mCursorTreeAdapter;
     private ExpandableListView mExerciseElv;
@@ -46,9 +45,7 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
         super.onAttach(context);
         Log.d(CLASS_NAME, "onAttach");
 
-        mDbHelper = new GymLabDbHelper(context);
-        mDatabase = mDbHelper.getReadableDatabase();
-
+        mDatabase = DatabaseHelper.getInstance(context).getReadableDatabase();
         mCursorTreeAdapter = new MyCursorTreeAdapter(context, this);
     }
 

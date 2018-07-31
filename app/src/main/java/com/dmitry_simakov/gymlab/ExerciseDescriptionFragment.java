@@ -18,19 +18,19 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.dmitry_simakov.gymlab.database.DbContract;
-import com.dmitry_simakov.gymlab.database.GymLabDbHelper;
+import com.dmitry_simakov.gymlab.database.DatabaseContract;
+import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 
 public class ExerciseDescriptionFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
     public static final String CLASS_NAME = ExerciseDescriptionFragment.class.getSimpleName();
 
-    private static final class Ex extends DbContract.ExercisesEntry{}
-    private static final class M extends DbContract.MusclesEntry{}
-    private static final class TM extends DbContract.TargetedMusclesEntry{}
-    private static final class MT extends DbContract.MechanicsTypesEntry{}
-    private static final class ET extends DbContract.ExerciseTypesEntry{}
-    private static final class Eq extends DbContract.EquipmentEntry{}
+    private static final class Ex extends DatabaseContract.ExercisesEntry{}
+    private static final class M extends DatabaseContract.MusclesEntry{}
+    private static final class TM extends DatabaseContract.TargetedMusclesEntry{}
+    private static final class MT extends DatabaseContract.MechanicsTypesEntry{}
+    private static final class ET extends DatabaseContract.ExerciseTypesEntry{}
+    private static final class Eq extends DatabaseContract.EquipmentEntry{}
 
     private static final int MAIN_LOADER_ID = 0;
     private static final int TARGETED_MUSCLES_LOADER_ID = 1;
@@ -45,7 +45,6 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
     private TextView mDescriptionTextView;
     private TextView mTechniqueTextView;
 
-    private GymLabDbHelper mDbHelper;
     private SQLiteDatabase mDatabase;
 
     private int mExerciseId;
@@ -57,9 +56,7 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
         super.onAttach(context);
         Log.d(CLASS_NAME, "onAttach");
 
-        mDbHelper = new GymLabDbHelper(context);
-        mDatabase = mDbHelper.getWritableDatabase();
-
+        mDatabase = DatabaseHelper.getInstance(context).getWritableDatabase();
         mExerciseId = getArguments().getInt(Ex._ID);
     }
 

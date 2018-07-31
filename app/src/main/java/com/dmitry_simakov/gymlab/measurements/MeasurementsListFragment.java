@@ -18,8 +18,8 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.dmitry_simakov.gymlab.R;
-import com.dmitry_simakov.gymlab.database.DbContract;
-import com.dmitry_simakov.gymlab.database.MeasuresDbHelper;
+import com.dmitry_simakov.gymlab.database.DatabaseContract;
+import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -31,10 +31,9 @@ public class MeasurementsListFragment extends ListFragment
 
     public static final String CLASS_NAME = MeasurementsListFragment.class.getSimpleName();
 
-    private static final class BM extends DbContract.BodyMeasurementsEntry {}
-    private static final class BP extends DbContract.BodyParametersEntry {}
+    private static final class BM extends DatabaseContract.BodyMeasurementsEntry {}
+    private static final class BP extends DatabaseContract.BodyParametersEntry {}
 
-    private MeasuresDbHelper mDbHelper;
     private SQLiteDatabase mDatabase;
     private SimpleCursorAdapter mCursorAdapter;
 
@@ -47,8 +46,7 @@ public class MeasurementsListFragment extends ListFragment
         super.onAttach(context);
         Log.d(CLASS_NAME, "onAttach");
 
-        mDbHelper = new MeasuresDbHelper(context);
-        mDatabase = mDbHelper.getWritableDatabase();
+        mDatabase = DatabaseHelper.getInstance(context).getWritableDatabase();
 
         Bundle args = getArguments();
         if (args != null) {
