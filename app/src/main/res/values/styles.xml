@@ -4,6 +4,7 @@
         <item name="colorPrimary">@color/red600</item>
         <item name="colorPrimaryDark">@color/red800</item>
         <item name="colorAccent">@color/red600</item>
+        <item name="android:background">@color/white</item>
     </style>
 
     <style name="LabelStyle">
@@ -33,6 +34,7 @@
 
     <style name="DialogTheme" parent="Theme.AppCompat.Light.Dialog">
         <item name="colorAccent">@color/red600</item>
+        <item name="android:textColor">@color/black</item>
     </style>
 
 </resources>

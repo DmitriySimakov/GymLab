@@ -33,5 +33,6 @@
     <string name="calculator">Калькулятор</string>
     <string name="add_measurement">Добавить</string>
     <string name="measurement_history">История</string>
+    <string name="enter_value">Введите значение параметра</string>
 
 </resources>

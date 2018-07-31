@@ -19,11 +19,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final class BM extends DatabaseContract.BodyMeasurementsEntry{}
 
-    public static final String DB_NAME = "gymlab.db";
+    private static final String DB_NAME = "gymlab.db";
     private static final int DB_VERSION = 1;
     private static final String DB_PATH = "/data/data/com.dmitry_simakov.gymlab/databases/";
 
-    private static DatabaseHelper sInstance = null;
+    private static DatabaseHelper sInstance = null; // No memory leaks cuz we put the ApplicationContext
     private Context mContext;
 
     public static synchronized DatabaseHelper getInstance(Context context) {

@@ -3,32 +3,40 @@ package com.dmitry_simakov.gymlab.measurements;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.BaseAdapter;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.database.DatabaseContract;
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 
-public class ProportionsCalculatorFragment extends Fragment {
+import java.util.ArrayList;
+
+public class ProportionsCalculatorFragment extends Fragment implements View.OnClickListener {
 
     public static final String CLASS_NAME = ProportionsCalculatorFragment.class.getSimpleName();
 
     private static final class BM extends DatabaseContract.BodyMeasurementsEntry {}
-    private static final class BP extends DatabaseContract.BodyParametersEntry {}
 
+    private static final class BP extends DatabaseContract.BodyParametersEntry {}
     private SQLiteDatabase mDatabase;
-    private SimpleCursorAdapter mCursorAdapter;
+
     private ListView mListView;
+    private MyAdapter mListAdapter;
 
     public ProportionsCalculatorFragment() {}
 
@@ -39,7 +47,7 @@ public class ProportionsCalculatorFragment extends Fragment {
 
         mDatabase = DatabaseHelper.getInstance(context).getWritableDatabase();
 
-        Cursor cursor = mDatabase.rawQuery("SELECT "+ BP._ID +", "+ BP.NAME +","+
+        Cursor cursor = mDatabase.rawQuery("SELECT "+ BP._ID +", "+ BP.NAME +","+ BP.COEFFICIENT +","+
                         " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
                         " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
                         " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.VALUE +
@@ -48,11 +56,7 @@ public class ProportionsCalculatorFragment extends Fragment {
                         " ORDER BY "+ BP._ID,
                 null
         );
-
-        String[] groupFrom = { BP.NAME, BM.VALUE };
-        int[] groupTo = { R.id.parameter, R.id.actual_value };
-        mCursorAdapter = new SimpleCursorAdapter(context,
-                R.layout.proportions_calculator_list_item, cursor, groupFrom, groupTo, 0);
+        mListAdapter = new MyAdapter(cursor);
     }
 
     @Override
@@ -63,7 +67,15 @@ public class ProportionsCalculatorFragment extends Fragment {
         mListView = view.findViewById(R.id.list_view);
         ProgressBar progressBar = view.findViewById(R.id.progressBar);
         mListView.setEmptyView(progressBar);
-        mListView.setAdapter(mCursorAdapter);
+
+        mListView.setAdapter(mListAdapter);
+
+        Button resetBtn = view.findViewById(R.id.reset_btn);
+        resetBtn.setOnClickListener(this);
+        Button fillBtn = view.findViewById(R.id.fill_btn);
+        fillBtn.setOnClickListener(this);
+        Button countBtn = view.findViewById(R.id.count_btn);
+        countBtn.setOnClickListener(this);
 
         return view;
     }
@@ -75,62 +87,200 @@ public class ProportionsCalculatorFragment extends Fragment {
         //initLoader
     }
 
-    /*private static class MyCursorAdapter extends SimpleCursorAdapter {
+    @Override
+    public void onClick(View v) {
+        Log.d(CLASS_NAME, "onClick");
+        switch (v.getId()) {
+            case R.id.reset_btn:
+                mListAdapter.reset();
+                break;
+            case R.id.fill_btn:
+                mListAdapter.fill();
+                break;
+            case R.id.count_btn:
+                mListAdapter.count();
+                break;
+        }
+    }
 
-        private static final int LAYOUT = R.layout.proportions_calculator_list_item;
-        private static final String[] FROM = { BP.NAME, BM.VALUE };
-        private static final int[] TO = { R.id.measure_parameter, R.id.measure_value };
+    private class MyAdapter extends BaseAdapter {
 
-        MyCursorAdapter(Context context) {
-            super(context, LAYOUT, null, FROM, TO, 0);
+        public final String CLASS_NAME = ProportionsCalculatorFragment.CLASS_NAME +"."+ MyAdapter.class.getSimpleName();
+
+        private LayoutInflater mInflater;
+        private Cursor mCursor;
+        private ArrayList<ListItem> mItems = new ArrayList<>();
+
+        MyAdapter(Cursor cursor) {
+            mCursor = cursor;
+            mInflater = LayoutInflater.from(getContext());
+            mCursor.moveToFirst();
+            do {
+                ListItem listItem = new ListItem();
+                listItem.parameter = mCursor.getString(mCursor.getColumnIndex(BP.NAME));
+                listItem.coefficient = mCursor.getDouble(mCursor.getColumnIndex(BP.COEFFICIENT));
+                listItem.actualValue = mCursor.getDouble(mCursor.getColumnIndex(BM.VALUE));
+                mItems.add(listItem);
+            } while (mCursor.moveToNext());
+            notifyDataSetChanged();
         }
 
         @Override
-        public void bindView(View view, Context context, Cursor cursor) {
-            super.bindView(view, context, cursor);
-            Log.d(CLASS_NAME, "bindView");
+        public int getCount() {
+            return mItems.size();
+        }
 
-            TextView differenceTextView = view.findViewById(R.id.measure_difference);
+        @Override
+        public Object getItem(int position) {
+            return mItems.get(position);
+        }
 
-            int prevValColumnIndex = cursor.getColumnIndexOrThrow("prevVal");
-            int curValColumnIndex = cursor.getColumnIndexOrThrow(MeasurementsListFragment.BM.VALUE);
-            int prevDateColumnIndex = cursor.getColumnIndexOrThrow("prevDate");
-            int curDateColumnIndex = cursor.getColumnIndexOrThrow(MeasurementsListFragment.BM.DATE);
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
 
-            double prevVal = cursor.getDouble(prevValColumnIndex);
-            if (prevVal == 0) return;
-            double curVal = cursor.getDouble(curValColumnIndex);
-
-            double valDiff = curVal - prevVal;
-
-            String prevDateISO = cursor.getString(prevDateColumnIndex);
-            String curDateISO = cursor.getString(curDateColumnIndex);
-
-            Calendar prevDate = Calendar.getInstance();
-            Calendar curDate = Calendar.getInstance();
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-            Date date;
-            int dateDiff = 0;
-            try {
-                date = sdf.parse(prevDateISO);
-                prevDate.setTime(date);
-                date = sdf.parse(curDateISO);
-                curDate.setTime(date);
-                dateDiff = (int)((curDate.getTimeInMillis() - prevDate.getTimeInMillis())/(1000*60*60*24));
-            } catch (ParseException e) {
-                e.printStackTrace();
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            ViewHolder holder;
+            if (convertView == null) {
+                holder = new ViewHolder();
+                convertView = mInflater.inflate(R.layout.proportions_calculator_list_item, parent, false);
+                holder.parameter = convertView.findViewById(R.id.parameter);
+                holder.actualValue = convertView.findViewById(R.id.actual_value);
+                holder.expectedValue = convertView.findViewById(R.id.expected_value);
+                holder.percent = convertView.findViewById(R.id.percent);
+                convertView.setTag(holder);
+            } else {
+                holder = (ViewHolder) convertView.getTag();
             }
 
-            String valDiffStr = String.valueOf(curVal - prevVal);
-            String dateDiffStr = String.valueOf(dateDiff);
-            if (valDiff < 0) {
-                differenceTextView.setTextColor(Color.parseColor("#e53935"));
-            } else if (valDiff > 0) {
-                valDiffStr = "+" + valDiffStr;
-                differenceTextView.setTextColor(Color.parseColor("#43A047"));
+            //Fill EditText with the value you have in data source
+            holder.parameter.setText(mItems.get(position).parameter);
+
+            if (mItems.get(position).actualValue == 0) {
+                holder.actualValue.setText("");
+            } else {
+                holder.actualValue.setText(String.valueOf(mItems.get(position).actualValue));
             }
-            differenceTextView.setText(valDiffStr +" за "+ dateDiffStr +" дн.");
+
+            if (mItems.get(position).expectedValue == 0) {
+                holder.expectedValue.setText("");
+            } else {
+                holder.expectedValue.setText(String.valueOf(mItems.get(position).expectedValue));
+            }
+
+            if (mItems.get(position).percent == 0) {
+                holder.percent.setText("");
+            } else {
+                holder.percent.setText(mItems.get(position).percent + "%");
+                double difference = 100 - mItems.get(position).percent;
+                String color;
+                if (difference > 13) {
+                    color = "#f44336"; // red
+                } else if (difference > 11) {
+                    color = "#FF5722"; // deep orange
+                } else if (difference > 9) {
+                    color = "#FF9800"; // orange
+                } else if (difference > 7) {
+                    color = "#FFC107"; // amber
+                } else if (difference > 5) {
+                    color = "#FFEB3B"; // yellow
+                } else if (difference > 3) {
+                    color = "#CDDC39"; // lime
+                } else if (difference > 1) {
+                    color = "#8BC34A"; // light greeen
+                } else {
+                    color = "#4CAF50"; // green
+                }
+                holder.percent.setTextColor(Color.parseColor(color));
+            }
+
+            holder.actualValue.setId(position);
+
+            //we need to update adapter once we finish with editing
+            holder.actualValue.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                public void onFocusChange(View v, boolean hasFocus) {
+                    if (!hasFocus){
+                        int position = v.getId();
+                        EditText actualValueET = (EditText) v;
+                        try {
+                            mItems.get(position).actualValue = Double.parseDouble(String.valueOf(actualValueET.getText()));
+                        } catch(Exception e){
+                            Toast.makeText(getContext(), "Неверно введено значение", Toast.LENGTH_LONG).show();
+                            mItems.get(position).actualValue = 0;
+                        }
+                    }
+                }
+            });
+            return convertView;
+        }
+
+        void reset() {
+            Log.d(CLASS_NAME, "reset");
+
+            for (ListItem i : mItems) {
+                i.actualValue = 0;
+                i.expectedValue = 0;
+                i.percent = 0;
+            }
+            notifyDataSetChanged();
+        }
+
+        void fill() {
+            Log.d(CLASS_NAME, "fill");
+
+            mCursor.moveToFirst();
+            for (ListItem i : mItems) {
+                i.actualValue = mCursor.getDouble(mCursor.getColumnIndex(BM.VALUE));
+                i.expectedValue = 0;
+                i.percent = 0;
+                mCursor.moveToNext();
+            }
+            notifyDataSetChanged();
+        }
+
+        void count() {
+            Log.d(CLASS_NAME, "count");
+
+            double chestValue = mItems.get(3).actualValue;
+            if (chestValue == 0) {
+                Toast.makeText(getContext(), "Введите параметр Грудь", Toast.LENGTH_LONG).show();
+                return;
+            }
+            double maxRatio = 0;
+            ListItem maxRatioItem = null;
+            for (ListItem i : mItems) {
+                if (!i.parameter.equals("Талия")){
+                    double ratio = i.actualValue / (chestValue * i.coefficient);
+                    if (ratio > maxRatio) {
+                        maxRatio = ratio;
+                        maxRatioItem = i;
+                    }
+                }
+            }
+            for (ListItem i : mItems) {
+                double expectedValue = i.coefficient * (maxRatioItem.actualValue / maxRatioItem.coefficient);
+                i.expectedValue = (double)Math.round(expectedValue * 10d) / 10d;;
+                double percent = i.actualValue / i.expectedValue * 100;
+                i.percent = (double)Math.round(percent * 10d) / 10d;
+            }
+            notifyDataSetChanged();
+        }
+
+        private class ViewHolder {
+            TextView parameter;
+            EditText actualValue;
+            TextView expectedValue;
+            TextView percent;
+        }
+
+        private class ListItem {
+            String parameter;
+            double coefficient;
+            double actualValue;
+            double expectedValue;
+            double percent;
         }
     }
-    */
 }

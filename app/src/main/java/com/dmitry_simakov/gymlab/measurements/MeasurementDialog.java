@@ -77,7 +77,7 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
         Log.d(CLASS_NAME, "onCreateDialog");
 
         Activity activity = getActivity();
-        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity, R.style.DialogTheme);
 
         LayoutInflater inflater = activity.getLayoutInflater();
         View view = inflater.inflate(R.layout.fragment_measurement_dialog, null);
@@ -98,6 +98,7 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
             }
         });
 
+        builder.setTitle("kek");
         return builder.create();
     }
 
@@ -402,7 +403,7 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
     private AlertDialog.Builder getParamAlreadyExistAlert(String date, String param) {
         Log.d(CLASS_NAME, "getParamAlreadyExistAlert");
 
-        AlertDialog.Builder alert = new AlertDialog.Builder(getContext());
+        AlertDialog.Builder alert = new AlertDialog.Builder(getContext(), R.style.DialogTheme);
         alert.setTitle(date +" уже задан параметр "+ param);
         alert.setMessage("Хотите заменить его новым?"); // сообщение
         alert.setNegativeButton("Нет", new DialogInterface.OnClickListener() {
