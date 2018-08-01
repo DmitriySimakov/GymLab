@@ -70,6 +70,17 @@ public class ProportionsCalculatorFragment extends Fragment implements View.OnCl
 
         mListView.setAdapter(mListAdapter);
 
+        // TODO It's for debug. DELETE LATER
+        mListView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (!hasFocus){
+                    Log.d(CLASS_NAME, "list lost focus");
+                } else {
+                    Log.d(CLASS_NAME, "list takes focus");
+                }
+            }
+        });
+
         Button resetBtn = view.findViewById(R.id.reset_btn);
         resetBtn.setOnClickListener(this);
         Button fillBtn = view.findViewById(R.id.fill_btn);
@@ -131,21 +142,21 @@ public class ProportionsCalculatorFragment extends Fragment implements View.OnCl
         }
 
         @Override
-        public Object getItem(int position) {
+        public ListItem getItem(int position) {
             return mItems.get(position);
         }
 
         @Override
         public long getItemId(int position) {
-            return position;
+            return 0;
         }
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
-            ViewHolder holder;
+            final ViewHolder holder;
             if (convertView == null) {
-                holder = new ViewHolder();
                 convertView = mInflater.inflate(R.layout.proportions_calculator_list_item, parent, false);
+                holder = new ViewHolder();
                 holder.parameter = convertView.findViewById(R.id.parameter);
                 holder.actualValue = convertView.findViewById(R.id.actual_value);
                 holder.expectedValue = convertView.findViewById(R.id.expected_value);
@@ -155,26 +166,37 @@ public class ProportionsCalculatorFragment extends Fragment implements View.OnCl
                 holder = (ViewHolder) convertView.getTag();
             }
 
-            //Fill EditText with the value you have in data source
-            holder.parameter.setText(mItems.get(position).parameter);
+            // TODO It's for debug. DELETE LATER
+            convertView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+                public void onFocusChange(View v, boolean hasFocus) {
+                    if (!hasFocus){
+                        Log.d(CLASS_NAME, "view lost focus");
+                    } else {
+                        Log.d(CLASS_NAME, "view takes focus");
+                    }
+                }
+            });
 
-            if (mItems.get(position).actualValue == 0) {
+            final ListItem item = getItem(position);
+            holder.parameter.setText(item.parameter);
+
+            if (item.actualValue == 0) {
                 holder.actualValue.setText("");
             } else {
-                holder.actualValue.setText(String.valueOf(mItems.get(position).actualValue));
+                holder.actualValue.setText(String.valueOf(item.actualValue));
             }
 
-            if (mItems.get(position).expectedValue == 0) {
+            if (item.expectedValue == 0) {
                 holder.expectedValue.setText("");
             } else {
-                holder.expectedValue.setText(String.valueOf(mItems.get(position).expectedValue));
+                holder.expectedValue.setText(String.valueOf(item.expectedValue));
             }
 
-            if (mItems.get(position).percent == 0) {
+            if (item.percent == 0) {
                 holder.percent.setText("");
             } else {
-                holder.percent.setText(mItems.get(position).percent + "%");
-                double difference = 100 - mItems.get(position).percent;
+                holder.percent.setText(item.percent + "%");
+                double difference = Math.abs(100 - item.percent);
                 String color;
                 if (difference > 13) {
                     color = "#f44336"; // red
@@ -196,20 +218,17 @@ public class ProportionsCalculatorFragment extends Fragment implements View.OnCl
                 holder.percent.setTextColor(Color.parseColor(color));
             }
 
-            holder.actualValue.setId(position);
-
-            //we need to update adapter once we finish with editing
             holder.actualValue.setOnFocusChangeListener(new View.OnFocusChangeListener() {
                 public void onFocusChange(View v, boolean hasFocus) {
                     if (!hasFocus){
-                        int position = v.getId();
-                        EditText actualValueET = (EditText) v;
                         try {
-                            mItems.get(position).actualValue = Double.parseDouble(String.valueOf(actualValueET.getText()));
+                            item.actualValue = Double.parseDouble(String.valueOf(holder.actualValue.getText()));
                         } catch(Exception e){
-                            Toast.makeText(getContext(), "Неверно введено значение", Toast.LENGTH_LONG).show();
-                            mItems.get(position).actualValue = 0;
+                            item.actualValue = 0;
                         }
+                        Log.d(CLASS_NAME, item.parameter +" lost focus");
+                    } else {
+                        Log.d(CLASS_NAME, item.parameter +" takes focus");
                     }
                 }
             });
@@ -274,13 +293,13 @@ public class ProportionsCalculatorFragment extends Fragment implements View.OnCl
             TextView expectedValue;
             TextView percent;
         }
+    }
 
-        private class ListItem {
-            String parameter;
-            double coefficient;
-            double actualValue;
-            double expectedValue;
-            double percent;
-        }
+    private class ListItem {
+        String parameter;
+        double coefficient;
+        double actualValue;
+        double expectedValue;
+        double percent;
     }
 }
