@@ -1,68 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical"
     android:focusable="true"
     android:focusableInTouchMode="true"
     tools:context=".MainActivity" >
 
     <LinearLayout
+        android:id="@+id/header"
         android:layout_width="match_parent"
         android:layout_height="?android:attr/listPreferredItemHeightSmall"
-        android:orientation="horizontal" >
+        app:layout_constraintTop_toTopOf="parent"
+        android:orientation="horizontal">
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="2"
             android:gravity="center"
-            android:textColor="@color/black"
-            android:text="Параметр"/>
+            android:text="Параметр"
+            android:textColor="@color/black" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
-            android:textSize="12sp"
+            android:text="Фактическое значение"
             android:textColor="@color/black"
-            android:text="Фактическое значение"/>
+            android:textSize="12sp" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
-            android:textSize="12sp"
+            android:text="Ожидаемое значение"
             android:textColor="@color/black"
-            android:text="Ожидаемое значение"/>
+            android:textSize="12sp" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
-            android:textSize="12sp"
+            android:text="Процент"
             android:textColor="@color/black"
-            android:text="Процент"/>
+            android:textSize="12sp" />
 
     </LinearLayout>
 
-    <View style="@style/DividerStyle" />
+    <View style="@style/DividerStyle"
+        android:id="@+id/divider"
+        app:layout_constraintTop_toBottomOf="@id/header"/>
 
     <ListView
         android:id="@+id/list_view"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
-
-    <View style="@style/DividerStyle" />
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/divider"
+        app:layout_constraintBottom_toTopOf="@id/buttonPanel"/>
 
     <LinearLayout
+        android:id="@+id/buttonPanel"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="?attr/listPreferredItemHeight"
+        app:layout_constraintBottom_toBottomOf="parent"
         android:orientation="horizontal">
 
         <Button
@@ -71,7 +77,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:background="@color/white"
-            android:text="Сбросить"/>
+            android:text="Сбросить" />
 
         <Button
             android:id="@+id/fill_btn"
@@ -79,7 +85,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:background="@color/white"
-            android:text="Заполнить"/>
+            android:text="Заполнить" />
 
         <Button
             android:id="@+id/count_btn"
@@ -87,8 +93,8 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:background="@color/white"
-            android:text="Рассчитать"/>
+            android:text="Рассчитать" />
 
     </LinearLayout>
 
-</LinearLayout>
+</android.support.constraint.ConstraintLayout>
