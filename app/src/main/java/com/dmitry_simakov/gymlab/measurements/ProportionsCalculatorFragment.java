@@ -6,13 +6,17 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.BaseAdapter;
 import android.widget.Button;
-import android.widget.CursorAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -25,14 +29,17 @@ import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 
 import java.util.ArrayList;
 
-public class ProportionsCalculatorFragment extends Fragment implements View.OnClickListener {
+public class ProportionsCalculatorFragment extends Fragment
+        implements LoaderManager.LoaderCallbacks<Cursor>, View.OnClickListener {
 
     public static final String CLASS_NAME = ProportionsCalculatorFragment.class.getSimpleName();
 
     private static final class BM extends DatabaseContract.BodyMeasurementsEntry {}
     private static final class BP extends DatabaseContract.BodyParametersEntry {}
 
-    private MyCursorAdapter mCursorAdapter;
+    private SQLiteDatabase mDatabase;
+    private Cursor mCursor;
+    private MyAdapter mAdapter;
 
 
     public ProportionsCalculatorFragment() {}
@@ -42,18 +49,8 @@ public class ProportionsCalculatorFragment extends Fragment implements View.OnCl
         super.onAttach(context);
         Log.d(CLASS_NAME, "onAttach");
 
-        SQLiteDatabase db = DatabaseHelper.getInstance(context).getWritableDatabase();
-
-        Cursor cursor = db.rawQuery("SELECT "+ BP._ID +", "+ BP.NAME +","+ BP.COEFFICIENT +","+
-                        " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
-                        " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
-                        " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.VALUE +
-                        " FROM "+ BP.TABLE_NAME +" AS bp"+
-                        " WHERE "+ BM._ID +" > '2'"+
-                        " ORDER BY "+ BP._ID,
-                null
-        );
-        mCursorAdapter = new MyCursorAdapter(getContext(), cursor);
+        mDatabase = DatabaseHelper.getInstance(context).getWritableDatabase();
+        mAdapter = new MyAdapter(mCursor);
     }
 
     @Override
@@ -64,7 +61,7 @@ public class ProportionsCalculatorFragment extends Fragment implements View.OnCl
         ListView listView = view.findViewById(R.id.list_view);
         ProgressBar progressBar = view.findViewById(R.id.progressBar);
         listView.setEmptyView(progressBar);
-        listView.setAdapter(mCursorAdapter);
+        listView.setAdapter(mAdapter);
 
         // TODO It's for debug. DELETE LATER
         listView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
@@ -88,41 +85,92 @@ public class ProportionsCalculatorFragment extends Fragment implements View.OnCl
     }
 
     @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+
+        getLoaderManager().initLoader(0, null, this);
+    }
+
+    @Override
     public void onClick(View v) {
         Log.d(CLASS_NAME, "onClick");
         switch (v.getId()) {
             case R.id.reset_btn:
-                mCursorAdapter.reset();
+                mAdapter.reset();
                 break;
             case R.id.fill_btn:
-                mCursorAdapter.fill();
+                mAdapter.fill(mCursor);
                 break;
             case R.id.count_btn:
-                mCursorAdapter.count();
+                mAdapter.count();
                 break;
         }
     }
 
-    private class MyCursorAdapter extends CursorAdapter {
+    @NonNull
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
+        return new MyCursorLoader(getContext(), mDatabase);
+    }
 
-        public final String CLASS_NAME = ProportionsCalculatorFragment.CLASS_NAME +"."+ MyCursorAdapter.class.getSimpleName();
+    @Override
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
+        mCursor = cursor;
+        mAdapter.fill(cursor);
+    }
 
-        private ArrayList<ListItem> mItems = new ArrayList<>();
+    @Override
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
+        mAdapter.fill(null);
+    }
+
+    private static class MyCursorLoader extends CursorLoader {
+
+        private final ForceLoadContentObserver mObserver = new ForceLoadContentObserver();
+
+        private SQLiteDatabase mDatabase;
+        private String mDate;
+
+        MyCursorLoader(Context context, SQLiteDatabase db) {
+            super(context);
+            mDatabase = db;
+            setUri(BM.CONTENT_URI);
+        }
+
+        @Override
+        public Cursor loadInBackground() {
+            Cursor cursor = mDatabase.rawQuery("SELECT "+ BP._ID +", "+ BP.NAME +","+ BP.COEFFICIENT +","+
+                            " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
+                            " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                            " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.VALUE +
+                            " FROM "+ BP.TABLE_NAME +" AS bp"+
+                            " WHERE "+ BM._ID +" > '2'"+
+                            " ORDER BY "+ BP._ID,
+                    null);
+
+            if (cursor != null) {
+                cursor.registerContentObserver(mObserver);
+                cursor.setNotificationUri(getContext().getContentResolver(), getUri());
+            }
+            return cursor;
+        }
+    }
+
+    private class MyAdapter extends BaseAdapter {
+
+        public final String CLASS_NAME = ProportionsCalculatorFragment.CLASS_NAME +"."+ MyAdapter.class.getSimpleName();
+
         private LayoutInflater mInflater;
+        private ArrayList<ListItem> mItems = new ArrayList<>();
 
-        public MyCursorAdapter(Context context, Cursor c) {
-            super(context, c, 0);
+        MyAdapter(Cursor c) {
             mInflater = LayoutInflater.from(getContext());
+            fill(c);
+        }
 
-            c.moveToFirst();
-            do {
-                ListItem listItem = new ListItem();
-                listItem.parameter = c.getString(c.getColumnIndex(BP.NAME));
-                listItem.coefficient = c.getDouble(c.getColumnIndex(BP.COEFFICIENT));
-                listItem.actualValue = c.getDouble(c.getColumnIndex(BM.VALUE));
-                mItems.add(listItem);
-            } while (c.moveToNext());
-            notifyDataSetChanged();
+        @Override
+        public int getCount() {
+            return mItems.size();
         }
 
         @Override
@@ -131,20 +179,27 @@ public class ProportionsCalculatorFragment extends Fragment implements View.OnCl
         }
 
         @Override
-        public View newView(Context context, Cursor cursor, ViewGroup parent) {
-            return mInflater.inflate(R.layout.proportions_calculator_list_item, parent, false);
+        public long getItemId(int position) {
+            return 0;
         }
 
         @Override
-        public void bindView(View view, Context context, Cursor cursor) {
-            final ViewHolder holder = new ViewHolder();
-            holder.parameter = view.findViewById(R.id.parameter);
-            holder.actualValue = view.findViewById(R.id.actual_value);
-            holder.expectedValue = view.findViewById(R.id.expected_value);
-            holder.percent = view.findViewById(R.id.percent);
+        public View getView(int position, View convertView, ViewGroup parent) {
+            final ViewHolder holder;
+            if (convertView == null) {
+                convertView = mInflater.inflate(R.layout.proportions_calculator_list_item, parent, false);
+                holder = new ViewHolder();
+                holder.parameter = convertView.findViewById(R.id.parameter);
+                holder.actualValue = convertView.findViewById(R.id.actual_value);
+                holder.expectedValue = convertView.findViewById(R.id.expected_value);
+                holder.percent = convertView.findViewById(R.id.percent);
+                convertView.setTag(holder);
+            } else {
+                holder = (ViewHolder) convertView.getTag();
+            }
 
             // TODO It's for debug. DELETE LATER
-            view.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            convertView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
                 public void onFocusChange(View v, boolean hasFocus) {
                     if (!hasFocus){
                         Log.d(CLASS_NAME, "view lost focus");
@@ -154,7 +209,7 @@ public class ProportionsCalculatorFragment extends Fragment implements View.OnCl
                 }
             });
 
-            final ListItem item = getItem(cursor.getPosition());
+            final ListItem item = getItem(position);
             holder.parameter.setText(item.parameter);
 
             if (item.actualValue == 0) {
@@ -209,12 +264,7 @@ public class ProportionsCalculatorFragment extends Fragment implements View.OnCl
                     }
                 }
             });
-        }
-
-        @Override
-        public Cursor swapCursor(Cursor newCursor) {
-            fill();
-            return super.swapCursor(newCursor);
+            return convertView;
         }
 
         void reset() {
@@ -228,16 +278,23 @@ public class ProportionsCalculatorFragment extends Fragment implements View.OnCl
             notifyDataSetChanged();
         }
 
-        void fill() {
+        void fill(Cursor c) {
             Log.d(CLASS_NAME, "fill");
 
-            Cursor c = getCursor();
-            c.moveToFirst();
-            for (ListItem i : mItems) {
-                i.actualValue = c.getDouble(c.getColumnIndex(BM.VALUE));
-                i.expectedValue = 0;
-                i.percent = 0;
-                c.moveToNext();
+            mItems.clear();
+            if (c != null) {
+                c.moveToFirst();
+                do {
+                    ListItem item = new ListItem();
+                    item.parameter = c.getString(c.getColumnIndex(BP.NAME));
+                    item.coefficient = c.getDouble(c.getColumnIndex(BP.COEFFICIENT));
+                    item.actualValue = c.getDouble(c.getColumnIndex(BM.VALUE));
+                    item.expectedValue = 0;
+                    item.percent = 0;
+                    mItems.add(item);
+                } while (c.moveToNext());
+            } else {
+                reset();
             }
             notifyDataSetChanged();
         }
