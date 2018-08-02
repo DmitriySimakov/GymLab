@@ -21,35 +21,39 @@
             android:layout_height="match_parent"
             android:layout_weight="2"
             android:gravity="center"
-            android:text="Параметр"
-            android:textColor="@color/black" />
+
+            android:textColor="@color/black"
+            android:text="@string/parameter" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="Фактическое значение"
+
+            android:textSize="12sp"
             android:textColor="@color/black"
-            android:textSize="12sp" />
+            android:text="@string/actual_value" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="Ожидаемое значение"
+
+            android:textSize="12sp"
             android:textColor="@color/black"
-            android:textSize="12sp" />
+            android:text="@string/expected_value" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="Процент"
+
+            android:textSize="12sp"
             android:textColor="@color/black"
-            android:textSize="12sp" />
+            android:text="@string/percent" />
 
     </LinearLayout>
 
@@ -76,24 +80,30 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:background="@color/white"
-            android:text="Сбросить" />
+
+            style="?attr/buttonBarButtonStyle"
+            android:textColor="@color/black"
+            android:text="@string/reset" />
 
         <Button
             android:id="@+id/fill_btn"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:background="@color/white"
-            android:text="Заполнить" />
+
+            style="?attr/buttonBarButtonStyle"
+            android:textColor="@color/black"
+            android:text="@string/fill" />
 
         <Button
             android:id="@+id/count_btn"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:background="@color/white"
-            android:text="Рассчитать" />
+
+            style="?attr/buttonBarButtonStyle"
+            android:textColor="@color/black"
+            android:text="@string/count" />
 
     </LinearLayout>
 

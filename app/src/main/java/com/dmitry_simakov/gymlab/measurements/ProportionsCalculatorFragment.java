@@ -6,14 +6,13 @@ import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.CursorAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -31,12 +30,10 @@ public class ProportionsCalculatorFragment extends Fragment implements View.OnCl
     public static final String CLASS_NAME = ProportionsCalculatorFragment.class.getSimpleName();
 
     private static final class BM extends DatabaseContract.BodyMeasurementsEntry {}
-
     private static final class BP extends DatabaseContract.BodyParametersEntry {}
-    private SQLiteDatabase mDatabase;
 
-    private ListView mListView;
-    private MyAdapter mListAdapter;
+    private MyCursorAdapter mCursorAdapter;
+
 
     public ProportionsCalculatorFragment() {}
 
@@ -45,9 +42,9 @@ public class ProportionsCalculatorFragment extends Fragment implements View.OnCl
         super.onAttach(context);
         Log.d(CLASS_NAME, "onAttach");
 
-        mDatabase = DatabaseHelper.getInstance(context).getWritableDatabase();
+        SQLiteDatabase db = DatabaseHelper.getInstance(context).getWritableDatabase();
 
-        Cursor cursor = mDatabase.rawQuery("SELECT "+ BP._ID +", "+ BP.NAME +","+ BP.COEFFICIENT +","+
+        Cursor cursor = db.rawQuery("SELECT "+ BP._ID +", "+ BP.NAME +","+ BP.COEFFICIENT +","+
                         " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
                         " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
                         " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.VALUE +
@@ -56,7 +53,7 @@ public class ProportionsCalculatorFragment extends Fragment implements View.OnCl
                         " ORDER BY "+ BP._ID,
                 null
         );
-        mListAdapter = new MyAdapter(cursor);
+        mCursorAdapter = new MyCursorAdapter(getContext(), cursor);
     }
 
     @Override
@@ -64,14 +61,13 @@ public class ProportionsCalculatorFragment extends Fragment implements View.OnCl
 
         View view = inflater.inflate(R.layout.fragment_proportions_calculator, container, false);
 
-        mListView = view.findViewById(R.id.list_view);
+        ListView listView = view.findViewById(R.id.list_view);
         ProgressBar progressBar = view.findViewById(R.id.progressBar);
-        mListView.setEmptyView(progressBar);
-
-        mListView.setAdapter(mListAdapter);
+        listView.setEmptyView(progressBar);
+        listView.setAdapter(mCursorAdapter);
 
         // TODO It's for debug. DELETE LATER
-        mListView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+        listView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             public void onFocusChange(View v, boolean hasFocus) {
                 if (!hasFocus){
                     Log.d(CLASS_NAME, "list lost focus");
@@ -92,53 +88,41 @@ public class ProportionsCalculatorFragment extends Fragment implements View.OnCl
     }
 
     @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-
-        //initLoader
-    }
-
-    @Override
     public void onClick(View v) {
         Log.d(CLASS_NAME, "onClick");
         switch (v.getId()) {
             case R.id.reset_btn:
-                mListAdapter.reset();
+                mCursorAdapter.reset();
                 break;
             case R.id.fill_btn:
-                mListAdapter.fill();
+                mCursorAdapter.fill();
                 break;
             case R.id.count_btn:
-                mListAdapter.count();
+                mCursorAdapter.count();
                 break;
         }
     }
 
-    private class MyAdapter extends BaseAdapter {
+    private class MyCursorAdapter extends CursorAdapter {
 
-        public final String CLASS_NAME = ProportionsCalculatorFragment.CLASS_NAME +"."+ MyAdapter.class.getSimpleName();
+        public final String CLASS_NAME = ProportionsCalculatorFragment.CLASS_NAME +"."+ MyCursorAdapter.class.getSimpleName();
 
-        private LayoutInflater mInflater;
-        private Cursor mCursor;
         private ArrayList<ListItem> mItems = new ArrayList<>();
+        private LayoutInflater mInflater;
 
-        MyAdapter(Cursor cursor) {
-            mCursor = cursor;
+        public MyCursorAdapter(Context context, Cursor c) {
+            super(context, c, 0);
             mInflater = LayoutInflater.from(getContext());
-            mCursor.moveToFirst();
+
+            c.moveToFirst();
             do {
                 ListItem listItem = new ListItem();
-                listItem.parameter = mCursor.getString(mCursor.getColumnIndex(BP.NAME));
-                listItem.coefficient = mCursor.getDouble(mCursor.getColumnIndex(BP.COEFFICIENT));
-                listItem.actualValue = mCursor.getDouble(mCursor.getColumnIndex(BM.VALUE));
+                listItem.parameter = c.getString(c.getColumnIndex(BP.NAME));
+                listItem.coefficient = c.getDouble(c.getColumnIndex(BP.COEFFICIENT));
+                listItem.actualValue = c.getDouble(c.getColumnIndex(BM.VALUE));
                 mItems.add(listItem);
-            } while (mCursor.moveToNext());
+            } while (c.moveToNext());
             notifyDataSetChanged();
-        }
-
-        @Override
-        public int getCount() {
-            return mItems.size();
         }
 
         @Override
@@ -147,27 +131,20 @@ public class ProportionsCalculatorFragment extends Fragment implements View.OnCl
         }
 
         @Override
-        public long getItemId(int position) {
-            return 0;
+        public View newView(Context context, Cursor cursor, ViewGroup parent) {
+            return mInflater.inflate(R.layout.proportions_calculator_list_item, parent, false);
         }
 
         @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            final ViewHolder holder;
-            if (convertView == null) {
-                convertView = mInflater.inflate(R.layout.proportions_calculator_list_item, parent, false);
-                holder = new ViewHolder();
-                holder.parameter = convertView.findViewById(R.id.parameter);
-                holder.actualValue = convertView.findViewById(R.id.actual_value);
-                holder.expectedValue = convertView.findViewById(R.id.expected_value);
-                holder.percent = convertView.findViewById(R.id.percent);
-                convertView.setTag(holder);
-            } else {
-                holder = (ViewHolder) convertView.getTag();
-            }
+        public void bindView(View view, Context context, Cursor cursor) {
+            final ViewHolder holder = new ViewHolder();
+            holder.parameter = view.findViewById(R.id.parameter);
+            holder.actualValue = view.findViewById(R.id.actual_value);
+            holder.expectedValue = view.findViewById(R.id.expected_value);
+            holder.percent = view.findViewById(R.id.percent);
 
             // TODO It's for debug. DELETE LATER
-            convertView.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            view.setOnFocusChangeListener(new View.OnFocusChangeListener() {
                 public void onFocusChange(View v, boolean hasFocus) {
                     if (!hasFocus){
                         Log.d(CLASS_NAME, "view lost focus");
@@ -177,7 +154,7 @@ public class ProportionsCalculatorFragment extends Fragment implements View.OnCl
                 }
             });
 
-            final ListItem item = getItem(position);
+            final ListItem item = getItem(cursor.getPosition());
             holder.parameter.setText(item.parameter);
 
             if (item.actualValue == 0) {
@@ -232,7 +209,12 @@ public class ProportionsCalculatorFragment extends Fragment implements View.OnCl
                     }
                 }
             });
-            return convertView;
+        }
+
+        @Override
+        public Cursor swapCursor(Cursor newCursor) {
+            fill();
+            return super.swapCursor(newCursor);
         }
 
         void reset() {
@@ -249,12 +231,13 @@ public class ProportionsCalculatorFragment extends Fragment implements View.OnCl
         void fill() {
             Log.d(CLASS_NAME, "fill");
 
-            mCursor.moveToFirst();
+            Cursor c = getCursor();
+            c.moveToFirst();
             for (ListItem i : mItems) {
-                i.actualValue = mCursor.getDouble(mCursor.getColumnIndex(BM.VALUE));
+                i.actualValue = c.getDouble(c.getColumnIndex(BM.VALUE));
                 i.expectedValue = 0;
                 i.percent = 0;
-                mCursor.moveToNext();
+                c.moveToNext();
             }
             notifyDataSetChanged();
         }

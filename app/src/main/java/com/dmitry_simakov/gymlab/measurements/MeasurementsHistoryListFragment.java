@@ -32,6 +32,7 @@ public class MeasurementsHistoryListFragment extends ListFragment
     private Cursor mCursor;
     SimpleCursorAdapter mCursorAdapter;
 
+
     public MeasurementsHistoryListFragment() {}
 
     @Override

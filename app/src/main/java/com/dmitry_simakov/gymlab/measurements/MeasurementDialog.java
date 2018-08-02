@@ -18,7 +18,9 @@ import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatDialogFragment;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -33,7 +35,8 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-public class MeasurementDialog extends AppCompatDialogFragment implements LoaderManager.LoaderCallbacks<Cursor> {
+public class MeasurementDialog extends AppCompatDialogFragment
+        implements LoaderManager.LoaderCallbacks<Cursor> {
 
     public static final String CLASS_NAME = MeasurementDialog.class.getSimpleName();
 
@@ -81,6 +84,13 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
 
         LayoutInflater inflater = activity.getLayoutInflater();
         View view = inflater.inflate(R.layout.fragment_measurement_dialog, null);
+        view.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                hideKeyboard();
+                return true;
+            }
+        });
         builder.setView(view);
 
         mDateTextView = view.findViewById(R.id.date);
@@ -94,6 +104,7 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 Log.d(CLASS_NAME, "negativeButton onClick");
+                hideKeyboard();
                 dialog.cancel();
             }
         });
@@ -268,6 +279,7 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
                     Log.d(CLASS_NAME, "positiveButton onClick");
 
                     if (!validateValue()) return;
+                    hideKeyboard();
                     getLoaderManager().initLoader(NEW_MEASUREMENT_CHECK_LOADER_ID, null, callback);
                 }
             });
@@ -310,6 +322,7 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
                     Log.d(CLASS_NAME, "positiveButton onClick");
 
                     if (!validateValue()) return;
+                    hideKeyboard();
                     getLoaderManager().initLoader(EDIT_MEASUREMENT_CHECK_LOADER_ID, null, callback);
                 }
             });
@@ -413,5 +426,10 @@ public class MeasurementDialog extends AppCompatDialogFragment implements Loader
         });
         alert.setCancelable(false);
         return alert;
+    }
+
+    private void hideKeyboard() {
+        InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
+        imm.hideSoftInputFromWindow(mValueEditText.getWindowToken(), 0);
     }
 }

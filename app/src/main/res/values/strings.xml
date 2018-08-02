@@ -1,12 +1,22 @@
 <resources>
     <string name="app_name">GymLab</string>
 
+    <!-- NavigationView -->
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">GymLab</string>
+    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_desc">Navigation header</string>
+
     <!-- NavigationView items -->
     <string name="exercises">Упражнения</string>
     <string name="training_programs">Программы</string>
     <string name="measures">Замеры</string>
 
-    <!-- ExerciseDescription -->
+    <!-- Options menu -->
+    <string name="action_settings">Settings</string>
+
+    <!-- ExerciseDescriptionFragment -->
     <string name="exercise">Упражнение</string>
 
     <string name="exercise_name">Название упражнения</string>
@@ -19,20 +29,21 @@
     <string name="description">Описание</string>
     <string name="technique">Техника выполнения</string>
 
-    <!-- NavigationView -->
-    <string name="navigation_drawer_open">Open navigation drawer</string>
-    <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="nav_header_title">Android Studio</string>
-    <string name="nav_header_subtitle">android.studio@android.com</string>
-    <string name="nav_header_desc">Navigation header</string>
-
-    <!-- Settings -->
-    <string name="action_settings">Settings</string>
-
-    <!-- Tabs -->
+    <!-- MeasurementTabFragment -->
     <string name="calculator">Калькулятор</string>
     <string name="add_measurement">Добавить</string>
     <string name="measurement_history">История</string>
+
+    <!-- MeasurementDialog -->
     <string name="enter_value">Введите значение параметра</string>
+
+    <!-- ProportionsCalculatorFragment -->
+    <string name="reset">Сбросить</string>
+    <string name="fill">Заполнить</string>
+    <string name="count">Рассчитать</string>
+    <string name="parameter">Параметр</string>
+    <string name="actual_value">Фактическое значение</string>
+    <string name="expected_value">Ожидаемое значение</string>
+    <string name="percent">Процент</string>
 
 </resources>
