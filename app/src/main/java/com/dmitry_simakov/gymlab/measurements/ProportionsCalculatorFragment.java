@@ -34,8 +34,8 @@ public class ProportionsCalculatorFragment extends Fragment
 
     public static final String CLASS_NAME = ProportionsCalculatorFragment.class.getSimpleName();
 
-    private static final class BM extends DatabaseContract.BodyMeasurementsEntry {}
-    private static final class BP extends DatabaseContract.BodyParametersEntry {}
+    private static final class BM extends DatabaseContract.BodyMeasurementEntry {}
+    private static final class BMP extends DatabaseContract.BodyMeasurementParamEntry {}
 
     private SQLiteDatabase mDatabase;
     private Cursor mCursor;
@@ -50,11 +50,12 @@ public class ProportionsCalculatorFragment extends Fragment
         Log.d(CLASS_NAME, "onAttach");
 
         mDatabase = DatabaseHelper.getInstance(context).getWritableDatabase();
-        mAdapter = new MyAdapter(mCursor);
+        mAdapter = new MyAdapter();
     }
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        Log.d(CLASS_NAME, "onCreateView");
 
         View view = inflater.inflate(R.layout.fragment_proportions_calculator, container, false);
 
@@ -87,6 +88,7 @@ public class ProportionsCalculatorFragment extends Fragment
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        Log.d(CLASS_NAME, "onActivityCreated");
 
         getLoaderManager().initLoader(0, null, this);
     }
@@ -110,26 +112,28 @@ public class ProportionsCalculatorFragment extends Fragment
     @NonNull
     @Override
     public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
+        Log.d(CLASS_NAME, "onCreateLoader id: "+ id);
         return new MyCursorLoader(getContext(), mDatabase);
     }
 
     @Override
     public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
+        Log.d(CLASS_NAME, "onLoadFinished id: "+ loader.getId());
         mCursor = cursor;
         mAdapter.fill(cursor);
     }
 
     @Override
-    public void onLoaderReset(@NonNull Loader<Cursor> loader) {
-        mAdapter.fill(null);
-    }
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {}
 
     private static class MyCursorLoader extends CursorLoader {
+
+        public final String CLASS_NAME = ProportionsCalculatorFragment.CLASS_NAME +"."+ MyCursorLoader.class.getSimpleName();
 
         private final ForceLoadContentObserver mObserver = new ForceLoadContentObserver();
 
         private SQLiteDatabase mDatabase;
-        private String mDate;
+
 
         MyCursorLoader(Context context, SQLiteDatabase db) {
             super(context);
@@ -139,13 +143,15 @@ public class ProportionsCalculatorFragment extends Fragment
 
         @Override
         public Cursor loadInBackground() {
-            Cursor cursor = mDatabase.rawQuery("SELECT "+ BP._ID +", "+ BP.NAME +","+ BP.COEFFICIENT +","+
+            Log.d(CLASS_NAME, "loadInBackground id: "+ getId());
+
+            Cursor cursor = mDatabase.rawQuery("SELECT "+ BMP._ID +", "+ BMP.NAME +","+ BMP.COEFFICIENT +","+
                             " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
-                            " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                            " WHERE "+ BM.BODY_PARAM_ID +" = bp."+ BMP._ID +
                             " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.VALUE +
-                            " FROM "+ BP.TABLE_NAME +" AS bp"+
+                            " FROM "+ BMP.TABLE_NAME +" AS bp"+
                             " WHERE "+ BM._ID +" > '2'"+
-                            " ORDER BY "+ BP._ID,
+                            " ORDER BY "+ BMP._ID,
                     null);
 
             if (cursor != null) {
@@ -163,9 +169,8 @@ public class ProportionsCalculatorFragment extends Fragment
         private LayoutInflater mInflater;
         private ArrayList<ListItem> mItems = new ArrayList<>();
 
-        MyAdapter(Cursor c) {
+        MyAdapter() {
             mInflater = LayoutInflater.from(getContext());
-            fill(c);
         }
 
         @Override
@@ -180,7 +185,7 @@ public class ProportionsCalculatorFragment extends Fragment
 
         @Override
         public long getItemId(int position) {
-            return 0;
+            return position;
         }
 
         @Override
@@ -282,20 +287,17 @@ public class ProportionsCalculatorFragment extends Fragment
             Log.d(CLASS_NAME, "fill");
 
             mItems.clear();
-            if (c != null) {
-                c.moveToFirst();
-                do {
-                    ListItem item = new ListItem();
-                    item.parameter = c.getString(c.getColumnIndex(BP.NAME));
-                    item.coefficient = c.getDouble(c.getColumnIndex(BP.COEFFICIENT));
-                    item.actualValue = c.getDouble(c.getColumnIndex(BM.VALUE));
-                    item.expectedValue = 0;
-                    item.percent = 0;
-                    mItems.add(item);
-                } while (c.moveToNext());
-            } else {
-                reset();
-            }
+            c.moveToFirst();
+            do {
+                ListItem item = new ListItem();
+                item.parameter = c.getString(c.getColumnIndex(BMP.NAME));
+                item.coefficient = c.getDouble(c.getColumnIndex(BMP.COEFFICIENT));
+                item.actualValue = c.getDouble(c.getColumnIndex(BM.VALUE));
+                item.expectedValue = 0;
+                item.percent = 0;
+                mItems.add(item);
+            } while (c.moveToNext());
+            
             notifyDataSetChanged();
         }
 

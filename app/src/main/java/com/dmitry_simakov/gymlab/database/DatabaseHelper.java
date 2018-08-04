@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
-import com.dmitry_simakov.gymlab.database.DatabaseContract.ExercisesEntry;
+import com.dmitry_simakov.gymlab.database.DatabaseContract.ExerciseEntry;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -17,7 +17,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String LOG_TAG = DatabaseHelper.class.getSimpleName();
 
-    private static final class BM extends DatabaseContract.BodyMeasurementsEntry{}
+    private static final class BM extends DatabaseContract.BodyMeasurementEntry {}
 
     private static final String DB_NAME = "gymlab.db";
     private static final int DB_VERSION = 1;
@@ -73,17 +73,17 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static void insertExercise(String name, int majorMuscles, String description) {
         ContentValues contentValues = new ContentValues();
-        contentValues.put(ExercisesEntry.NAME, name);
-        contentValues.put(ExercisesEntry.MAIN_MUSCLE_ID, majorMuscles);
-        contentValues.put(ExercisesEntry.DESCRIPTION, description);
+        contentValues.put(ExerciseEntry.NAME, name);
+        contentValues.put(ExerciseEntry.MAIN_MUSCLE_ID, majorMuscles);
+        contentValues.put(ExerciseEntry.DESCRIPTION, description);
 
-        sInstance.getWritableDatabase().insert(ExercisesEntry.TABLE_NAME, null, contentValues);
+        sInstance.getWritableDatabase().insert(ExerciseEntry.TABLE_NAME, null, contentValues);
     }
 
     public static void insertMeasurement(String date, int body_parameter_id, double value) {
         ContentValues contentValues = new ContentValues();
         contentValues.put(BM.DATE, date);
-        contentValues.put(BM.BODY_PARAMETER_ID, body_parameter_id);
+        contentValues.put(BM.BODY_PARAM_ID, body_parameter_id);
         contentValues.put(BM.VALUE, value);
 
         sInstance.getWritableDatabase().insert(BM.TABLE_NAME, null, contentValues);

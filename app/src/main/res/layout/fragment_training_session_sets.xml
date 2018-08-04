@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".training_sessions.TrainingSessionSetsFragment">
+
+    <LinearLayout
+        android:id="@+id/header"
+        android:layout_width="match_parent"
+        android:layout_height="30dp"
+        android:orientation="horizontal"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:layout_width="50dp"
+            android:layout_height="match_parent"
+
+            android:gravity="center"
+            android:textSize="12sp"
+            android:text="№" />
+
+        <TextView
+            android:id="@+id/header_weight"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+
+            android:gravity="center"
+            android:textSize="12sp"
+            android:text="Вес" />
+
+        <TextView
+            android:id="@+id/header_reps"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+
+            android:gravity="center"
+            android:textSize="12sp"
+            android:text="Повторения" />
+
+        <TextView
+            android:id="@+id/header_time"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+
+            android:gravity="center"
+            android:textSize="12sp"
+            android:text="Время" />
+
+        <TextView
+            android:id="@+id/header_distance"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+
+            android:gravity="center"
+            android:textSize="12sp"
+            android:text="Расстояние" />
+
+        <Space
+            android:layout_width="40dp"
+            android:layout_height="match_parent"/>
+
+    </LinearLayout>
+
+    <View style="@style/DividerStyle"
+        android:id="@+id/divider"
+        app:layout_constraintTop_toBottomOf="@id/header" />
+
+    <ListView
+        android:id="@+id/list_view"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toBottomOf="@id/divider"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:layout_margin="@dimen/fab_margin"
+        app:srcCompat="@drawable/baseline_add_white_36" />
+
+</android.support.constraint.ConstraintLayout>

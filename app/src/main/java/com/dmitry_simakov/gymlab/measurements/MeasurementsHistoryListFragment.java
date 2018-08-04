@@ -26,7 +26,7 @@ public class MeasurementsHistoryListFragment extends ListFragment
 
     public static final String CLASS_NAME = MeasurementsHistoryListFragment.class.getSimpleName();
 
-    private static final class BM extends DatabaseContract.BodyMeasurementsEntry{}
+    private static final class BM extends DatabaseContract.BodyMeasurementEntry {}
 
     private SQLiteDatabase mDatabase;
     private Cursor mCursor;
@@ -52,6 +52,7 @@ public class MeasurementsHistoryListFragment extends ListFragment
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        Log.d(CLASS_NAME, "onActivityCreated");
 
         getLoaderManager().initLoader(0, null, this);
     }
@@ -79,11 +80,13 @@ public class MeasurementsHistoryListFragment extends ListFragment
     @NonNull
     @Override
     public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
+        Log.d(CLASS_NAME, "onCreateLoader id: "+ id);
         return new MyCursorLoader(getContext(), mDatabase);
     }
 
     @Override
     public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
+        Log.d(CLASS_NAME, "onLoadFinished id: "+ loader.getId());
         mCursor = cursor;
         mCursorAdapter.swapCursor(cursor);
     }
@@ -94,6 +97,8 @@ public class MeasurementsHistoryListFragment extends ListFragment
     }
 
     private static class MyCursorLoader extends CursorLoader {
+
+        public final String CLASS_NAME = MeasurementsHistoryListFragment.CLASS_NAME +"."+ MyCursorLoader.class.getSimpleName();
 
         private final ForceLoadContentObserver mObserver = new ForceLoadContentObserver();
 
@@ -107,6 +112,8 @@ public class MeasurementsHistoryListFragment extends ListFragment
 
         @Override
         public Cursor loadInBackground() {
+            Log.d(CLASS_NAME, "loadInBackground id: "+ getId());
+
             Cursor cursor = mDatabase.rawQuery("SELECT "+ BM._ID +", "+ BM.DATE +" "+
                             " FROM "+ BM.TABLE_NAME +
                             " GROUP BY "+ BM.DATE +

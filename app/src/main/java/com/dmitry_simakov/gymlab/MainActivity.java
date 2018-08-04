@@ -2,7 +2,6 @@ package com.dmitry_simakov.gymlab;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
@@ -20,7 +19,10 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
+import com.dmitry_simakov.gymlab.exercises.ExercisesListFragment;
 import com.dmitry_simakov.gymlab.measurements.MeasurementsTabFragment;
+import com.dmitry_simakov.gymlab.training_programs.TrainingProgramsFragment;
+import com.dmitry_simakov.gymlab.training_sessions.TrainingSessionsFragment;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
@@ -64,7 +66,7 @@ public class MainActivity extends AppCompatActivity
 
         mFragmentManager = getSupportFragmentManager();
         mFragmentManager.addOnBackStackChangedListener(this);
-        setFragment(new ExercisesListFragment(), navigationView.getMenu().findItem(R.id.nav_exercises));
+        setFragment(new TrainingSessionsFragment(), navigationView.getMenu().findItem(R.id.nav_training_sessions));
     }
 
     @Override
@@ -97,12 +99,15 @@ public class MainActivity extends AppCompatActivity
             case R.id.nav_training_programs:
                 setFragment(new TrainingProgramsFragment(), item);
                 break;
+            case R.id.nav_training_sessions:
+                setFragment(new TrainingSessionsFragment(), item);
+                break;
             case R.id.nav_measures:
                 setFragment(new MeasurementsTabFragment(), item);
                 break;
-            case R.id.nav_share:
+            case R.id.nav_settings:
                 break;
-            case R.id.nav_send:
+            case R.id.nav_info:
                 break;
         }
 

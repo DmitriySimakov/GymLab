@@ -12,8 +12,10 @@ public class DatabaseContract {
     private static final String CONTENT_AUTHORITY = "com.dmitry_simakov.gymlab";
     private static final Uri BASE_CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
 
-    public static class ExercisesEntry implements BaseColumns {
-        public final static String TABLE_NAME = "exercises";
+    //______________________________ Exercises ______________________________
+
+    public static class ExerciseEntry implements BaseColumns {
+        public final static String TABLE_NAME = "exercise";
         public static final Uri CONTENT_URI = Uri.withAppendedPath(BASE_CONTENT_URI, TABLE_NAME);
 
         // Names for external keys
@@ -34,8 +36,8 @@ public class DatabaseContract {
         public final static String TECHNIQUE = "technique";
     }
 
-    public static class MusclesEntry implements BaseColumns {
-        public final static String TABLE_NAME = "muscles";
+    public static class MuscleEntry implements BaseColumns {
+        public final static String TABLE_NAME = "muscle";
 
         // Columns names
         public final static String _ID = ID;
@@ -43,8 +45,8 @@ public class DatabaseContract {
         public final static String IMAGE = "image";
     }
 
-    public static class TargetedMusclesEntry implements BaseColumns {
-        public final static String TABLE_NAME = "targeted_muscles";
+    public static class TargetedMuscleEntry implements BaseColumns {
+        public final static String TABLE_NAME = "targeted_muscle";
 
         // Names for external keys
         public final static String MUSCLE = "muscle";
@@ -54,16 +56,16 @@ public class DatabaseContract {
         public final static String MUSCLE_ID = MUSCLE + ID;
     }
 
-    public static class MechanicsTypesEntry implements BaseColumns {
-        public final static String TABLE_NAME = "mechanics_types";
+    public static class MechanicsTypeEntry implements BaseColumns {
+        public final static String TABLE_NAME = "mechanics_type";
 
         // Columns names
         public final static String _ID = ID;
         public final static String NAME = "name";
     }
 
-    public static class ExerciseTypesEntry implements BaseColumns {
-        public final static String TABLE_NAME = "exercise_types";
+    public static class ExerciseTypeEntry implements BaseColumns {
+        public final static String TABLE_NAME = "exercise_type";
 
         // Columns names
         public final static String _ID = ID;
@@ -78,22 +80,114 @@ public class DatabaseContract {
         public final static String NAME = "name";
     }
 
-    public static class BodyMeasurementsEntry implements BaseColumns {
-        public final static String TABLE_NAME = "body_measurements";
-        public static final Uri CONTENT_URI = Uri.withAppendedPath(BASE_CONTENT_URI, TABLE_NAME);
+    //______________________________ Training Programs ______________________________
 
-        // Names for external keys
-        public final static String BODY_PARAMETER = "body_parameter";
+    public static class TrainingProgramEntry implements BaseColumns {
+        public final static String TABLE_NAME = "training_program";
 
         // Columns names
         public final static String _ID = ID;
-        public final static String DATE = "date";
-        public final static String BODY_PARAMETER_ID = BODY_PARAMETER + ID;
-        public final static String VALUE = "value";
+        public final static String NAME = "name";
     }
 
-    public static class BodyParametersEntry implements BaseColumns {
-        public final static String TABLE_NAME = "body_parameters";
+    public static class TrainingProgramDayEntry implements BaseColumns {
+        public final static String TABLE_NAME = "training_program_day";
+
+        // Names for external keys
+        public final static String PROGRAM = "program";
+
+        // Columns names
+        public final static String _ID = ID;
+        public final static String NAME = "name";
+        public final static String PROGRAM_ID = PROGRAM + ID;
+    }
+
+    public static class TrainingProgramExerciseEntry implements BaseColumns {
+        public final static String TABLE_NAME = "training_program_exercise";
+
+        // Names for external keys
+        public final static String TRAINING_DAY = "training_day";
+        public final static String EXERCISE = "exercise";
+
+        // Columns names
+        public final static String _ID = ID;
+        public final static String TRAINING_DAY_ID = TRAINING_DAY + ID;
+        public final static String EXERCISE_ID = EXERCISE + ID;
+        public final static String NUMBER = "number";
+        public final static String STRATEGY = "strategy";
+    }
+
+    //______________________________ Training Sessions ______________________________
+
+    public static class TrainingSessionEntry implements BaseColumns {
+        public final static String TABLE_NAME = "training_session";
+
+        // Names for external keys
+        public final static String TRAINING_DAY = "training_day";
+
+        // Columns names
+        public final static String _ID = ID;
+        public final static String DATE_TIME = "date_time";
+        public final static String TRAINING_DAY_ID = TRAINING_DAY + ID;
+    }
+
+    public static class TrainingSessionExerciseEntry implements BaseColumns {
+        public final static String TABLE_NAME = "training_session_exercise";
+
+        // Names for external keys
+        public final static String SESSION = "session";
+        public final static String EXERCISE = "exercise";
+
+        // Columns names
+        public final static String _ID = ID;
+        public final static String SESSION_ID = SESSION + ID;
+        public final static String EXERCISE_ID = EXERCISE + ID;
+        public final static String NUMBER = "number";
+        public final static String PARAMS_BOOL_ARR = "params_bool_arr";
+    }
+
+    public static class TrainingSessionSetEntry implements BaseColumns {
+        public final static String TABLE_NAME = "training_session_set";
+
+        // Names for external keys
+        public final static String EXERCISE = "exercise";
+
+        // Columns names
+        public final static String _ID = ID;
+        public final static String EXERCISE_ID = EXERCISE + ID;
+        public final static String SECS_SINCE_START = "secs_since_start";
+        public final static String WEIGHT = "weight";
+        public final static String REPS = "reps";
+        public final static String TIME = "_time";
+        public final static String DISTANCE = "distance";
+    }
+
+    public static class ExerciseMeasurementParamEntry implements BaseColumns {
+        public final static String TABLE_NAME = "exercise_measurement_param";
+
+        // Columns names
+        public final static String _ID = ID;
+        public final static String NAME = "name";
+    }
+
+    //______________________________ Measurements ______________________________
+
+    public static class BodyMeasurementEntry implements BaseColumns {
+        public final static String TABLE_NAME = "body_measurement";
+        public static final Uri CONTENT_URI = Uri.withAppendedPath(BASE_CONTENT_URI, TABLE_NAME);
+
+        // Names for external keys
+        public final static String BODY_PARAM = "body_param";
+
+        // Columns names
+        public final static String _ID = ID;
+        public final static String DATE = "_date";
+        public final static String BODY_PARAM_ID = BODY_PARAM + ID;
+        public final static String VALUE = "_value";
+    }
+
+    public static class BodyMeasurementParamEntry implements BaseColumns {
+        public final static String TABLE_NAME = "body_measurement_param";
 
         // Columns names
         public final static String _ID = ID;

@@ -11,10 +11,13 @@
     <!-- NavigationView items -->
     <string name="exercises">Упражнения</string>
     <string name="training_programs">Программы</string>
+    <string name="training_sessions">Тренировки</string>
     <string name="measures">Замеры</string>
+    <string name="settings">Настройки</string>
+    <string name="about">О приложении</string>
 
     <!-- Options menu -->
-    <string name="action_settings">Settings</string>
+
 
     <!-- ExerciseDescriptionFragment -->
     <string name="exercise">Упражнение</string>
@@ -45,5 +48,8 @@
     <string name="actual_value">Фактическое значение</string>
     <string name="expected_value">Ожидаемое значение</string>
     <string name="percent">Процент</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 
 </resources>

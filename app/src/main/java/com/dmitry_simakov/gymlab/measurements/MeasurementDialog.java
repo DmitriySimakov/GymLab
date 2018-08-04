@@ -40,8 +40,8 @@ public class MeasurementDialog extends AppCompatDialogFragment
 
     public static final String CLASS_NAME = MeasurementDialog.class.getSimpleName();
 
-    private static final class BM extends DatabaseContract.BodyMeasurementsEntry {}
-    private static final class BP extends DatabaseContract.BodyParametersEntry {}
+    private static final class BM extends DatabaseContract.BodyMeasurementEntry {}
+    private static final class BMP extends DatabaseContract.BodyMeasurementParamEntry {}
 
     public static final String PARAMETER_ID = "parameter_id";
     public static final String MEASUREMENT_ID = "measurement_id";
@@ -189,17 +189,17 @@ public class MeasurementDialog extends AppCompatDialogFragment
             Cursor cursor = null;
             switch (getId()) {
                 case NEW_MEASUREMENT_LOADER_ID:
-                    cursor = mDatabase.rawQuery("SELECT "+ BP.NAME +", "+ BP.IMAGE +", "+ BP.INSTRUCTION +
-                                    " FROM "+ BP.TABLE_NAME +
-                                    " WHERE "+ BP._ID +" = ?",
+                    cursor = mDatabase.rawQuery("SELECT "+ BMP.NAME +", "+ BMP.IMAGE +", "+ BMP.INSTRUCTION +
+                                    " FROM "+ BMP.TABLE_NAME +
+                                    " WHERE "+ BMP._ID +" = ?",
                             new String[]{ String.valueOf(mId) });
                     break;
                 case EDIT_MEASUREMENT_LOADER_ID:
                     cursor = mDatabase.rawQuery("SELECT" +
-                                    " bp."+ BP.NAME +", bm."+ BM.DATE +", bp."+ BP.IMAGE +"," +
-                                    " bp."+ BP.INSTRUCTION +", bm."+ BM.VALUE +", bm."+ BM.BODY_PARAMETER_ID +
-                                    " FROM "+ BM.TABLE_NAME +" AS bm LEFT JOIN "+ BP.TABLE_NAME +" AS bp" +
-                                    " ON bm."+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                                    " bmp."+ BMP.NAME +", bm."+ BM.DATE +", bmp."+ BMP.IMAGE +"," +
+                                    " bmp."+ BMP.INSTRUCTION +", bm."+ BM.VALUE +", bm."+ BM.BODY_PARAM_ID +
+                                    " FROM "+ BM.TABLE_NAME +" AS bm LEFT JOIN "+ BMP.TABLE_NAME +" AS bmp" +
+                                    " ON bm."+ BM.BODY_PARAM_ID +" = bmp."+ BMP._ID +
                                     " WHERE bm."+ BM._ID +" = ?",
                             new String[]{ String.valueOf(mId) });
                     break;
@@ -229,14 +229,14 @@ public class MeasurementDialog extends AppCompatDialogFragment
             switch (getId()) {
                 case NEW_MEASUREMENT_CHECK_LOADER_ID:
                     cursor = mDatabase.rawQuery("SELECT "+ BM._ID +" FROM "+ BM.TABLE_NAME +
-                                    " WHERE "+ BM.DATE +" = ? AND "+ BM.BODY_PARAMETER_ID +" = ?",
+                                    " WHERE "+ BM.DATE +" = ? AND "+ BM.BODY_PARAM_ID +" = ?",
                             new String[]{ mDate, String.valueOf(mParameterId) });
                     break;
                 case EDIT_MEASUREMENT_CHECK_LOADER_ID:
                     cursor = mDatabase.rawQuery("SELECT "+ BM._ID +
                                     " FROM "+ BM.TABLE_NAME +
                                     " WHERE "+ BM.DATE +" = ?"+
-                                    " AND "+ BM.BODY_PARAMETER_ID +" = ?"+
+                                    " AND "+ BM.BODY_PARAM_ID +" = ?"+
                                     " AND "+ BM._ID +" <> ?",
                             new String[]{ mDate, String.valueOf(mParameterId), String.valueOf(mMeasurementId) });
                     break;
@@ -249,9 +249,9 @@ public class MeasurementDialog extends AppCompatDialogFragment
         Log.d(CLASS_NAME, "newMeasurementInit");
 
         if (c.moveToFirst()) {
-            mName        = c.getString(c.getColumnIndex(BP.NAME));
-            mImageName = c.getString(c.getColumnIndex(BP.IMAGE));
-            mInstruction = c.getString(c.getColumnIndex(BP.INSTRUCTION));
+            mName        = c.getString(c.getColumnIndex(BMP.NAME));
+            mImageName = c.getString(c.getColumnIndex(BMP.IMAGE));
+            mInstruction = c.getString(c.getColumnIndex(BMP.INSTRUCTION));
 
             Calendar calendar = Calendar.getInstance();
             int year  = calendar.get(Calendar.YEAR);
@@ -290,12 +290,12 @@ public class MeasurementDialog extends AppCompatDialogFragment
         Log.d(CLASS_NAME, "editMeasurementInit");
 
         if (c.moveToFirst()) {
-            mName        = c.getString(c.getColumnIndex(BP.NAME));
+            mName        = c.getString(c.getColumnIndex(BMP.NAME));
             mDate        = c.getString(c.getColumnIndex(BM.DATE));
-            mImageName   = c.getString(c.getColumnIndex(BP.IMAGE));
-            mInstruction = c.getString(c.getColumnIndex(BP.INSTRUCTION));
+            mImageName   = c.getString(c.getColumnIndex(BMP.IMAGE));
+            mInstruction = c.getString(c.getColumnIndex(BMP.INSTRUCTION));
             mValue       = c.getDouble(c.getColumnIndex(BM.VALUE));
-            mParameterId = c.getInt(c.getColumnIndex(BM.BODY_PARAMETER_ID));
+            mParameterId = c.getInt(c.getColumnIndex(BM.BODY_PARAM_ID));
 
             int year  = Integer.parseInt(mDate.substring(0, 4));
             int month = Integer.parseInt(mDate.substring(5, 7));

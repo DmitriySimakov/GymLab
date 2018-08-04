@@ -1,4 +1,4 @@
-package com.dmitry_simakov.gymlab;
+package com.dmitry_simakov.gymlab.exercises;
 
 import android.content.Context;
 import android.content.res.Resources;
@@ -18,6 +18,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.database.DatabaseContract;
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 
@@ -25,11 +26,11 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
 
     public static final String CLASS_NAME = ExerciseDescriptionFragment.class.getSimpleName();
 
-    private static final class Ex extends DatabaseContract.ExercisesEntry{}
-    private static final class M extends DatabaseContract.MusclesEntry{}
-    private static final class TM extends DatabaseContract.TargetedMusclesEntry{}
-    private static final class MT extends DatabaseContract.MechanicsTypesEntry{}
-    private static final class ET extends DatabaseContract.ExerciseTypesEntry{}
+    private static final class Ex extends DatabaseContract.ExerciseEntry {}
+    private static final class M extends DatabaseContract.MuscleEntry {}
+    private static final class TM extends DatabaseContract.TargetedMuscleEntry {}
+    private static final class MT extends DatabaseContract.MechanicsTypeEntry {}
+    private static final class ET extends DatabaseContract.ExerciseTypeEntry {}
     private static final class Eq extends DatabaseContract.EquipmentEntry{}
 
     private static final int MAIN_LOADER_ID = 0;

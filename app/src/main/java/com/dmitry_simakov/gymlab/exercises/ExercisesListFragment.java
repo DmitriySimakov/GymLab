@@ -1,4 +1,4 @@
-package com.dmitry_simakov.gymlab;
+package com.dmitry_simakov.gymlab.exercises;
 
 import android.content.Context;
 import android.content.res.Resources;
@@ -20,6 +20,7 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.SimpleCursorTreeAdapter;
 
+import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.database.DatabaseContract;
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 
@@ -29,8 +30,8 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
 
     public static final String CLASS_NAME = ExercisesListFragment.class.getSimpleName();
 
-    private static final class Ex extends DatabaseContract.ExercisesEntry{}
-    private static final class M extends DatabaseContract.MusclesEntry{}
+    private static final class Ex extends DatabaseContract.ExerciseEntry {}
+    private static final class M extends DatabaseContract.MuscleEntry {}
 
     private static final int GROUP_LOADER_ID = -1;
 
@@ -66,7 +67,7 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
                 Bundle bundle = new Bundle();
                 bundle.putInt(Ex._ID, (int)id);
                 fragment.setArguments(bundle);
-                getFragmentManager()
+                getActivity().getSupportFragmentManager()
                         .beginTransaction()
                         .replace(R.id.fragment_container, fragment)
                         .addToBackStack(null)
@@ -169,10 +170,10 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
 
         public static final String CLASS_NAME = ExercisesListFragment.CLASS_NAME +"."+ MyCursorTreeAdapter.class.getSimpleName();
 
-        private static final int GROUP_LAYOUT = R.layout.muscle_expandable_list_item;
+        private static final int GROUP_LAYOUT = R.layout.exercise_list_group_item;
         private static final String[] GROUP_FROM = { M.NAME, M.IMAGE };
         private static final int[] GROUP_TO = { R.id.muscle_name, R.id.muscle_image };
-        private static final int CHILD_LAYOUT = R.layout.exercise_list_item;
+        private static final int CHILD_LAYOUT = R.layout.exercise_list_child_item;
         private static final String[] CHILD_FROM = { Ex.NAME, Ex.IMAGE };
         private static final int[] CHILD_TO = { R.id.exercise_name, R.id.exercise_image };
 

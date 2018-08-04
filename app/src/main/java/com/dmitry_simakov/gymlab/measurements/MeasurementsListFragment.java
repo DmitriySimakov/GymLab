@@ -31,8 +31,8 @@ public class MeasurementsListFragment extends ListFragment
 
     public static final String CLASS_NAME = MeasurementsListFragment.class.getSimpleName();
 
-    private static final class BM extends DatabaseContract.BodyMeasurementsEntry {}
-    private static final class BP extends DatabaseContract.BodyParametersEntry {}
+    private static final class BM extends DatabaseContract.BodyMeasurementEntry {}
+    private static final class BMP extends DatabaseContract.BodyMeasurementParamEntry {}
 
     private SQLiteDatabase mDatabase;
     private SimpleCursorAdapter mCursorAdapter;
@@ -85,11 +85,13 @@ public class MeasurementsListFragment extends ListFragment
     @NonNull
     @Override
     public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
+        Log.d(CLASS_NAME, "onCreateLoader id: "+ id);
         return new MyCursorLoader(getContext(), mDatabase, mDate);
     }
 
     @Override
     public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
+        Log.d(CLASS_NAME, "onLoadFinished id: "+ loader.getId());
         mCursorAdapter.swapCursor(cursor);
     }
 
@@ -99,6 +101,8 @@ public class MeasurementsListFragment extends ListFragment
     }
 
     private static class MyCursorLoader extends CursorLoader {
+
+        public final String CLASS_NAME = MeasurementsListFragment.CLASS_NAME +"."+ MyCursorLoader.class.getSimpleName();
 
         private final ForceLoadContentObserver mObserver = new ForceLoadContentObserver();
 
@@ -114,40 +118,42 @@ public class MeasurementsListFragment extends ListFragment
 
         @Override
         public Cursor loadInBackground() {
+            Log.d(CLASS_NAME, "loadInBackground id: "+ getId());
+
             Cursor cursor;
             if (mDate == null) {
-                cursor = mDatabase.rawQuery("SELECT "+ BP._ID +", "+ BP.NAME +","+
+                cursor = mDatabase.rawQuery("SELECT "+ BMP._ID +", "+ BMP.NAME +","+
                                 " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
-                                " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                                " WHERE "+ BM.BODY_PARAM_ID +" = bmp."+ BMP._ID +
                                 " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.VALUE +","+
                                 " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
-                                " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                                " WHERE "+ BM.BODY_PARAM_ID +" = bmp."+ BMP._ID +
                                 " ORDER BY "+ BM.DATE +" DESC LIMIT 1, 1) AS prevVal,"+
                                 " (SELECT "+ BM.DATE +" FROM "+ BM.TABLE_NAME +
-                                " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                                " WHERE "+ BM.BODY_PARAM_ID +" = bmp."+ BMP._ID +
                                 " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.DATE +", "+
                                 " (SELECT "+ BM.DATE +" FROM "+ BM.TABLE_NAME +
-                                " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                                " WHERE "+ BM.BODY_PARAM_ID +" = bmp."+ BMP._ID +
                                 " ORDER BY "+ BM.DATE +" DESC LIMIT 1, 1) AS prevDate"+
-                                " FROM "+ BP.TABLE_NAME +" AS bp"+
-                                " ORDER BY "+ BP._ID,
+                                " FROM "+ BMP.TABLE_NAME +" AS bmp"+
+                                " ORDER BY "+ BMP._ID,
                         null
                 );
             } else {
-                cursor = mDatabase.rawQuery("SELECT bm."+ BM._ID +", bp."+ BP.NAME +", bm."+ BM.VALUE +","+
+                cursor = mDatabase.rawQuery("SELECT bm."+ BM._ID +", bmp."+ BMP.NAME +", bm."+ BM.VALUE +","+
                                 " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
-                                " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                                " WHERE "+ BM.BODY_PARAM_ID +" = bmp."+ BMP._ID +
                                 " AND julianday("+ BM.DATE +") < julianday(?)"+
                                 " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS prevVal, "+
                                 BM.DATE +"," +
                                 " (SELECT "+ BM.DATE +" FROM "+ BM.TABLE_NAME +
-                                " WHERE "+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                                " WHERE "+ BM.BODY_PARAM_ID +" = bmp."+ BMP._ID +
                                 " AND julianday("+ BM.DATE +") < julianday(?)"+
                                 " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS prevDate"+
-                                " FROM "+ BM.TABLE_NAME +" AS bm LEFT JOIN "+ BP.TABLE_NAME +" AS bp" +
-                                " ON bm."+ BM.BODY_PARAMETER_ID +" = bp."+ BP._ID +
+                                " FROM "+ BM.TABLE_NAME +" AS bm LEFT JOIN "+ BMP.TABLE_NAME +" AS bmp" +
+                                " ON bm."+ BM.BODY_PARAM_ID +" = bmp."+ BMP._ID +
                                 " WHERE bm."+ BM.DATE +" = ?"+
-                                " ORDER BY bp."+ BP._ID,
+                                " ORDER BY bmp."+ BMP._ID,
                         new String[]{ mDate, mDate, mDate }
                 );
             }
@@ -162,10 +168,12 @@ public class MeasurementsListFragment extends ListFragment
 
     private static class MyCursorAdapter extends SimpleCursorAdapter {
 
+        public final String CLASS_NAME = MeasurementsListFragment.CLASS_NAME +"."+ MyCursorAdapter.class.getSimpleName();
+
         private static final int LAYOUT = R.layout.measurement_list_item;
-        private static final String[] FROM = { BP.NAME, BM.VALUE, "prevVal", BM.DATE, "prevDate" };
+        private static final String[] FROM = { BMP.NAME, BM.VALUE, "prevVal", BM.DATE, "prevDate" };
         private static final int[] TO = { R.id.measure_parameter, R.id.measure_value,
-                R.id.measure_difference, R.id.measure_difference, R.id.measure_difference, };
+                R.id.measure_difference, R.id.measure_difference, R.id.measure_difference };
 
         MyCursorAdapter(Context context) {
             super(context, LAYOUT, null, FROM, TO, 0);
