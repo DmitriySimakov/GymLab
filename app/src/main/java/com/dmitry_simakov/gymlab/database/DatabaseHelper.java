@@ -17,6 +17,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String LOG_TAG = DatabaseHelper.class.getSimpleName();
 
+    private static final class TSS extends DatabaseContract.TrainingSessionSetEntry {}
     private static final class BM extends DatabaseContract.BodyMeasurementEntry {}
 
     private static final String DB_NAME = "gymlab.db";
@@ -80,21 +81,43 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         sInstance.getWritableDatabase().insert(ExerciseEntry.TABLE_NAME, null, contentValues);
     }
 
-    public static void insertMeasurement(String date, int body_parameter_id, double value) {
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(BM.DATE, date);
-        contentValues.put(BM.BODY_PARAM_ID, body_parameter_id);
-        contentValues.put(BM.VALUE, value);
+    public static void insertSet(int exercise_id, int secsSinceStart, int weight, int reps, int time, int distance) {
+        ContentValues cv = new ContentValues();
+        cv.put(TSS.EXERCISE_ID, exercise_id);
+        cv.put(TSS.SECS_SINCE_START, secsSinceStart);
+        cv.put(TSS.WEIGHT, weight);
+        cv.put(TSS.REPS, reps);
+        cv.put(TSS.TIME, time);
+        cv.put(TSS.DISTANCE, distance);
+        sInstance.getWritableDatabase().insert(TSS.TABLE_NAME, null, cv);
+    }
 
-        sInstance.getWritableDatabase().insert(BM.TABLE_NAME, null, contentValues);
+    public static void updateSet(int id, int weight, int reps, int time, int distance) {
+        ContentValues cv = new ContentValues();
+        cv.put(TSS.WEIGHT, weight);
+        cv.put(TSS.REPS, reps);
+        cv.put(TSS.TIME, time);
+        cv.put(TSS.DISTANCE, distance);
+        sInstance.getWritableDatabase().update(TSS.TABLE_NAME, cv, TSS._ID +" = ?", new String[]{ String.valueOf(id) });
+    }
+
+    public static void deleteSet(int id) {
+        sInstance.getWritableDatabase().delete(TSS.TABLE_NAME, TSS._ID +" = ?", new String[]{ String.valueOf(id) });
+    }
+
+    public static void insertMeasurement(String date, int body_parameter_id, double value) {
+        ContentValues cv = new ContentValues();
+        cv.put(BM.DATE, date);
+        cv.put(BM.BODY_PARAM_ID, body_parameter_id);
+        cv.put(BM.VALUE, value);
+        sInstance.getWritableDatabase().insert(BM.TABLE_NAME, null, cv);
     }
 
     public static void updateMeasurement(int id, String date, double value) {
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(BM.DATE, date);
-        contentValues.put(BM.VALUE, value);
-
-        sInstance.getWritableDatabase().update(BM.TABLE_NAME, contentValues, BM._ID +" = ?", new String[]{ String.valueOf(id) });
+        ContentValues cv = new ContentValues();
+        cv.put(BM.DATE, date);
+        cv.put(BM.VALUE, value);
+        sInstance.getWritableDatabase().update(BM.TABLE_NAME, cv, BM._ID +" = ?", new String[]{ String.valueOf(id) });
     }
 
     public static void deleteMeasurement(int id) {

@@ -51,6 +51,8 @@ public class MeasurementDialog extends AppCompatDialogFragment
     public static final int EDIT_MEASUREMENT_LOADER_ID = 2;
     public static final int EDIT_MEASUREMENT_CHECK_LOADER_ID = 22;
 
+    private AlertDialog mDialog;
+
     private TextView mDateTextView;
     private ImageView mImageView;
     private TextView mInstructionTextView;
@@ -62,7 +64,6 @@ public class MeasurementDialog extends AppCompatDialogFragment
 
     private SQLiteDatabase mDatabase;
 
-    private AlertDialog mDialog;
 
     public MeasurementDialog() {}
 
@@ -83,7 +84,7 @@ public class MeasurementDialog extends AppCompatDialogFragment
         AlertDialog.Builder builder = new AlertDialog.Builder(activity, R.style.DialogTheme);
 
         LayoutInflater inflater = activity.getLayoutInflater();
-        View view = inflater.inflate(R.layout.fragment_measurement_dialog, null);
+        View view = inflater.inflate(R.layout.dialog_measurement, null);
         view.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
