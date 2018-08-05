@@ -33,9 +33,6 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
     private static final class ET extends DatabaseContract.ExerciseTypeEntry {}
     private static final class Eq extends DatabaseContract.EquipmentEntry{}
 
-    private static final int MAIN_LOADER_ID = 0;
-    private static final int TARGETED_MUSCLES_LOADER_ID = 1;
-
     private ImageView mImageView;
     private TextView mExerciseNameTextView, mMainMuscleTextView, mTargetedMusclesTextView,
             mMechanicsTypeTextView, mExerciseTypeTextView, mEquipmentTextView, mDescriptionTextView,
@@ -66,8 +63,7 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         Log.d(CLASS_NAME, "onActivityCreated");
-        getLoaderManager().initLoader(MAIN_LOADER_ID, null, this);
-        getLoaderManager().initLoader(TARGETED_MUSCLES_LOADER_ID, null, this);
+        getLoaderManager().initLoader(0, null, this);
     }
 
     @NonNull
@@ -79,45 +75,32 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
     @Override
     public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor c) {
         if (c.moveToFirst()) {
-            switch (loader.getId()) {
-                case MAIN_LOADER_ID:
-                    String name          = c.getString(c.getColumnIndex(Ex.NAME));
-                    String imageName     = c.getString(c.getColumnIndex(Ex.IMAGE));
-                    String mainMuscle    = c.getString(c.getColumnIndex(Ex.MAIN_MUSCLE));
-                    String mechanicsType = c.getString(c.getColumnIndex(Ex.MECHANICS_TYPE));
-                    String exerciseType  = c.getString(c.getColumnIndex(Ex.EXERCISE_TYPE));
-                    String equipment     = c.getString(c.getColumnIndex(Ex.EQUIPMENT));
-                    String description   = c.getString(c.getColumnIndex(Ex.DESCRIPTION));
-                    String technique     = c.getString(c.getColumnIndex(Ex.TECHNIQUE));
+            String name            = c.getString(c.getColumnIndex(Ex.NAME));
+            String imageName       = c.getString(c.getColumnIndex(Ex.IMAGE));
+            String mainMuscle      = c.getString(c.getColumnIndex(Ex.MAIN_MUSCLE));
+            String targetedMuscles = c.getString(c.getColumnIndex("targeted_muscles"));
+            String mechanicsType   = c.getString(c.getColumnIndex(Ex.MECHANICS_TYPE));
+            String exerciseType    = c.getString(c.getColumnIndex(Ex.EXERCISE_TYPE));
+            String equipment       = c.getString(c.getColumnIndex(Ex.EQUIPMENT));
+            String description     = c.getString(c.getColumnIndex(Ex.DESCRIPTION));
+            String technique       = c.getString(c.getColumnIndex(Ex.TECHNIQUE));
 
-                    getActivity().setTitle(name);
-                    mExerciseNameTextView.setText(name);
-                    if (imageName != null) {
-                        Resources res = getContext().getResources();
-                        int resID = res.getIdentifier(imageName, "drawable", getContext().getPackageName());
-                        if (resID != 0) {
-                            mImageView.setImageDrawable(res.getDrawable(resID));
-                        }
-                    }
-                    mMainMuscleTextView.setText(mainMuscle);
-                    mMechanicsTypeTextView.setText(mechanicsType);
-                    mExerciseTypeTextView.setText(exerciseType);
-                    mEquipmentTextView.setText(equipment);
-                    mDescriptionTextView.setText(description);
-                    mTechniqueTextView.setText(technique);
-                    break;
-
-                case TARGETED_MUSCLES_LOADER_ID:
-                    StringBuilder sb = new StringBuilder();
-                    do {
-                        sb.append(c.getString(c.getColumnIndex(M.NAME)));
-                        sb.append(", ");
-                    } while (c.moveToNext());
-                    sb.setLength(sb.length() - 2); // Delete last delimiter
-
-                    mTargetedMusclesTextView.setText(sb.toString());
-                    break;
+            getActivity().setTitle(name);
+            mExerciseNameTextView.setText(name);
+            if (imageName != null) {
+                Resources res = getContext().getResources();
+                int resID = res.getIdentifier(imageName, "drawable", getContext().getPackageName());
+                if (resID != 0) {
+                    mImageView.setImageDrawable(res.getDrawable(resID));
+                }
             }
+            mMainMuscleTextView.setText(mainMuscle);
+            mTargetedMusclesTextView.setText(targetedMuscles);
+            mMechanicsTypeTextView.setText(mechanicsType);
+            mExerciseTypeTextView.setText(exerciseType);
+            mEquipmentTextView.setText(equipment);
+            mDescriptionTextView.setText(description);
+            mTechniqueTextView.setText(technique);
         }
     }
 
@@ -139,30 +122,22 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
         @Override
         public Cursor loadInBackground() {
             SQLiteDatabase db = DatabaseHelper.getInstance(getContext()).getReadableDatabase();
-            Cursor cursor = null;
-            switch (getId()) {
-                case MAIN_LOADER_ID:
-                    cursor = db.rawQuery("SELECT " +
-                                    Ex.NAME + ", " +
-                                    Ex.IMAGE + ", " +
-                                    "(SELECT " + M.NAME + " FROM " + M.TABLE_NAME + " WHERE " + M._ID + " = Ex." + Ex.MAIN_MUSCLE_ID + ") AS " + Ex.MAIN_MUSCLE + ", " +
-                                    "(SELECT " + MT.NAME + " FROM " + MT.TABLE_NAME + " WHERE " + MT._ID + " = Ex." + Ex.MECHANICS_TYPE_ID + ") AS " + Ex.MECHANICS_TYPE + ", " +
-                                    "(SELECT " + ET.NAME + " FROM " + ET.TABLE_NAME + " WHERE " + ET._ID + " = Ex." + Ex.EXERCISE_TYPE_ID + ") AS " + Ex.EXERCISE_TYPE + ", " +
-                                    "(SELECT " + Eq.NAME + " FROM " + Eq.TABLE_NAME + " WHERE " + Eq._ID + " = Ex." + Ex.EQUIPMENT_ID + ") AS " + Ex.EQUIPMENT + ", " +
-                                    Ex.DESCRIPTION + ", " +
-                                    Ex.TECHNIQUE + " " +
-                                    "FROM " + Ex.TABLE_NAME + " AS Ex " +
-                                    "WHERE " + Ex._ID + " = ?",
-                            new String[]{String.valueOf(mExerciseId)});
-                    break;
-                case TARGETED_MUSCLES_LOADER_ID:
-                    cursor = db.rawQuery("SELECT m." + M.NAME +
-                                    " FROM " + TM.TABLE_NAME + " AS tm LEFT JOIN " + M.TABLE_NAME + " AS m" +
-                                    " ON tm." + TM.MUSCLE_ID + " = m." + M._ID +
-                                    " WHERE tm." + TM.EXERCISE_ID + " = ?",
-                            new String[]{String.valueOf(mExerciseId)});
-                    break;
-            }
+            Cursor cursor = db.rawQuery("SELECT "+
+                            Ex.NAME +", "+
+                            Ex.IMAGE +", "+
+                            " (SELECT "+ M.NAME +" FROM "+ M.TABLE_NAME +" WHERE "+ M._ID +" = Ex."+ Ex.MAIN_MUSCLE_ID +") AS "+ Ex.MAIN_MUSCLE +", "+
+                            " (SELECT group_concat(m."+ M.NAME +", ', ')"+
+                                " FROM "+ TM.TABLE_NAME +" AS tm LEFT JOIN " + M.TABLE_NAME + " AS m" +
+                                " ON tm."+ TM.MUSCLE_ID +" = m." + M._ID +
+                                " WHERE tm." + TM.EXERCISE_ID + " = ?) AS targeted_muscles,"+
+                            " (SELECT "+ MT.NAME +" FROM "+ MT.TABLE_NAME +" WHERE "+ MT._ID +" = Ex."+ Ex.MECHANICS_TYPE_ID +") AS "+ Ex.MECHANICS_TYPE +", "+
+                            " (SELECT "+ ET.NAME +" FROM "+ ET.TABLE_NAME +" WHERE "+ ET._ID +" = Ex."+ Ex.EXERCISE_TYPE_ID +") AS "+ Ex.EXERCISE_TYPE +", "+
+                            " (SELECT "+ Eq.NAME +" FROM "+ Eq.TABLE_NAME +" WHERE "+ Eq._ID +" = Ex."+ Ex.EQUIPMENT_ID +") AS "+ Ex.EQUIPMENT +", "+
+                            Ex.DESCRIPTION +","+
+                            Ex.TECHNIQUE +
+                            " FROM "+ Ex.TABLE_NAME +" AS Ex "+
+                            " WHERE "+ Ex._ID +" = ?",
+                    new String[]{ String.valueOf(mExerciseId), String.valueOf(mExerciseId) });
 
             if (cursor != null) {
                 cursor.registerContentObserver(mObserver);
