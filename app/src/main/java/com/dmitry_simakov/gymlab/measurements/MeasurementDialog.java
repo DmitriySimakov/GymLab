@@ -53,10 +53,10 @@ public class MeasurementDialog extends AppCompatDialogFragment
 
     private AlertDialog mDialog;
 
-    private TextView mDateTextView;
+    private TextView mDateTV;
     private ImageView mImageView;
-    private TextView mInstructionTextView;
-    private EditText mValueEditText;
+    private TextView mInstructionTV;
+    private EditText mValueET;
 
     private String mName, mDate, mImageName, mInstruction;
     private int mParameterId, mMeasurementId;
@@ -84,11 +84,11 @@ public class MeasurementDialog extends AppCompatDialogFragment
         });
         builder.setView(view);
 
-        mDateTextView = view.findViewById(R.id.date);
+        mDateTV = view.findViewById(R.id.date);
 
         mImageView = view.findViewById(R.id.image);
-        mInstructionTextView = view.findViewById(R.id.description);
-        mValueEditText = view.findViewById(R.id.value);
+        mInstructionTV = view.findViewById(R.id.description);
+        mValueET = view.findViewById(R.id.value);
 
         builder.setPositiveButton("ОК", null);
         builder.setNegativeButton("Отмена", new DialogInterface.OnClickListener() {
@@ -249,7 +249,7 @@ public class MeasurementDialog extends AppCompatDialogFragment
             setDatePickerDialog(year, month, day);
 
             mDate = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime());
-            mDateTextView.setText(mDate);
+            mDateTV.setText(mDate);
 
             mDialog.setTitle(mName);
             if (mImageName != null) {
@@ -259,7 +259,7 @@ public class MeasurementDialog extends AppCompatDialogFragment
                     mImageView.setImageDrawable(res.getDrawable(resID));
                 }
             }
-            mInstructionTextView.setText(mInstruction);
+            mInstructionTV.setText(mInstruction);
 
             final LoaderManager.LoaderCallbacks<Cursor> callback = this;
             mDialog.getButton(Dialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
@@ -291,7 +291,7 @@ public class MeasurementDialog extends AppCompatDialogFragment
             int day   = Integer.parseInt(mDate.substring(8, 10));
             setDatePickerDialog(year, month, day);
 
-            mDateTextView.setText(mDate);
+            mDateTV.setText(mDate);
 
             mDialog.setTitle(mName);
             if (mImageName != null) {
@@ -301,8 +301,8 @@ public class MeasurementDialog extends AppCompatDialogFragment
                     mImageView.setImageDrawable(res.getDrawable(resID));
                 }
             }
-            mInstructionTextView.setText(mInstruction);
-            mValueEditText.setText(String.valueOf(mValue));
+            mInstructionTV.setText(mInstruction);
+            mValueET.setText(String.valueOf(mValue));
 
             final LoaderManager.LoaderCallbacks<Cursor> callback = this;
             mDialog.getButton(Dialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
@@ -364,10 +364,10 @@ public class MeasurementDialog extends AppCompatDialogFragment
     }
 
     private void setDatePickerDialog(final int year, final int month, final int day) {
-        mDateTextView.setOnClickListener(new View.OnClickListener() {
+        mDateTV.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Log.d(CLASS_NAME, "mDateTextView onClick");
+                Log.d(CLASS_NAME, "mDateTV onClick");
 
                 DatePickerDialog dialog = new DatePickerDialog(getContext(), R.style.DialogTheme, new DatePickerDialog.OnDateSetListener() {
                     public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
@@ -376,7 +376,7 @@ public class MeasurementDialog extends AppCompatDialogFragment
                         Calendar calendar = Calendar.getInstance();
                         calendar.set(year, monthOfYear, dayOfMonth);
                         mDate = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime());
-                        mDateTextView.setText(mDate);
+                        mDateTV.setText(mDate);
                     }
                 }, year, month - 1, day); // monthOfYear = month - 1
 
@@ -390,7 +390,7 @@ public class MeasurementDialog extends AppCompatDialogFragment
 
     private boolean validateValue() {
         try {
-            mValue = Double.parseDouble(String.valueOf(mValueEditText.getText()));
+            mValue = Double.parseDouble(String.valueOf(mValueET.getText()));
             if (mValue == 0) {
                 Toast.makeText(getContext(), "Параметр не может быть равен 0", Toast.LENGTH_LONG).show();
                 return false;
@@ -419,6 +419,6 @@ public class MeasurementDialog extends AppCompatDialogFragment
 
     private void hideKeyboard() {
         InputMethodManager imm = (InputMethodManager) getContext().getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.hideSoftInputFromWindow(mValueEditText.getWindowToken(), 0);
+        imm.hideSoftInputFromWindow(mValueET.getWindowToken(), 0);
     }
 }

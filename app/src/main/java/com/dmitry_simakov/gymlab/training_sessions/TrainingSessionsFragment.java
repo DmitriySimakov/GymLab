@@ -74,8 +74,7 @@ public class TrainingSessionsFragment extends Fragment
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "This function is not implemented yet.", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                new TrainingSessionDialog().show(getChildFragmentManager(), "NEW_TRAINING_SESSION_DIALOG");
             }
         });
 
