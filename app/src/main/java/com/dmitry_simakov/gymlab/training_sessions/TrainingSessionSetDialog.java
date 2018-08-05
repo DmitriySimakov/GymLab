@@ -23,6 +23,7 @@ import android.widget.Toast;
 import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.database.DatabaseContract;
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
+import com.dmitry_simakov.gymlab.measurements.MeasurementDialog;
 
 public class TrainingSessionSetDialog extends AppCompatDialogFragment
         implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -39,24 +40,11 @@ public class TrainingSessionSetDialog extends AppCompatDialogFragment
 
     private AlertDialog mDialog;
 
-    private EditText mWeightET;
-    private EditText mRepsET;
-    private EditText mTimeET;
-    private EditText mDistanceET;
-
-    private SQLiteDatabase mDatabase;
+    private EditText mWeightET, mRepsET, mTimeET, mDistanceET;
 
     private int mExerciseId, mSetId;
 
     public TrainingSessionSetDialog() {}
-
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        Log.d(CLASS_NAME, "onAttach");
-
-        mDatabase = DatabaseHelper.getInstance(context).getWritableDatabase();
-    }
 
     @NonNull
     @Override
@@ -97,8 +85,6 @@ public class TrainingSessionSetDialog extends AppCompatDialogFragment
         return builder.create();
     }
 
-
-
     @Override
     public void onStart() {
         super.onStart();
@@ -120,7 +106,7 @@ public class TrainingSessionSetDialog extends AppCompatDialogFragment
     @NonNull
     @Override
     public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
-        return new EditCursorLoader(getContext(), mDatabase, mSetId);
+        return new EditCursorLoader(getContext(), mSetId);
     }
 
     @Override
@@ -133,18 +119,17 @@ public class TrainingSessionSetDialog extends AppCompatDialogFragment
 
     private static class EditCursorLoader extends CursorLoader {
 
-        private SQLiteDatabase mDatabase;
         private int mSetId;
 
-        EditCursorLoader(Context context, SQLiteDatabase db, int setId) {
+        EditCursorLoader(Context context, int setId) {
             super(context);
-            mDatabase = db;
             mSetId = setId;
         }
 
         @Override
         public Cursor loadInBackground() {
-            return mDatabase.rawQuery("SELECT "+
+            SQLiteDatabase db = DatabaseHelper.getInstance(getContext()).getReadableDatabase();
+            return db.rawQuery("SELECT "+
                             TSS.WEIGHT +", "+ TSS.REPS +", "+ TSS.TIME +", "+ TSS.DISTANCE +" "+
                             " FROM "+ TSS.TABLE_NAME +" WHERE "+ TSS._ID +" = ?",
                     new String[]{ String.valueOf(mSetId) });
@@ -158,6 +143,7 @@ public class TrainingSessionSetDialog extends AppCompatDialogFragment
                 Log.d(CLASS_NAME, "positiveButton onClick");
                 DatabaseHelper.insertSet(mExerciseId, 0,
                         getValue(mWeightET), getValue(mRepsET), getValue(mTimeET), getValue(mDistanceET));
+                getContext().getContentResolver().notifyChange(TSS.CONTENT_URI, null);
                 mDialog.dismiss();
             }
         });
@@ -176,6 +162,7 @@ public class TrainingSessionSetDialog extends AppCompatDialogFragment
             public void onClick(View v) {
                 Log.d(CLASS_NAME, "positiveButton onClick");
                 DatabaseHelper.updateSet(mSetId, getValue(mWeightET), getValue(mRepsET), getValue(mTimeET), getValue(mDistanceET));
+                getContext().getContentResolver().notifyChange(TSS.CONTENT_URI, null);
                 mDialog.dismiss();
             }
         });

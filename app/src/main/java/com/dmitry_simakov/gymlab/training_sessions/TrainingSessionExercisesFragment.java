@@ -4,9 +4,14 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v4.widget.CursorAdapter;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.Log;
@@ -20,7 +25,8 @@ import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.database.DatabaseContract;
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 
-public class TrainingSessionExercisesFragment extends Fragment {
+public class TrainingSessionExercisesFragment extends Fragment
+        implements LoaderManager.LoaderCallbacks<Cursor> {
 
     public static final String CLASS_NAME = TrainingSessionExercisesFragment.class.getSimpleName();
 
@@ -28,7 +34,6 @@ public class TrainingSessionExercisesFragment extends Fragment {
     private static final class TSE extends DatabaseContract.TrainingSessionExerciseEntry {}
     private static final class E extends DatabaseContract.ExerciseEntry {}
 
-    private SQLiteDatabase mDatabase;
     private Cursor mCursor;
     private CursorAdapter mCursorAdapter;
 
@@ -46,23 +51,14 @@ public class TrainingSessionExercisesFragment extends Fragment {
             mSessionId = args.getInt(TS._ID);
         }
 
-        mDatabase = DatabaseHelper.getInstance(context).getWritableDatabase();
-        mCursor = mDatabase.rawQuery("SELECT tse."+ TSE._ID +", tse."+ TSE.PARAMS_BOOL_ARR +", "+
-                        "e."+ E.IMAGE +", e."+ E.NAME +
-                        " FROM "+ TSE.TABLE_NAME +" AS tse LEFT JOIN "+ E.TABLE_NAME +" AS e"+
-                        " ON tse."+ TSE.EXERCISE_ID +" = e."+ E._ID +
-                        " WHERE "+ TSE.SESSION_ID +" = ?"+
-                        " ORDER BY tse."+ TSE.NUMBER,
-                new String[]{ String.valueOf(mSessionId) });
-
         String[] groupFrom = { E.NAME };
         int[] groupTo = { android.R.id.text1 };
         mCursorAdapter = new SimpleCursorAdapter(context,
-                android.R.layout.simple_list_item_1, mCursor, groupFrom, groupTo, 0);
+                android.R.layout.simple_list_item_1, null, groupFrom, groupTo, 0);
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_training_session_exercises, container, false);
 
         ListView listView = view.findViewById(R.id.list_view);
@@ -97,4 +93,56 @@ public class TrainingSessionExercisesFragment extends Fragment {
         return view;
     }
 
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        getLoaderManager().initLoader(0, null, this);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (mCursor != null) mCursor.close();
+    }
+
+    @NonNull
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
+        return new MyCursorLoader(getContext(), mSessionId);
+    }
+
+    @Override
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
+        mCursor = cursor;
+        mCursorAdapter.swapCursor(cursor);
+    }
+
+    @Override
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {}
+
+    private static class MyCursorLoader extends CursorLoader {
+
+        public final String CLASS_NAME = TrainingSessionExercisesFragment.CLASS_NAME +"."+ MyCursorLoader.class.getSimpleName();
+
+        private int mSessionId;
+
+        MyCursorLoader(Context context, int sessionId) {
+            super(context);
+            mSessionId = sessionId;
+        }
+
+        @Override
+        public Cursor loadInBackground() {
+            Log.d(CLASS_NAME, "loadInBackground id: "+ getId());
+
+            SQLiteDatabase db = DatabaseHelper.getInstance(getContext()).getWritableDatabase();
+            return db.rawQuery("SELECT tse."+ TSE._ID +", tse."+ TSE.PARAMS_BOOL_ARR +", "+
+                            "e."+ E.IMAGE +", e."+ E.NAME +
+                            " FROM "+ TSE.TABLE_NAME +" AS tse LEFT JOIN "+ E.TABLE_NAME +" AS e"+
+                            " ON tse."+ TSE.EXERCISE_ID +" = e."+ E._ID +
+                            " WHERE "+ TSE.SESSION_ID +" = ?"+
+                            " ORDER BY tse."+ TSE.NUMBER,
+                    new String[]{ String.valueOf(mSessionId) });
+        }
+    }
 }

@@ -37,7 +37,6 @@ public class ProportionsCalculatorFragment extends Fragment
     private static final class BM extends DatabaseContract.BodyMeasurementEntry {}
     private static final class BMP extends DatabaseContract.BodyMeasurementParamEntry {}
 
-    private SQLiteDatabase mDatabase;
     private Cursor mCursor;
     private MyAdapter mAdapter;
 
@@ -47,9 +46,6 @@ public class ProportionsCalculatorFragment extends Fragment
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        Log.d(CLASS_NAME, "onAttach");
-
-        mDatabase = DatabaseHelper.getInstance(context).getWritableDatabase();
         mAdapter = new MyAdapter();
     }
 
@@ -113,7 +109,7 @@ public class ProportionsCalculatorFragment extends Fragment
     @Override
     public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
         Log.d(CLASS_NAME, "onCreateLoader id: "+ id);
-        return new MyCursorLoader(getContext(), mDatabase);
+        return new MyCursorLoader(getContext());
     }
 
     @Override
@@ -132,12 +128,8 @@ public class ProportionsCalculatorFragment extends Fragment
 
         private final ForceLoadContentObserver mObserver = new ForceLoadContentObserver();
 
-        private SQLiteDatabase mDatabase;
-
-
-        MyCursorLoader(Context context, SQLiteDatabase db) {
+        MyCursorLoader(Context context) {
             super(context);
-            mDatabase = db;
             setUri(BM.CONTENT_URI);
         }
 
@@ -145,7 +137,8 @@ public class ProportionsCalculatorFragment extends Fragment
         public Cursor loadInBackground() {
             Log.d(CLASS_NAME, "loadInBackground id: "+ getId());
 
-            Cursor cursor = mDatabase.rawQuery("SELECT "+ BMP._ID +", "+ BMP.NAME +","+ BMP.COEFFICIENT +","+
+            SQLiteDatabase db = DatabaseHelper.getInstance(getContext()).getReadableDatabase();
+            Cursor cursor = db.rawQuery("SELECT "+ BMP._ID +", "+ BMP.NAME +","+ BMP.COEFFICIENT +","+
                             " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
                             " WHERE "+ BM.BODY_PARAM_ID +" = bp."+ BMP._ID +
                             " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.VALUE +

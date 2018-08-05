@@ -5,9 +5,13 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v4.widget.CursorAdapter;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.Log;
@@ -21,13 +25,13 @@ import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.database.DatabaseContract;
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 
-public class TrainingSessionsFragment extends Fragment {
+public class TrainingSessionsFragment extends Fragment
+        implements LoaderManager.LoaderCallbacks<Cursor> {
 
     public static final String CLASS_NAME = TrainingSessionsFragment.class.getSimpleName();
 
     private static final class TS extends DatabaseContract.TrainingSessionEntry {}
 
-    private SQLiteDatabase mDatabase;
     private CursorAdapter mCursorAdapter;
 
     public TrainingSessionsFragment() {}
@@ -37,16 +41,10 @@ public class TrainingSessionsFragment extends Fragment {
         super.onAttach(context);
         Log.d(CLASS_NAME, "onAttach");
 
-        mDatabase = DatabaseHelper.getInstance(context).getWritableDatabase();
-
-        Cursor c = mDatabase.rawQuery("SELECT "+ TS._ID +", "+ TS.DATE_TIME +" "+
-                " FROM "+ TS.TABLE_NAME +
-                " ORDER BY "+ TS.DATE_TIME +" DESC", null);
-
         String[] groupFrom = { TS.DATE_TIME };
         int[] groupTo = { android.R.id.text1 };
         mCursorAdapter = new SimpleCursorAdapter(context,
-                android.R.layout.simple_list_item_1, c, groupFrom, groupTo, 0);
+                android.R.layout.simple_list_item_1, null, groupFrom, groupTo, 0);
     }
 
     @Override
@@ -84,4 +82,42 @@ public class TrainingSessionsFragment extends Fragment {
         return view;
     }
 
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        getLoaderManager().initLoader(0, null, this);
+    }
+
+    @NonNull
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
+        return new MyCursorLoader(getContext());
+    }
+
+    @Override
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
+        mCursorAdapter.swapCursor(cursor);
+    }
+
+    @Override
+    public void onLoaderReset(@NonNull Loader<Cursor> loader) {}
+
+    private static class MyCursorLoader extends CursorLoader {
+
+        public final String CLASS_NAME = TrainingSessionsFragment.CLASS_NAME +"."+ MyCursorLoader.class.getSimpleName();
+
+        MyCursorLoader(Context context) {
+            super(context);
+        }
+
+        @Override
+        public Cursor loadInBackground() {
+            Log.d(CLASS_NAME, "loadInBackground id: "+ getId());
+
+            SQLiteDatabase db = DatabaseHelper.getInstance(getContext()).getWritableDatabase();
+            return db.rawQuery("SELECT "+ TS._ID +", "+ TS.DATE_TIME +" "+
+                    " FROM "+ TS.TABLE_NAME +
+                    " ORDER BY "+ TS.DATE_TIME +" DESC", null);
+        }
+    }
 }

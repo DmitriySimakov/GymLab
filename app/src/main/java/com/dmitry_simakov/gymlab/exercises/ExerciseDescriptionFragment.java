@@ -36,30 +36,12 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
     private static final int MAIN_LOADER_ID = 0;
     private static final int TARGETED_MUSCLES_LOADER_ID = 1;
 
-    private TextView mExerciseNameTextView;
     private ImageView mImageView;
-    private TextView mMainMuscleTextView;
-    private TextView mTargetedMusclesTextView;
-    private TextView mMechanicsTypeTextView;
-    private TextView mExerciseTypeTextView;
-    private TextView mEquipmentTextView;
-    private TextView mDescriptionTextView;
-    private TextView mTechniqueTextView;
-
-    private SQLiteDatabase mDatabase;
-
-    private int mExerciseId;
+    private TextView mExerciseNameTextView, mMainMuscleTextView, mTargetedMusclesTextView,
+            mMechanicsTypeTextView, mExerciseTypeTextView, mEquipmentTextView, mDescriptionTextView,
+            mTechniqueTextView;
 
     public ExerciseDescriptionFragment() {}
-
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        Log.d(CLASS_NAME, "onAttach");
-
-        mDatabase = DatabaseHelper.getInstance(context).getWritableDatabase();
-        mExerciseId = getArguments().getInt(Ex._ID);
-    }
 
     @Override
     public View onCreateView(@NonNull final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -91,7 +73,7 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
     @NonNull
     @Override
     public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
-        return new MyCursorLoader(getContext(), mDatabase, mExerciseId);
+        return new MyCursorLoader(getContext(), getArguments().getInt(Ex._ID));
     }
 
     @Override
@@ -146,22 +128,21 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
 
         private final ForceLoadContentObserver mObserver = new ForceLoadContentObserver();
 
-        private SQLiteDatabase mDatabase;
         private int mExerciseId;
 
-        MyCursorLoader(Context context, SQLiteDatabase db, int exerciseId) {
+        MyCursorLoader(Context context, int exerciseId) {
             super(context);
-            mDatabase = db;
             mExerciseId = exerciseId;
             setUri(Ex.CONTENT_URI);
         }
 
         @Override
         public Cursor loadInBackground() {
+            SQLiteDatabase db = DatabaseHelper.getInstance(getContext()).getReadableDatabase();
             Cursor cursor = null;
             switch (getId()) {
                 case MAIN_LOADER_ID:
-                    cursor = mDatabase.rawQuery("SELECT " +
+                    cursor = db.rawQuery("SELECT " +
                                     Ex.NAME + ", " +
                                     Ex.IMAGE + ", " +
                                     "(SELECT " + M.NAME + " FROM " + M.TABLE_NAME + " WHERE " + M._ID + " = Ex." + Ex.MAIN_MUSCLE_ID + ") AS " + Ex.MAIN_MUSCLE + ", " +
@@ -175,7 +156,7 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
                             new String[]{String.valueOf(mExerciseId)});
                     break;
                 case TARGETED_MUSCLES_LOADER_ID:
-                    cursor = mDatabase.rawQuery("SELECT m." + M.NAME +
+                    cursor = db.rawQuery("SELECT m." + M.NAME +
                                     " FROM " + TM.TABLE_NAME + " AS tm LEFT JOIN " + M.TABLE_NAME + " AS m" +
                                     " ON tm." + TM.MUSCLE_ID + " = m." + M._ID +
                                     " WHERE tm." + TM.EXERCISE_ID + " = ?",

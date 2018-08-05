@@ -28,7 +28,6 @@ public class MeasurementsHistoryListFragment extends ListFragment
 
     private static final class BM extends DatabaseContract.BodyMeasurementEntry {}
 
-    private SQLiteDatabase mDatabase;
     private Cursor mCursor;
     SimpleCursorAdapter mCursorAdapter;
 
@@ -39,8 +38,6 @@ public class MeasurementsHistoryListFragment extends ListFragment
     public void onAttach(Context context) {
         super.onAttach(context);
         Log.d(CLASS_NAME, "onAttach");
-
-        mDatabase = DatabaseHelper.getInstance(context).getWritableDatabase();
 
         String[] groupFrom = { BM.DATE };
         int[] groupTo = { android.R.id.text1 };
@@ -81,7 +78,7 @@ public class MeasurementsHistoryListFragment extends ListFragment
     @Override
     public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
         Log.d(CLASS_NAME, "onCreateLoader id: "+ id);
-        return new MyCursorLoader(getContext(), mDatabase);
+        return new MyCursorLoader(getContext());
     }
 
     @Override
@@ -102,19 +99,15 @@ public class MeasurementsHistoryListFragment extends ListFragment
 
         private final ForceLoadContentObserver mObserver = new ForceLoadContentObserver();
 
-        private SQLiteDatabase mDatabase;
-
-        MyCursorLoader(Context context, SQLiteDatabase db) {
+        MyCursorLoader(Context context) {
             super(context);
-            mDatabase = db;
             setUri(BM.CONTENT_URI);
         }
 
         @Override
         public Cursor loadInBackground() {
-            Log.d(CLASS_NAME, "loadInBackground id: "+ getId());
-
-            Cursor cursor = mDatabase.rawQuery("SELECT "+ BM._ID +", "+ BM.DATE +" "+
+            SQLiteDatabase db = DatabaseHelper.getInstance(getContext()).getReadableDatabase();
+            Cursor cursor = db.rawQuery("SELECT "+ BM._ID +", "+ BM.DATE +" "+
                             " FROM "+ BM.TABLE_NAME +
                             " GROUP BY "+ BM.DATE +
                             " ORDER BY "+ BM.DATE +" DESC",
@@ -124,7 +117,6 @@ public class MeasurementsHistoryListFragment extends ListFragment
                 cursor.registerContentObserver(mObserver);
                 cursor.setNotificationUri(getContext().getContentResolver(), getUri());
             }
-
             return cursor;
         }
     }

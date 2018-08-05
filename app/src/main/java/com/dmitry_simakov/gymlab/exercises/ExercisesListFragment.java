@@ -35,7 +35,6 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
 
     private static final int GROUP_LOADER_ID = -1;
 
-    private SQLiteDatabase mDatabase;
     private MyCursorTreeAdapter mCursorTreeAdapter;
     private ExpandableListView mExerciseElv;
 
@@ -45,8 +44,6 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
     public void onAttach(Context context) {
         super.onAttach(context);
         Log.d(CLASS_NAME, "onAttach");
-
-        mDatabase = DatabaseHelper.getInstance(context).getReadableDatabase();
         mCursorTreeAdapter = new MyCursorTreeAdapter(context, this);
     }
 
@@ -93,7 +90,7 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         Log.d(CLASS_NAME, "onCreateLoader id: " + id);
-        return new MyCursorLoader(getContext(), mDatabase);
+        return new MyCursorLoader(getContext());
     }
 
     @Override
@@ -134,12 +131,10 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
         public static final String CLASS_NAME = ExercisesListFragment.CLASS_NAME +"."+ MyCursorLoader.class.getSimpleName();
 
         private ForceLoadContentObserver mObserver = new ForceLoadContentObserver();
-        private SQLiteDatabase mDatabase;
 
-        MyCursorLoader(Context context, SQLiteDatabase db) { // getId() returns wrong result
+        MyCursorLoader(Context context) {
             super(context);
             Log.d(CLASS_NAME, "constructor");
-            mDatabase = db;
         }
 
         @Override
@@ -147,13 +142,14 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
             int id = getId();
             Log.d(CLASS_NAME, "loadInBackground id: "+ id);
 
+            SQLiteDatabase db = DatabaseHelper.getInstance(getContext()).getReadableDatabase();
             Cursor cursor;
             if (id != GROUP_LOADER_ID) { // child loader
-                cursor = mDatabase.rawQuery("SELECT "+ Ex._ID +", "+ Ex.NAME +", "+ Ex.IMAGE +
+                cursor = db.rawQuery("SELECT "+ Ex._ID +", "+ Ex.NAME +", "+ Ex.IMAGE +
                                 " FROM "+ Ex.TABLE_NAME +" WHERE "+ Ex.MAIN_MUSCLE_ID +" = ?",
                         new String[]{ String.valueOf(id) });
             } else { // group loader
-                cursor = mDatabase.rawQuery("SELECT "+ M._ID +", "+ M.NAME +", "+ M.IMAGE +
+                cursor = db.rawQuery("SELECT "+ M._ID +", "+ M.NAME +", "+ M.IMAGE +
                         " FROM "+ M.TABLE_NAME + " ORDER BY "+ M._ID, null);
             }
 
@@ -161,7 +157,6 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
                 cursor.registerContentObserver(mObserver);
                 //cursor.setNotificationUri(getContext().getContentResolver(), getUri());
             }
-
             return cursor;
         }
     }

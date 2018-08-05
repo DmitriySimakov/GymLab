@@ -34,7 +34,6 @@ public class MeasurementsListFragment extends ListFragment
     private static final class BM extends DatabaseContract.BodyMeasurementEntry {}
     private static final class BMP extends DatabaseContract.BodyMeasurementParamEntry {}
 
-    private SQLiteDatabase mDatabase;
     private SimpleCursorAdapter mCursorAdapter;
 
     private String mDate;
@@ -45,8 +44,6 @@ public class MeasurementsListFragment extends ListFragment
     public void onAttach(Context context) {
         super.onAttach(context);
         Log.d(CLASS_NAME, "onAttach");
-
-        mDatabase = DatabaseHelper.getInstance(context).getWritableDatabase();
 
         Bundle args = getArguments();
         if (args != null) {
@@ -86,7 +83,7 @@ public class MeasurementsListFragment extends ListFragment
     @Override
     public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
         Log.d(CLASS_NAME, "onCreateLoader id: "+ id);
-        return new MyCursorLoader(getContext(), mDatabase, mDate);
+        return new MyCursorLoader(getContext(), mDate);
     }
 
     @Override
@@ -106,23 +103,20 @@ public class MeasurementsListFragment extends ListFragment
 
         private final ForceLoadContentObserver mObserver = new ForceLoadContentObserver();
 
-        private SQLiteDatabase mDatabase;
         private String mDate;
 
-        MyCursorLoader(Context context, SQLiteDatabase db, String date) {
+        MyCursorLoader(Context context, String date) {
             super(context);
-            mDatabase = db;
             mDate = date;
             setUri(BM.CONTENT_URI);
         }
 
         @Override
         public Cursor loadInBackground() {
-            Log.d(CLASS_NAME, "loadInBackground id: "+ getId());
-
+            SQLiteDatabase db = DatabaseHelper.getInstance(getContext()).getReadableDatabase();
             Cursor cursor;
             if (mDate == null) {
-                cursor = mDatabase.rawQuery("SELECT "+ BMP._ID +", "+ BMP.NAME +","+
+                cursor = db.rawQuery("SELECT "+ BMP._ID +", "+ BMP.NAME +","+
                                 " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
                                 " WHERE "+ BM.BODY_PARAM_ID +" = bmp."+ BMP._ID +
                                 " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.VALUE +","+
@@ -140,7 +134,7 @@ public class MeasurementsListFragment extends ListFragment
                         null
                 );
             } else {
-                cursor = mDatabase.rawQuery("SELECT bm."+ BM._ID +", bmp."+ BMP.NAME +", bm."+ BM.VALUE +","+
+                cursor = db.rawQuery("SELECT bm."+ BM._ID +", bmp."+ BMP.NAME +", bm."+ BM.VALUE +","+
                                 " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
                                 " WHERE "+ BM.BODY_PARAM_ID +" = bmp."+ BMP._ID +
                                 " AND julianday("+ BM.DATE +") < julianday(?)"+
@@ -161,7 +155,6 @@ public class MeasurementsListFragment extends ListFragment
                 cursor.registerContentObserver(mObserver);
                 cursor.setNotificationUri(getContext().getContentResolver(), getUri());
             }
-
             return cursor;
         }
     }

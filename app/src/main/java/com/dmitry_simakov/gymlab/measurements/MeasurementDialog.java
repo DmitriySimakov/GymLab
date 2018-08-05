@@ -62,18 +62,8 @@ public class MeasurementDialog extends AppCompatDialogFragment
     private int mParameterId, mMeasurementId;
     private double mValue;
 
-    private SQLiteDatabase mDatabase;
-
 
     public MeasurementDialog() {}
-
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-        Log.d(CLASS_NAME, "onAttach");
-
-        mDatabase = DatabaseHelper.getInstance(context).getWritableDatabase();
-    }
 
     @NonNull
     @Override
@@ -139,14 +129,14 @@ public class MeasurementDialog extends AppCompatDialogFragment
         CursorLoader loader = null;
         switch (id) {
             case NEW_MEASUREMENT_LOADER_ID:
-                loader = new InitCursorLoader(getContext(), mDatabase, mParameterId);
+                loader = new InitCursorLoader(getContext(), mParameterId);
                 break;
             case EDIT_MEASUREMENT_LOADER_ID:
-                loader = new InitCursorLoader(getContext(), mDatabase, mMeasurementId);
+                loader = new InitCursorLoader(getContext(), mMeasurementId);
                 break;
             case NEW_MEASUREMENT_CHECK_LOADER_ID:
             case EDIT_MEASUREMENT_CHECK_LOADER_ID:
-                loader = new CheckCursorLoader(getContext(), mDatabase,
+                loader = new CheckCursorLoader(getContext(),
                         String.valueOf(mMeasurementId), String.valueOf(mParameterId), mDate);
                 break;
         }
@@ -176,27 +166,26 @@ public class MeasurementDialog extends AppCompatDialogFragment
 
     private static class InitCursorLoader extends CursorLoader {
 
-        private SQLiteDatabase mDatabase;
         private int mId;
 
-        InitCursorLoader(Context context, SQLiteDatabase db, int id) {
+        InitCursorLoader(Context context, int id) {
             super(context);
-            mDatabase = db;
             mId = id;
         }
 
         @Override
         public Cursor loadInBackground() {
+            SQLiteDatabase db = DatabaseHelper.getInstance(getContext()).getReadableDatabase();
             Cursor cursor = null;
             switch (getId()) {
                 case NEW_MEASUREMENT_LOADER_ID:
-                    cursor = mDatabase.rawQuery("SELECT "+ BMP.NAME +", "+ BMP.IMAGE +", "+ BMP.INSTRUCTION +
+                    cursor = db.rawQuery("SELECT "+ BMP.NAME +", "+ BMP.IMAGE +", "+ BMP.INSTRUCTION +
                                     " FROM "+ BMP.TABLE_NAME +
                                     " WHERE "+ BMP._ID +" = ?",
                             new String[]{ String.valueOf(mId) });
                     break;
                 case EDIT_MEASUREMENT_LOADER_ID:
-                    cursor = mDatabase.rawQuery("SELECT" +
+                    cursor = db.rawQuery("SELECT" +
                                     " bmp."+ BMP.NAME +", bm."+ BM.DATE +", bmp."+ BMP.IMAGE +"," +
                                     " bmp."+ BMP.INSTRUCTION +", bm."+ BM.VALUE +", bm."+ BM.BODY_PARAM_ID +
                                     " FROM "+ BM.TABLE_NAME +" AS bm LEFT JOIN "+ BMP.TABLE_NAME +" AS bmp" +
@@ -211,14 +200,12 @@ public class MeasurementDialog extends AppCompatDialogFragment
 
     private static class CheckCursorLoader extends CursorLoader {
 
-        private SQLiteDatabase mDatabase;
         private String mMeasurementId;
         private String mParameterId;
         private String mDate;
 
-        CheckCursorLoader(Context context, SQLiteDatabase db, String measurementId, String parameterId, String date) {
+        CheckCursorLoader(Context context, String measurementId, String parameterId, String date) {
             super(context);
-            mDatabase = db;
             mMeasurementId = measurementId;
             mParameterId = parameterId;
             mDate = date;
@@ -226,15 +213,16 @@ public class MeasurementDialog extends AppCompatDialogFragment
 
         @Override
         public Cursor loadInBackground() {
+            SQLiteDatabase db = DatabaseHelper.getInstance(getContext()).getReadableDatabase();
             Cursor cursor = null;
             switch (getId()) {
                 case NEW_MEASUREMENT_CHECK_LOADER_ID:
-                    cursor = mDatabase.rawQuery("SELECT "+ BM._ID +" FROM "+ BM.TABLE_NAME +
+                    cursor = db.rawQuery("SELECT "+ BM._ID +" FROM "+ BM.TABLE_NAME +
                                     " WHERE "+ BM.DATE +" = ? AND "+ BM.BODY_PARAM_ID +" = ?",
                             new String[]{ mDate, String.valueOf(mParameterId) });
                     break;
                 case EDIT_MEASUREMENT_CHECK_LOADER_ID:
-                    cursor = mDatabase.rawQuery("SELECT "+ BM._ID +
+                    cursor = db.rawQuery("SELECT "+ BM._ID +
                                     " FROM "+ BM.TABLE_NAME +
                                     " WHERE "+ BM.DATE +" = ?"+
                                     " AND "+ BM.BODY_PARAM_ID +" = ?"+
