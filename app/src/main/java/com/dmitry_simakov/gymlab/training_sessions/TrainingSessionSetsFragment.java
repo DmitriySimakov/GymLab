@@ -153,6 +153,7 @@ public class TrainingSessionSetsFragment extends Fragment
                     new String[]{ String.valueOf(mExerciseId) });
 
             if (cursor != null) {
+                cursor.getCount(); // Fill cursor window
                 cursor.registerContentObserver(mObserver);
                 cursor.setNotificationUri(getContext().getContentResolver(), getUri());
             }

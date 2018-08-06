@@ -194,6 +194,9 @@ public class MeasurementDialog extends AppCompatDialogFragment
                             new String[]{ String.valueOf(mId) });
                     break;
             }
+            if (cursor != null) {
+                cursor.getCount(); // Fill cursor window
+            }
             return cursor;
         }
     }
@@ -230,6 +233,9 @@ public class MeasurementDialog extends AppCompatDialogFragment
                             new String[]{ mDate, String.valueOf(mParameterId), String.valueOf(mMeasurementId) });
                     break;
             }
+            if (cursor != null) {
+                cursor.getCount(); // Fill cursor window
+            }
             return cursor;
         }
     }
@@ -244,9 +250,9 @@ public class MeasurementDialog extends AppCompatDialogFragment
 
             Calendar calendar = Calendar.getInstance();
             int year  = calendar.get(Calendar.YEAR);
-            int month = calendar.get(Calendar.MONTH) + 1; //  month = monthOfYear + 1
+            int monthOfYear = calendar.get(Calendar.MONTH);
             int day   = calendar.get(Calendar.DAY_OF_MONTH);
-            setDatePickerDialog(year, month, day);
+            setDatePickerDialog(year, monthOfYear, day);
 
             mDate = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime());
             mDateTV.setText(mDate);
@@ -287,9 +293,9 @@ public class MeasurementDialog extends AppCompatDialogFragment
             mParameterId = c.getInt(c.getColumnIndex(BM.BODY_PARAM_ID));
 
             int year  = Integer.parseInt(mDate.substring(0, 4));
-            int month = Integer.parseInt(mDate.substring(5, 7));
+            int monthOfYear = Integer.parseInt(mDate.substring(5, 7)) - 1;
             int day   = Integer.parseInt(mDate.substring(8, 10));
-            setDatePickerDialog(year, month, day);
+            setDatePickerDialog(year, monthOfYear, day);
 
             mDateTV.setText(mDate);
 
@@ -316,6 +322,31 @@ public class MeasurementDialog extends AppCompatDialogFragment
                 }
             });
         }
+    }
+
+    private void setDatePickerDialog(final int year, final int monthOfYear, final int day) {
+        mDateTV.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(CLASS_NAME, "mDateTV onClick");
+
+                DatePickerDialog dialog = new DatePickerDialog(getContext(), R.style.DialogTheme, new DatePickerDialog.OnDateSetListener() {
+                    public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
+                        Log.d(CLASS_NAME, "DatePickerDialog onDateSet");
+
+                        Calendar calendar = Calendar.getInstance();
+                        calendar.set(year, monthOfYear, dayOfMonth);
+                        mDate = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime());
+                        mDateTV.setText(mDate);
+                    }
+                }, year, monthOfYear, day);
+
+                DatePicker datePicker = dialog.getDatePicker();
+                datePicker.setMinDate(0);
+                datePicker.setMaxDate(new Date().getTime() + 60*60*1000);
+                dialog.show();
+            }
+        });
     }
 
     private void newMeasurementCheck(Cursor c) {
@@ -361,31 +392,6 @@ public class MeasurementDialog extends AppCompatDialogFragment
             getContext().getContentResolver().notifyChange(BM.CONTENT_URI, null);
             mDialog.dismiss();
         }
-    }
-
-    private void setDatePickerDialog(final int year, final int month, final int day) {
-        mDateTV.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.d(CLASS_NAME, "mDateTV onClick");
-
-                DatePickerDialog dialog = new DatePickerDialog(getContext(), R.style.DialogTheme, new DatePickerDialog.OnDateSetListener() {
-                    public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
-                        Log.d(CLASS_NAME, "DatePickerDialog onDateSet");
-
-                        Calendar calendar = Calendar.getInstance();
-                        calendar.set(year, monthOfYear, dayOfMonth);
-                        mDate = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime());
-                        mDateTV.setText(mDate);
-                    }
-                }, year, month - 1, day); // monthOfYear = month - 1
-
-                DatePicker datePicker = dialog.getDatePicker();
-                datePicker.setMinDate(0);
-                datePicker.setMaxDate(new Date().getTime() + 60*60*1000);
-                dialog.show();
-            }
-        });
     }
 
     private boolean validateValue() {

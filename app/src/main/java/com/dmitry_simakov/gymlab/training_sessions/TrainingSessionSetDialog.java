@@ -129,10 +129,14 @@ public class TrainingSessionSetDialog extends AppCompatDialogFragment
         @Override
         public Cursor loadInBackground() {
             SQLiteDatabase db = DatabaseHelper.getInstance(getContext()).getReadableDatabase();
-            return db.rawQuery("SELECT "+
+            Cursor cursor = db.rawQuery("SELECT "+
                             TSS.WEIGHT +", "+ TSS.REPS +", "+ TSS.TIME +", "+ TSS.DISTANCE +" "+
                             " FROM "+ TSS.TABLE_NAME +" WHERE "+ TSS._ID +" = ?",
                     new String[]{ String.valueOf(mSetId) });
+            if (cursor != null) {
+                cursor.getCount(); // Fill cursor window
+            }
+            return cursor;
         }
     }
 

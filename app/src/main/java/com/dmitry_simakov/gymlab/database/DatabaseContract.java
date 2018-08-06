@@ -114,6 +114,7 @@ public class DatabaseContract {
         public final static String TRAINING_DAY_ID = TRAINING_DAY + ID;
         public final static String EXERCISE_ID = EXERCISE + ID;
         public final static String NUMBER = "number";
+        public final static String PARAMS_BOOL_ARR = "params_bool_arr";
         public final static String STRATEGY = "strategy";
     }
 
@@ -121,6 +122,7 @@ public class DatabaseContract {
 
     public static class TrainingSessionEntry implements BaseColumns {
         public final static String TABLE_NAME = "training_session";
+        public static final Uri CONTENT_URI = Uri.withAppendedPath(BASE_CONTENT_URI, TABLE_NAME);
 
         // Names for external keys
         public final static String TRAINING_DAY = "training_day";

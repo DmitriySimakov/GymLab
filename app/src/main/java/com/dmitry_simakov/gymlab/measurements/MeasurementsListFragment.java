@@ -152,6 +152,7 @@ public class MeasurementsListFragment extends ListFragment
                 );
             }
             if (cursor != null) {
+                cursor.getCount(); // Fill cursor window
                 cursor.registerContentObserver(mObserver);
                 cursor.setNotificationUri(getContext().getContentResolver(), getUri());
             }

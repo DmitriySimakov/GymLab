@@ -154,6 +154,7 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
             }
 
             if (cursor != null) {
+                cursor.getCount(); // Fill cursor window
                 cursor.registerContentObserver(mObserver);
                 //cursor.setNotificationUri(getContext().getContentResolver(), getUri());
             }

@@ -127,7 +127,7 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
                             Ex.IMAGE +", "+
                             " (SELECT "+ M.NAME +" FROM "+ M.TABLE_NAME +" WHERE "+ M._ID +" = Ex."+ Ex.MAIN_MUSCLE_ID +") AS "+ Ex.MAIN_MUSCLE +", "+
                             " (SELECT group_concat(m."+ M.NAME +", ', ')"+
-                                " FROM "+ TM.TABLE_NAME +" AS tm LEFT JOIN " + M.TABLE_NAME + " AS m" +
+                                " FROM "+ TM.TABLE_NAME +" AS tm LEFT JOIN "+ M.TABLE_NAME +" AS m"+
                                 " ON tm."+ TM.MUSCLE_ID +" = m." + M._ID +
                                 " WHERE tm." + TM.EXERCISE_ID + " = ?) AS targeted_muscles,"+
                             " (SELECT "+ MT.NAME +" FROM "+ MT.TABLE_NAME +" WHERE "+ MT._ID +" = Ex."+ Ex.MECHANICS_TYPE_ID +") AS "+ Ex.MECHANICS_TYPE +", "+
@@ -140,6 +140,7 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
                     new String[]{ String.valueOf(mExerciseId), String.valueOf(mExerciseId) });
 
             if (cursor != null) {
+                cursor.getCount(); // Fill cursor window
                 cursor.registerContentObserver(mObserver);
                 cursor.setNotificationUri(getContext().getContentResolver(), getUri());
             }

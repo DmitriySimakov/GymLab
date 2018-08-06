@@ -24,6 +24,7 @@ import android.widget.ListView;
 import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.database.DatabaseContract;
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
+import com.dmitry_simakov.gymlab.exercises.ExerciseDescriptionFragment;
 
 public class TrainingSessionsFragment extends Fragment
         implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -105,8 +106,11 @@ public class TrainingSessionsFragment extends Fragment
 
         public final String CLASS_NAME = TrainingSessionsFragment.CLASS_NAME +"."+ MyCursorLoader.class.getSimpleName();
 
+        private final ForceLoadContentObserver mObserver = new ForceLoadContentObserver();
+
         MyCursorLoader(Context context) {
             super(context);
+            setUri(TS.CONTENT_URI);
         }
 
         @Override
@@ -114,9 +118,16 @@ public class TrainingSessionsFragment extends Fragment
             Log.d(CLASS_NAME, "loadInBackground id: "+ getId());
 
             SQLiteDatabase db = DatabaseHelper.getInstance(getContext()).getWritableDatabase();
-            return db.rawQuery("SELECT "+ TS._ID +", "+ TS.DATE_TIME +" "+
+            Cursor cursor = db.rawQuery("SELECT "+ TS._ID +", "+ TS.DATE_TIME +" "+
                     " FROM "+ TS.TABLE_NAME +
                     " ORDER BY "+ TS.DATE_TIME +" DESC", null);
+
+            if (cursor != null) {
+                cursor.getCount(); // Fill cursor window
+                cursor.registerContentObserver(mObserver);
+                cursor.setNotificationUri(getContext().getContentResolver(), getUri());
+            }
+            return cursor;
         }
     }
 }

@@ -6,19 +6,16 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
-import com.dmitry_simakov.gymlab.database.DatabaseContract.ExerciseEntry;
-
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import com.dmitry_simakov.gymlab.database.DatabaseContract.*;
+
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String LOG_TAG = DatabaseHelper.class.getSimpleName();
-
-    private static final class TSS extends DatabaseContract.TrainingSessionSetEntry {}
-    private static final class BM extends DatabaseContract.BodyMeasurementEntry {}
 
     private static final String DB_NAME = "gymlab.db";
     private static final int DB_VERSION = 1;
@@ -72,55 +69,70 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
-    private static void insertExercise(String name, int majorMuscles, String description) {
+    private static long insertExercise(String name, int majorMuscles, String description) {
         ContentValues contentValues = new ContentValues();
         contentValues.put(ExerciseEntry.NAME, name);
         contentValues.put(ExerciseEntry.MAIN_MUSCLE_ID, majorMuscles);
         contentValues.put(ExerciseEntry.DESCRIPTION, description);
-
-        sInstance.getWritableDatabase().insert(ExerciseEntry.TABLE_NAME, null, contentValues);
+        return sInstance.getWritableDatabase().insert(ExerciseEntry.TABLE_NAME, null, contentValues);
     }
 
-    public static void insertSet(int exercise_id, int secsSinceStart, int weight, int reps, int time, int distance) {
+    public static long insertTrainingSession(ContentValues cv) {
+        return sInstance.getWritableDatabase().insert(TrainingSessionEntry.TABLE_NAME, null, cv);
+    }
+
+    public static long insertExerciseIntoSession(int session_id, int exercise_id, int number) {
         ContentValues cv = new ContentValues();
-        cv.put(TSS.EXERCISE_ID, exercise_id);
-        cv.put(TSS.SECS_SINCE_START, secsSinceStart);
-        cv.put(TSS.WEIGHT, weight);
-        cv.put(TSS.REPS, reps);
-        cv.put(TSS.TIME, time);
-        cv.put(TSS.DISTANCE, distance);
-        sInstance.getWritableDatabase().insert(TSS.TABLE_NAME, null, cv);
+        cv.put(TrainingSessionExerciseEntry.SESSION_ID, session_id);
+        cv.put(TrainingSessionExerciseEntry.EXERCISE_ID, exercise_id);
+        cv.put(TrainingSessionExerciseEntry.NUMBER, number);
+        return sInstance.getWritableDatabase().insert(TrainingSessionExerciseEntry.TABLE_NAME, null, cv);
+    }
+
+    public static long insertSet(int exercise_id, int secsSinceStart, int weight, int reps, int time, int distance) {
+        ContentValues cv = new ContentValues();
+        cv.put(TrainingSessionSetEntry.EXERCISE_ID, exercise_id);
+        cv.put(TrainingSessionSetEntry.SECS_SINCE_START, secsSinceStart);
+        cv.put(TrainingSessionSetEntry.WEIGHT, weight);
+        cv.put(TrainingSessionSetEntry.REPS, reps);
+        cv.put(TrainingSessionSetEntry.TIME, time);
+        cv.put(TrainingSessionSetEntry.DISTANCE, distance);
+        return sInstance.getWritableDatabase().insert(TrainingSessionSetEntry.TABLE_NAME, null, cv);
     }
 
     public static void updateSet(int id, int weight, int reps, int time, int distance) {
         ContentValues cv = new ContentValues();
-        cv.put(TSS.WEIGHT, weight);
-        cv.put(TSS.REPS, reps);
-        cv.put(TSS.TIME, time);
-        cv.put(TSS.DISTANCE, distance);
-        sInstance.getWritableDatabase().update(TSS.TABLE_NAME, cv, TSS._ID +" = ?", new String[]{ String.valueOf(id) });
+        cv.put(TrainingSessionSetEntry.WEIGHT, weight);
+        cv.put(TrainingSessionSetEntry.REPS, reps);
+        cv.put(TrainingSessionSetEntry.TIME, time);
+        cv.put(TrainingSessionSetEntry.DISTANCE, distance);
+        sInstance.getWritableDatabase().update(TrainingSessionSetEntry.TABLE_NAME, cv,
+                TrainingSessionSetEntry._ID +" = ?", new String[]{ String.valueOf(id) });
     }
 
     public static void deleteSet(int id) {
-        sInstance.getWritableDatabase().delete(TSS.TABLE_NAME, TSS._ID +" = ?", new String[]{ String.valueOf(id) });
+        sInstance.getWritableDatabase().delete(TrainingSessionSetEntry.TABLE_NAME,
+                TrainingSessionSetEntry._ID +" = ?", new String[]{ String.valueOf(id) });
     }
 
-    public static void insertMeasurement(String date, int body_parameter_id, double value) {
+    public static long insertMeasurement(String date, int body_parameter_id, double value) {
         ContentValues cv = new ContentValues();
-        cv.put(BM.DATE, date);
-        cv.put(BM.BODY_PARAM_ID, body_parameter_id);
-        cv.put(BM.VALUE, value);
-        sInstance.getWritableDatabase().insert(BM.TABLE_NAME, null, cv);
+        cv.put(BodyMeasurementEntry.DATE, date);
+        cv.put(BodyMeasurementEntry.BODY_PARAM_ID, body_parameter_id);
+        cv.put(BodyMeasurementEntry.VALUE, value);
+        return sInstance.getWritableDatabase().insert(BodyMeasurementEntry.TABLE_NAME, null, cv);
     }
 
     public static void updateMeasurement(int id, String date, double value) {
         ContentValues cv = new ContentValues();
-        cv.put(BM.DATE, date);
-        cv.put(BM.VALUE, value);
-        sInstance.getWritableDatabase().update(BM.TABLE_NAME, cv, BM._ID +" = ?", new String[]{ String.valueOf(id) });
+        cv.put(BodyMeasurementEntry.DATE, date);
+        cv.put(BodyMeasurementEntry.VALUE, value);
+        sInstance.getWritableDatabase().update(BodyMeasurementEntry.TABLE_NAME, cv,
+                BodyMeasurementEntry._ID +" = ?", new String[]{ String.valueOf(id) });
     }
 
     public static void deleteMeasurement(int id) {
-        sInstance.getWritableDatabase().delete(BM.TABLE_NAME, BM._ID +" = ?", new String[]{ String.valueOf(id) });
+        sInstance.getWritableDatabase().delete(BodyMeasurementEntry.TABLE_NAME,
+                BodyMeasurementEntry._ID +" = ?", new String[]{ String.valueOf(id) });
     }
 }

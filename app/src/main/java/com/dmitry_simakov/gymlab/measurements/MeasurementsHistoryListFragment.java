@@ -114,6 +114,7 @@ public class MeasurementsHistoryListFragment extends ListFragment
                     null);
 
             if (cursor != null) {
+                cursor.getCount(); // Fill cursor window
                 cursor.registerContentObserver(mObserver);
                 cursor.setNotificationUri(getContext().getContentResolver(), getUri());
             }

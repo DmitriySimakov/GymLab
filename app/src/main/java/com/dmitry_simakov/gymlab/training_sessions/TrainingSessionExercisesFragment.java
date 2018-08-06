@@ -30,14 +30,18 @@ public class TrainingSessionExercisesFragment extends Fragment
 
     public static final String CLASS_NAME = TrainingSessionExercisesFragment.class.getSimpleName();
 
+    private static final int SESSION_LOADER_ID = 0;
+    private static final int PROGRAM_DAY_LOADER_ID = 1;
+
     private static final class TS extends DatabaseContract.TrainingSessionEntry {}
     private static final class TSE extends DatabaseContract.TrainingSessionExerciseEntry {}
+    private static final class TPE extends DatabaseContract.TrainingProgramExerciseEntry {}
     private static final class E extends DatabaseContract.ExerciseEntry {}
 
     private Cursor mCursor;
     private CursorAdapter mCursorAdapter;
 
-    private int mSessionId;
+    private Integer mTrainingDayId, mSessionId;
 
     public TrainingSessionExercisesFragment() {}
 
@@ -45,11 +49,6 @@ public class TrainingSessionExercisesFragment extends Fragment
     public void onAttach(Context context) {
         super.onAttach(context);
         Log.d(CLASS_NAME, "onAttach");
-
-        Bundle args = getArguments();
-        if (args != null) {
-            mSessionId = args.getInt(TS._ID);
-        }
 
         String[] groupFrom = { E.NAME };
         int[] groupTo = { android.R.id.text1 };
@@ -96,7 +95,17 @@ public class TrainingSessionExercisesFragment extends Fragment
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        getLoaderManager().initLoader(0, null, this);
+
+        Bundle args = getArguments();
+        if (args != null) {
+            if (args.containsKey(TS.TRAINING_DAY_ID)) {
+                mTrainingDayId = args.getInt(TS.TRAINING_DAY_ID);
+                getLoaderManager().initLoader(PROGRAM_DAY_LOADER_ID, null, this);
+            } else if (args.containsKey(TS._ID)) {
+                mSessionId = args.getInt(TS._ID);
+                getLoaderManager().initLoader(SESSION_LOADER_ID, null, this);
+            }
+        }
     }
 
     @Override
@@ -108,13 +117,42 @@ public class TrainingSessionExercisesFragment extends Fragment
     @NonNull
     @Override
     public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
-        return new MyCursorLoader(getContext(), mSessionId);
+        Loader loader = null;
+        switch (id) {
+            case PROGRAM_DAY_LOADER_ID:
+                loader = new MyCursorLoader(getContext(), mTrainingDayId);
+                break;
+            case SESSION_LOADER_ID:
+                loader = new MyCursorLoader(getContext(), mSessionId);
+                break;
+        }
+        return loader;
     }
 
     @Override
-    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
-        mCursor = cursor;
-        mCursorAdapter.swapCursor(cursor);
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor c) {
+        switch (loader.getId()) {
+            case PROGRAM_DAY_LOADER_ID:
+                // insert exercise from program to the session
+                if (c.moveToFirst()) {
+                    int sessionId = getArguments().getInt(TS._ID);
+                    do {
+                        int exerciseId = c.getInt(c.getColumnIndex(TPE.EXERCISE_ID));
+                        int number = c.getInt(c.getColumnIndex(TPE.NUMBER));
+                        DatabaseHelper.insertExerciseIntoSession(sessionId, exerciseId, number);
+                    } while (c.moveToNext());
+                }
+                Bundle args = getArguments();
+                if (args.containsKey(TS._ID)) {
+                    mSessionId = args.getInt(TS._ID);
+                    getLoaderManager().initLoader(SESSION_LOADER_ID, null, this);
+                }
+                break;
+            case SESSION_LOADER_ID:
+                mCursor = c;
+                mCursorAdapter.swapCursor(c);
+                break;
+        }
     }
 
     @Override
@@ -124,11 +162,11 @@ public class TrainingSessionExercisesFragment extends Fragment
 
         public final String CLASS_NAME = TrainingSessionExercisesFragment.CLASS_NAME +"."+ MyCursorLoader.class.getSimpleName();
 
-        private int mSessionId;
+        private int mId;
 
-        MyCursorLoader(Context context, int sessionId) {
+        MyCursorLoader(Context context, int id) {
             super(context);
-            mSessionId = sessionId;
+            mId = id;
         }
 
         @Override
@@ -136,13 +174,32 @@ public class TrainingSessionExercisesFragment extends Fragment
             Log.d(CLASS_NAME, "loadInBackground id: "+ getId());
 
             SQLiteDatabase db = DatabaseHelper.getInstance(getContext()).getWritableDatabase();
-            return db.rawQuery("SELECT tse."+ TSE._ID +", tse."+ TSE.PARAMS_BOOL_ARR +", "+
-                            "e."+ E.IMAGE +", e."+ E.NAME +
-                            " FROM "+ TSE.TABLE_NAME +" AS tse LEFT JOIN "+ E.TABLE_NAME +" AS e"+
-                            " ON tse."+ TSE.EXERCISE_ID +" = e."+ E._ID +
-                            " WHERE "+ TSE.SESSION_ID +" = ?"+
-                            " ORDER BY tse."+ TSE.NUMBER,
-                    new String[]{ String.valueOf(mSessionId) });
+            Cursor cursor = null;
+            switch (getId()) {
+                case PROGRAM_DAY_LOADER_ID:
+                    cursor = db.rawQuery("SELECT tpe."+ TPE._ID +", tpe."+ TPE.EXERCISE_ID +"," +
+                                    " tpe."+ TPE.NUMBER +", tpe."+ TPE.PARAMS_BOOL_ARR +"," +
+                                    " e."+ E.IMAGE +", e."+ E.NAME +
+                                    " FROM "+ TPE.TABLE_NAME +" AS tpe LEFT JOIN "+ E.TABLE_NAME +" AS e"+
+                                    " ON tpe."+ TPE.EXERCISE_ID +" = e."+ E._ID +
+                                    " WHERE "+ TPE.TRAINING_DAY_ID +" = ?"+
+                                    " ORDER BY tpe."+ TPE.NUMBER,
+                            new String[]{ String.valueOf(mId) });
+                    break;
+                case SESSION_LOADER_ID:
+                    cursor = db.rawQuery("SELECT tse."+ TSE._ID +", tse."+ TSE.PARAMS_BOOL_ARR +", "+
+                                    "e."+ E.IMAGE +", e."+ E.NAME +
+                                    " FROM "+ TSE.TABLE_NAME +" AS tse LEFT JOIN "+ E.TABLE_NAME +" AS e"+
+                                    " ON tse."+ TSE.EXERCISE_ID +" = e."+ E._ID +
+                                    " WHERE "+ TSE.SESSION_ID +" = ?"+
+                                    " ORDER BY tse."+ TSE.NUMBER,
+                            new String[]{ String.valueOf(mId) });
+                    break;
+            }
+            if (cursor != null) {
+                cursor.getCount(); // Fill cursor window
+            }
+            return cursor;
         }
     }
 }
