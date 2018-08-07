@@ -10,12 +10,12 @@
 
     <TextView
         android:text="@string/exercise_name"
-        style="@style/LabelStyle" />
+        style="@style/LabelStyle"/>
 
     <TextView
         android:id="@+id/exercise_name"
         tools:text="@string/exercise_name"
-        style="@style/FieldStyle" />
+        style="@style/FieldStyle"/>
 
     <View style="@style/DividerStyle" />
 
@@ -32,23 +32,23 @@
 
     <TextView
         android:text="@string/main_muscle"
-        style="@style/LabelStyle" />
+        style="@style/LabelStyle"/>
 
     <TextView
         android:id="@+id/main_muscle"
         tools:text="@string/main_muscle"
-        style="@style/FieldStyle" />
+        style="@style/FieldStyle"/>
 
     <View style="@style/DividerStyle" />
 
     <TextView
         android:text="@string/targeted_muscles"
-        style="@style/LabelStyle" />
+        style="@style/LabelStyle"/>
 
     <TextView
         android:id="@+id/targeted_muscles"
         tools:text="@string/targeted_muscles"
-        style="@style/FieldStyle" />
+        style="@style/FieldStyle"/>
 
     <View style="@style/DividerStyle" />
 

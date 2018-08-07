@@ -71,7 +71,7 @@ public class MeasurementDialog extends AppCompatDialogFragment
         Log.d(CLASS_NAME, "onCreateDialog");
 
         Activity activity = getActivity();
-        AlertDialog.Builder builder = new AlertDialog.Builder(activity, R.style.DialogTheme);
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
 
         LayoutInflater inflater = activity.getLayoutInflater();
         View view = inflater.inflate(R.layout.dialog_measurement, null);
@@ -330,7 +330,7 @@ public class MeasurementDialog extends AppCompatDialogFragment
             public void onClick(View v) {
                 Log.d(CLASS_NAME, "mDateTV onClick");
 
-                DatePickerDialog dialog = new DatePickerDialog(getContext(), R.style.DialogTheme, new DatePickerDialog.OnDateSetListener() {
+                DatePickerDialog dialog = new DatePickerDialog(getContext(), new DatePickerDialog.OnDateSetListener() {
                     public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
                         Log.d(CLASS_NAME, "DatePickerDialog onDateSet");
 
@@ -411,7 +411,7 @@ public class MeasurementDialog extends AppCompatDialogFragment
     private AlertDialog.Builder getParamAlreadyExistAlert(String date, String param) {
         Log.d(CLASS_NAME, "getParamAlreadyExistAlert");
 
-        AlertDialog.Builder alert = new AlertDialog.Builder(getContext(), R.style.DialogTheme);
+        AlertDialog.Builder alert = new AlertDialog.Builder(getContext());
         alert.setTitle(date +" уже задан параметр "+ param);
         alert.setMessage("Хотите заменить его новым?"); // сообщение
         alert.setNegativeButton("Нет", new DialogInterface.OnClickListener() {

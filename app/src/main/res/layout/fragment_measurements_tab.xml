@@ -10,17 +10,14 @@
 
     <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/white">
+        android:layout_height="wrap_content">
 
         <android.support.design.widget.TabLayout
             android:id="@+id/tabs"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
 
-            app:tabIndicatorColor="@color/red600"
-            app:tabSelectedTextColor="@color/red600"
-            app:tabTextColor="@color/red200" />
+            android:background="?attr/tabBackground"/>
 
     </android.support.design.widget.AppBarLayout>
 

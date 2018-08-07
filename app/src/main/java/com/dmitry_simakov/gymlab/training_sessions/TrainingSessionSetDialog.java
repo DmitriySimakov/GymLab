@@ -52,7 +52,7 @@ public class TrainingSessionSetDialog extends AppCompatDialogFragment
         Log.d(CLASS_NAME, "onCreateDialog");
 
         Activity activity = getActivity();
-        AlertDialog.Builder builder = new AlertDialog.Builder(activity, R.style.DialogTheme);
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
 
         LayoutInflater inflater = activity.getLayoutInflater();
         View view = inflater.inflate(R.layout.dialog_training_session_set, null);

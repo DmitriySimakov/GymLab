@@ -41,7 +41,6 @@
             android:gravity="right"
             android:textSize="12sp"
             android:textColor="#757575"
-            android:textAppearance="?android:attr/textAppearanceListItemSmall"
             tools:text="-3 за 3 дн." />
 
     </LinearLayout>

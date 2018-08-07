@@ -22,7 +22,6 @@
             android:layout_weight="2"
             android:gravity="center"
 
-            android:textColor="@color/black"
             android:text="@string/parameter" />
 
         <TextView
@@ -32,7 +31,6 @@
             android:gravity="center"
 
             android:textSize="12sp"
-            android:textColor="@color/black"
             android:text="@string/actual_value" />
 
         <TextView
@@ -42,7 +40,6 @@
             android:gravity="center"
 
             android:textSize="12sp"
-            android:textColor="@color/black"
             android:text="@string/expected_value" />
 
         <TextView
@@ -52,7 +49,6 @@
             android:gravity="center"
 
             android:textSize="12sp"
-            android:textColor="@color/black"
             android:text="@string/percent" />
 
     </LinearLayout>
@@ -80,9 +76,6 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-
-            style="?attr/buttonBarButtonStyle"
-            android:textColor="@color/black"
             android:text="@string/reset" />
 
         <Button
@@ -90,9 +83,6 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-
-            style="?attr/buttonBarButtonStyle"
-            android:textColor="@color/black"
             android:text="@string/fill" />
 
         <Button
@@ -100,9 +90,6 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-
-            style="?attr/buttonBarButtonStyle"
-            android:textColor="@color/black"
             android:text="@string/count" />
 
     </LinearLayout>

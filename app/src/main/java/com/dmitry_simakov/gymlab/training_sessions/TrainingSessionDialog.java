@@ -63,7 +63,7 @@ public class TrainingSessionDialog extends AppCompatDialogFragment
         Log.d(CLASS_NAME, "onCreateDialog");
 
         Activity activity = getActivity();
-        AlertDialog.Builder builder = new AlertDialog.Builder(activity, R.style.DialogTheme);
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
 
         LayoutInflater inflater = activity.getLayoutInflater();
         View view = inflater.inflate(R.layout.dialog_training_session, null);
@@ -163,7 +163,7 @@ public class TrainingSessionDialog extends AppCompatDialogFragment
                 int year  = calendar.get(Calendar.YEAR);
                 int monthOfYear = calendar.get(Calendar.MONTH);
                 int day   = calendar.get(Calendar.DAY_OF_MONTH);
-                DatePickerDialog dialog = new DatePickerDialog(getContext(), R.style.DialogTheme, new DatePickerDialog.OnDateSetListener() {
+                DatePickerDialog dialog = new DatePickerDialog(getContext(), new DatePickerDialog.OnDateSetListener() {
                     public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
                         Log.d(CLASS_NAME, "DatePickerDialog onDateSet");
 
@@ -191,7 +191,7 @@ public class TrainingSessionDialog extends AppCompatDialogFragment
 
                 final int hourOfDay  = calendar.get(Calendar.HOUR_OF_DAY);
                 int minute = calendar.get(Calendar.MINUTE);
-                TimePickerDialog dialog = new TimePickerDialog(getContext(), R.style.DialogTheme, new TimePickerDialog.OnTimeSetListener() {
+                TimePickerDialog dialog = new TimePickerDialog(getContext(), new TimePickerDialog.OnTimeSetListener() {
                     @Override
                     public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
                         Log.d(CLASS_NAME, "DatePickerDialog onDateSet");
