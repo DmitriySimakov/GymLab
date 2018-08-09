@@ -80,25 +80,20 @@ public class TrainingSessionExerciseDialog extends AppCompatDialogFragment {
         mDistanceCB = view.findViewById(R.id.distance_cb);
 
         SharedViewModel model = ViewModelProviders.of(getActivity()).get(SharedViewModel.class);
-        Observer observer = new Observer<Exercise>() {
-            @Override
-            public void onChanged(@Nullable Exercise exercise) {
-                mChooseExerciseBtn.setVisibility(View.GONE);
-                mChosenExerciseLL.setVisibility(View.VISIBLE);
-                mExerciseId = (int) exercise.getId();
-                String imageName = exercise.getImageName();
-                Resources res = getContext().getResources();
-                if (imageName != null) {
-                    int resID = res.getIdentifier(imageName, "drawable", getContext().getPackageName());
-                    if (resID != 0) {
-                        mExerciseIV.setImageDrawable(res.getDrawable(resID));
-                    }
+        model.getExercise().observe(this, exercise -> {
+            mChooseExerciseBtn.setVisibility(View.GONE);
+            mChosenExerciseLL.setVisibility(View.VISIBLE);
+            mExerciseId = (int) exercise.getId();
+            String imageName = exercise.getImageName();
+            Resources res = getContext().getResources();
+            if (imageName != null) {
+                int resID = res.getIdentifier(imageName, "drawable", getContext().getPackageName());
+                if (resID != 0) {
+                    mExerciseIV.setImageDrawable(res.getDrawable(resID));
                 }
-                mExerciseNameTV.setText(exercise.getExerciseName());
-                model.getExercise().removeObserver(this);
             }
-        };
-        model.getExercise().observe((AppCompatActivity)getContext(), observer);
+            mExerciseNameTV.setText(exercise.getExerciseName());
+        });
 
         builder.setTitle("Упражнение");
         builder.setPositiveButton("Добавить", (dialog, which) -> {
