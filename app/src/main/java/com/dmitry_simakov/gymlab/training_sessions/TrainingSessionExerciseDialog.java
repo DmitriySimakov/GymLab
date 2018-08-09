@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
+import android.content.Context;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -26,7 +27,9 @@ import com.dmitry_simakov.gymlab.Exercise;
 import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.SharedViewModel;
 import com.dmitry_simakov.gymlab.database.DatabaseContract;
+import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 import com.dmitry_simakov.gymlab.exercises.ExercisesListFragment;
+import com.dmitry_simakov.gymlab.measurements.MeasurementDialog;
 
 public class TrainingSessionExerciseDialog extends AppCompatDialogFragment {
 
@@ -37,15 +40,26 @@ public class TrainingSessionExerciseDialog extends AppCompatDialogFragment {
 
     private Button mChooseExerciseBtn;
     private LinearLayout mChosenExerciseLL;
-    private ImageView mExerciseIV;
+    private ImageView mExerciseIV, mRemoveExerciseIV;
     private TextView mExerciseNameTV;
 
     private CheckBox mWeightCB, mRepsCB, mTimeCB, mDistanceCB;
 
-    private Integer mExerciseId;
+    private int mSessionId;
+    private Exercise mExercise;
 
 
     public TrainingSessionExerciseDialog() {}
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+
+        Bundle args = getArguments();
+        if (args != null) {
+            mSessionId = args.getInt(TSE.SESSION_ID);
+        }
+    }
 
     @NonNull
     @Override
@@ -63,7 +77,7 @@ public class TrainingSessionExerciseDialog extends AppCompatDialogFragment {
         mChooseExerciseBtn.setOnClickListener(v -> {
             Fragment fragment = new ExercisesListFragment();
             Bundle bundle = new Bundle();
-            bundle.putInt(TSE.SESSION_ID, getArguments().getInt(TSE.SESSION_ID));
+            bundle.putInt(TSE.SESSION_ID, mSessionId);
             fragment.setArguments(bundle);
             getActivity().getSupportFragmentManager()
                     .beginTransaction()
@@ -74,6 +88,12 @@ public class TrainingSessionExerciseDialog extends AppCompatDialogFragment {
         mChosenExerciseLL = view.findViewById(R.id.chosen_exercise_ll);
         mExerciseIV       = view.findViewById(R.id.exercise_image);
         mExerciseNameTV   = view.findViewById(R.id.exercise_name);
+        mRemoveExerciseIV = view.findViewById(R.id.remove_exercise_iv);
+        mRemoveExerciseIV.setOnClickListener(v -> {
+            mExercise = null;
+            mChooseExerciseBtn.setVisibility(View.VISIBLE);
+            mChosenExerciseLL.setVisibility(View.GONE);
+        });
         mWeightCB   = view.findViewById(R.id.weight_cb);
         mRepsCB     = view.findViewById(R.id.reps_cb);
         mTimeCB     = view.findViewById(R.id.time_cb);
@@ -83,11 +103,10 @@ public class TrainingSessionExerciseDialog extends AppCompatDialogFragment {
         model.getExercise().observe(this, exercise -> {
             mChooseExerciseBtn.setVisibility(View.GONE);
             mChosenExerciseLL.setVisibility(View.VISIBLE);
-            mExerciseId = (int) exercise.getId();
-            String imageName = exercise.getImageName();
+            mExercise = exercise;
             Resources res = getContext().getResources();
-            if (imageName != null) {
-                int resID = res.getIdentifier(imageName, "drawable", getContext().getPackageName());
+            if (exercise.getImageName() != null) {
+                int resID = res.getIdentifier(exercise.getImageName(), "drawable", getContext().getPackageName());
                 if (resID != 0) {
                     mExerciseIV.setImageDrawable(res.getDrawable(resID));
                 }
@@ -99,10 +118,16 @@ public class TrainingSessionExerciseDialog extends AppCompatDialogFragment {
         builder.setPositiveButton("Добавить", (dialog, which) -> {
             Log.d(CLASS_NAME, "negativeButton onClick");
 
-            if (mExerciseId == null) {
+            if (mExercise == null) {
                 Toast.makeText(getContext(), "Выберете упражнение", Toast.LENGTH_LONG).show();
             } else {
-                // TODO insert Exercise
+                int boolArr = 0;
+                if (mWeightCB.isChecked()) boolArr += 1000;
+                if (mRepsCB.isChecked()) boolArr += 100;
+                if (mTimeCB.isChecked()) boolArr += 10;
+                if (mDistanceCB.isChecked()) boolArr += 1;
+                DatabaseHelper.insertExerciseIntoSession(mSessionId, (int) mExercise.getId(), 1, boolArr);
+                getContext().getContentResolver().notifyChange(TSE.CONTENT_URI, null);
                 dialog.cancel();
             }
         });

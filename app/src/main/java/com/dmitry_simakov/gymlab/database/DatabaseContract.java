@@ -135,6 +135,7 @@ public class DatabaseContract {
 
     public static class TrainingSessionExerciseEntry implements BaseColumns {
         public final static String TABLE_NAME = "training_session_exercise";
+        public static final Uri CONTENT_URI = Uri.withAppendedPath(BASE_CONTENT_URI, TABLE_NAME);
 
         // Names for external keys
         public final static String SESSION = "session";

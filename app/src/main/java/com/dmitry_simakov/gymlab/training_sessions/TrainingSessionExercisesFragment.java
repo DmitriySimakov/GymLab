@@ -64,34 +64,28 @@ public class TrainingSessionExercisesFragment extends Fragment
 
         ListView listView = view.findViewById(R.id.list_view);
         listView.setAdapter(mCursorAdapter);
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Fragment fragment = new TrainingSessionSetsFragment();
-                Bundle bundle = new Bundle();
-                bundle.putInt(TSE._ID, (int)id);
-                mCursor.moveToPosition(position);
-                int paramsBoolArr = mCursor.getInt(mCursor.getColumnIndex(TSE.PARAMS_BOOL_ARR));
-                bundle.putInt(TSE.PARAMS_BOOL_ARR, paramsBoolArr);
-                fragment.setArguments(bundle);
-                getActivity().getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.fragment_container, fragment)
-                        .addToBackStack(null)
-                        .commit();
-            }
+        listView.setOnItemClickListener((parent, view1, position, id) -> {
+            Fragment fragment = new TrainingSessionSetsFragment();
+            Bundle bundle = new Bundle();
+            bundle.putInt(TSE._ID, (int)id);
+            mCursor.moveToPosition(position);
+            int paramsBoolArr = mCursor.getInt(mCursor.getColumnIndex(TSE.PARAMS_BOOL_ARR));
+            bundle.putInt(TSE.PARAMS_BOOL_ARR, paramsBoolArr);
+            fragment.setArguments(bundle);
+            getActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, fragment)
+                    .addToBackStack(null)
+                    .commit();
         });
 
         FloatingActionButton fab = view.findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                TrainingSessionExerciseDialog dialog = new TrainingSessionExerciseDialog();
-                Bundle args = new Bundle();
-                args.putInt(TSE.SESSION_ID, mSessionId);
-                dialog.setArguments(args);
-                dialog.show(getChildFragmentManager(), null);
-            }
+        fab.setOnClickListener(view2 -> {
+            TrainingSessionExerciseDialog dialog = new TrainingSessionExerciseDialog();
+            Bundle args = new Bundle();
+            args.putInt(TSE.SESSION_ID, mSessionId);
+            dialog.setArguments(args);
+            dialog.show(getChildFragmentManager(), null);
         });
 
         return view;
@@ -143,7 +137,7 @@ public class TrainingSessionExercisesFragment extends Fragment
                     do {
                         int exerciseId = c.getInt(c.getColumnIndex(TPE.EXERCISE_ID));
                         int number = c.getInt(c.getColumnIndex(TPE.NUMBER));
-                        DatabaseHelper.insertExerciseIntoSession(mSessionId, exerciseId, number);
+                        DatabaseHelper.insertExerciseIntoSession(mSessionId, exerciseId, number, 1100);
                     } while (c.moveToNext());
                 }
 
@@ -166,11 +160,14 @@ public class TrainingSessionExercisesFragment extends Fragment
 
         public final String CLASS_NAME = TrainingSessionExercisesFragment.CLASS_NAME +"."+ MyCursorLoader.class.getSimpleName();
 
+        private final ForceLoadContentObserver mObserver = new ForceLoadContentObserver();
+
         private int mId;
 
         MyCursorLoader(Context context, int id) {
             super(context);
             mId = id;
+            setUri(TSE.CONTENT_URI);
         }
 
         @Override
@@ -202,6 +199,8 @@ public class TrainingSessionExercisesFragment extends Fragment
             }
             if (cursor != null) {
                 cursor.getCount(); // Fill cursor window
+                cursor.registerContentObserver(mObserver);
+                cursor.setNotificationUri(getContext().getContentResolver(), getUri());
             }
             return cursor;
         }

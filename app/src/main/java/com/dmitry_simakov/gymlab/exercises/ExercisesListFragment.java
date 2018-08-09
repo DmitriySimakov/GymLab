@@ -65,25 +65,23 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
 
         mExerciseElv.setOnChildClickListener((parent, v, groupPosition, childPosition, id) -> {
             Bundle args = getArguments();
-            if (args != null) {
-                if (args.containsKey(TSE.SESSION_ID)) {
-                    Cursor c = mCursorTreeAdapter.getChild(groupPosition, childPosition);
-                    SharedViewModel model = ViewModelProviders.of(getActivity()).get(SharedViewModel.class);
-                    model.setExercise(new Exercise(id,
-                            c.getString(c.getColumnIndex(Ex.IMAGE)),
-                            c.getString(c.getColumnIndex(Ex.NAME))));
-                    getFragmentManager().popBackStack();
-                } else {
-                    Fragment fragment = new ExerciseDescriptionFragment();
-                    Bundle bundle = new Bundle();
-                    bundle.putInt(Ex._ID, (int) id);
-                    fragment.setArguments(bundle);
-                    getActivity().getSupportFragmentManager()
-                            .beginTransaction()
-                            .replace(R.id.fragment_container, fragment)
-                            .addToBackStack(null)
-                            .commit();
-                }
+            if (args != null && args.containsKey(TSE.SESSION_ID)) {
+                Cursor c = mCursorTreeAdapter.getChild(groupPosition, childPosition);
+                SharedViewModel model = ViewModelProviders.of(getActivity()).get(SharedViewModel.class);
+                model.setExercise(new Exercise(id,
+                        c.getString(c.getColumnIndex(Ex.IMAGE)),
+                        c.getString(c.getColumnIndex(Ex.NAME))));
+                getFragmentManager().popBackStack();
+            } else {
+                Fragment fragment = new ExerciseDescriptionFragment();
+                Bundle bundle = new Bundle();
+                bundle.putInt(Ex._ID, (int) id);
+                fragment.setArguments(bundle);
+                getActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit();
             }
 
             /* Если мы возвращаем true – это значит, мы сообщаем, что сами полностью обработали
