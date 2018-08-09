@@ -44,6 +44,7 @@ public class TrainingSessionDialog extends AppCompatDialogFragment
     public static final String CLASS_NAME = TrainingSessionSetDialog.class.getSimpleName();
 
     private static final class TS extends DatabaseContract.TrainingSessionEntry {}
+    private static final class TSE extends DatabaseContract.TrainingSessionExerciseEntry {}
     private static final class TP extends DatabaseContract.TrainingProgramEntry {}
     private static final class TPD extends DatabaseContract.TrainingProgramDayEntry {}
 
@@ -140,7 +141,7 @@ public class TrainingSessionDialog extends AppCompatDialogFragment
                 cv.put(TS.DATE_TIME, mDate +" "+ mTime +":00");
                 long sessionId = DatabaseHelper.insertTrainingSession(cv);
                 getContext().getContentResolver().notifyChange(TS.CONTENT_URI, null);
-                bundle.putInt(TS._ID, (int)sessionId);
+                bundle.putInt(TSE.SESSION_ID, (int)sessionId);
 
                 mDialog.dismiss();
                 Fragment fragment = new TrainingSessionExercisesFragment();

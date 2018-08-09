@@ -24,6 +24,8 @@ import android.widget.ListView;
 import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.database.DatabaseContract;
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
+import com.dmitry_simakov.gymlab.exercises.ExercisesListFragment;
+import com.dmitry_simakov.gymlab.measurements.MeasurementDialog;
 
 public class TrainingSessionExercisesFragment extends Fragment
         implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -41,7 +43,7 @@ public class TrainingSessionExercisesFragment extends Fragment
     private Cursor mCursor;
     private CursorAdapter mCursorAdapter;
 
-    private Integer mTrainingDayId, mSessionId;
+    private int mTrainingDayId, mSessionId;
 
     public TrainingSessionExercisesFragment() {}
 
@@ -84,8 +86,11 @@ public class TrainingSessionExercisesFragment extends Fragment
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "This function is not implemented yet.", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                TrainingSessionExerciseDialog dialog = new TrainingSessionExerciseDialog();
+                Bundle args = new Bundle();
+                args.putInt(TSE.SESSION_ID, mSessionId);
+                dialog.setArguments(args);
+                dialog.show(getChildFragmentManager(), null);
             }
         });
 
@@ -98,11 +103,11 @@ public class TrainingSessionExercisesFragment extends Fragment
 
         Bundle args = getArguments();
         if (args != null) {
+            mSessionId = getArguments().getInt(TSE.SESSION_ID);
             if (args.containsKey(TS.TRAINING_DAY_ID)) {
                 mTrainingDayId = args.getInt(TS.TRAINING_DAY_ID);
                 getLoaderManager().initLoader(PROGRAM_DAY_LOADER_ID, null, this);
-            } else if (args.containsKey(TS._ID)) {
-                mSessionId = args.getInt(TS._ID);
+            } else {
                 getLoaderManager().initLoader(SESSION_LOADER_ID, null, this);
             }
         }
@@ -135,16 +140,15 @@ public class TrainingSessionExercisesFragment extends Fragment
             case PROGRAM_DAY_LOADER_ID:
                 // insert exercise from program to the session
                 if (c.moveToFirst()) {
-                    int sessionId = getArguments().getInt(TS._ID);
                     do {
                         int exerciseId = c.getInt(c.getColumnIndex(TPE.EXERCISE_ID));
                         int number = c.getInt(c.getColumnIndex(TPE.NUMBER));
-                        DatabaseHelper.insertExerciseIntoSession(sessionId, exerciseId, number);
+                        DatabaseHelper.insertExerciseIntoSession(mSessionId, exerciseId, number);
                     } while (c.moveToNext());
                 }
+
                 Bundle args = getArguments();
                 if (args.containsKey(TS._ID)) {
-                    mSessionId = args.getInt(TS._ID);
                     getLoaderManager().initLoader(SESSION_LOADER_ID, null, this);
                 }
                 break;

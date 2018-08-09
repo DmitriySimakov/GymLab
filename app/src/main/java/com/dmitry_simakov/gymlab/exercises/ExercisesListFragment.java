@@ -1,5 +1,6 @@
 package com.dmitry_simakov.gymlab.exercises;
 
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.res.Resources;
 import android.database.Cursor;
@@ -20,7 +21,9 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.SimpleCursorTreeAdapter;
 
+import com.dmitry_simakov.gymlab.Exercise;
 import com.dmitry_simakov.gymlab.R;
+import com.dmitry_simakov.gymlab.SharedViewModel;
 import com.dmitry_simakov.gymlab.database.DatabaseContract;
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 
@@ -32,11 +35,13 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
 
     private static final class Ex extends DatabaseContract.ExerciseEntry {}
     private static final class M extends DatabaseContract.MuscleEntry {}
+    private static final class TSE extends DatabaseContract.TrainingSessionExerciseEntry {}
 
     private static final int GROUP_LOADER_ID = -1;
 
     private MyCursorTreeAdapter mCursorTreeAdapter;
     private ExpandableListView mExerciseElv;
+
 
     public ExercisesListFragment() {}
 
@@ -57,25 +62,36 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
         ProgressBar progressBar = view.findViewById(R.id.progressBar);
         mExerciseElv.setEmptyView(progressBar);
         mExerciseElv.setAdapter(mCursorTreeAdapter);
-        mExerciseElv.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
-            @Override
-            public boolean onChildClick(ExpandableListView parent, View v,int groupPosition, int childPosition, long id) {
-                Fragment fragment = new ExerciseDescriptionFragment();
-                Bundle bundle = new Bundle();
-                bundle.putInt(Ex._ID, (int)id);
-                fragment.setArguments(bundle);
-                getActivity().getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.fragment_container, fragment)
-                        .addToBackStack(null)
-                        .commit();
 
-                /* Если мы возвращаем true – это значит, мы сообщаем, что сами полностью обработали
-                событие и оно не пойдет в дальнейшие обработчики (если они есть).
-                Если возвращаем false – значит, мы позволяем событию идти дальше. */
-                return true;
+        mExerciseElv.setOnChildClickListener((parent, v, groupPosition, childPosition, id) -> {
+            Bundle args = getArguments();
+            if (args != null) {
+                if (args.containsKey(TSE.SESSION_ID)) {
+                    Cursor c = mCursorTreeAdapter.getChild(groupPosition, childPosition);
+                    SharedViewModel model = ViewModelProviders.of(getActivity()).get(SharedViewModel.class);
+                    model.setExercise(new Exercise(id,
+                            c.getString(c.getColumnIndex(Ex.IMAGE)),
+                            c.getString(c.getColumnIndex(Ex.NAME))));
+                    getFragmentManager().popBackStack();
+                } else {
+                    Fragment fragment = new ExerciseDescriptionFragment();
+                    Bundle bundle = new Bundle();
+                    bundle.putInt(Ex._ID, (int) id);
+                    fragment.setArguments(bundle);
+                    getActivity().getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.fragment_container, fragment)
+                            .addToBackStack(null)
+                            .commit();
+                }
             }
+
+            /* Если мы возвращаем true – это значит, мы сообщаем, что сами полностью обработали
+            событие и оно не пойдет в дальнейшие обработчики (если они есть).
+            Если возвращаем false – значит, мы позволяем событию идти дальше. */
+            return true;
         });
+
         return view;
     }
 
@@ -183,26 +199,23 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
 
             mContext = context;
             mFragment = fragment;
-            mGroupMap = new HashMap<Integer, Integer>();
+            mGroupMap = new HashMap<>();
 
-            setViewBinder(new SimpleCursorTreeAdapter.ViewBinder() {
-                @Override
-                public boolean setViewValue(View view, Cursor cursor, int columnIndex) {
-                    if (view.getId() == R.id.muscle_image || view.getId() == R.id.exercise_image) {
-                        ImageView imageView = (ImageView) view;
+            setViewBinder((view, cursor, columnIndex) -> {
+                if (view.getId() == R.id.muscle_image || view.getId() == R.id.exercise_image) {
+                    ImageView imageView = (ImageView) view;
 
-                        String imageName = cursor.getString(columnIndex);
-                        if (imageName != null) {
-                            Resources res = mContext.getResources();
-                            int resID = res.getIdentifier(imageName, "drawable", mContext.getPackageName());
-                            if (resID != 0) {
-                                imageView.setImageDrawable(res.getDrawable(resID));
-                            }
+                    String imageName = cursor.getString(columnIndex);
+                    if (imageName != null) {
+                        Resources res = mContext.getResources();
+                        int resID = res.getIdentifier(imageName, "drawable", mContext.getPackageName());
+                        if (resID != 0) {
+                            imageView.setImageDrawable(res.getDrawable(resID));
                         }
-                        return true;
                     }
-                    return false;
+                    return true;
                 }
+                return false;
             });
         }
 

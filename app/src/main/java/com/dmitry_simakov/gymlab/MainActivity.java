@@ -22,6 +22,7 @@ import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 import com.dmitry_simakov.gymlab.exercises.ExercisesListFragment;
 import com.dmitry_simakov.gymlab.measurements.MeasurementsTabFragment;
 import com.dmitry_simakov.gymlab.training_programs.TrainingProgramsFragment;
+import com.dmitry_simakov.gymlab.training_sessions.TrainingSessionExerciseDialog;
 import com.dmitry_simakov.gymlab.training_sessions.TrainingSessionsFragment;
 
 public class MainActivity extends AppCompatActivity
@@ -30,8 +31,9 @@ public class MainActivity extends AppCompatActivity
 
     public static final String CLASS_NAME = MainActivity.class.getSimpleName();
 
-    public static final String APP_PREFERENCES = "AppPreferences";
-    public static final String IS_DB_COPIED = "isDbCopied";
+    public static final String APP_PREFERENCES = "app_preferences";
+    public static final String IS_DB_COPIED = "is_db_copied";
+    public static final String DARK_THEME = "dark_theme";
     private SharedPreferences mPreferences;
 
     private DrawerLayout mDrawer;
@@ -43,6 +45,11 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(CLASS_NAME, "onCreate");
+
+        mPreferences = getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
+        if (mPreferences.getBoolean(DARK_THEME, false)) {
+            setTheme(R.style.AppThemeDark);
+        }
 
         setContentView(R.layout.activity_main);
 
@@ -61,7 +68,6 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        mPreferences = getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
         initDB();
 
         mFragmentManager = getSupportFragmentManager();
@@ -106,6 +112,10 @@ public class MainActivity extends AppCompatActivity
                 setFragment(new MeasurementsTabFragment(), item);
                 break;
             case R.id.nav_settings:
+                SharedPreferences.Editor editor = mPreferences.edit();
+                editor.putBoolean(DARK_THEME, !mPreferences.getBoolean(DARK_THEME, false));
+                editor.apply();
+                recreate();
                 break;
             case R.id.nav_info:
                 break;

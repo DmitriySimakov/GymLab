@@ -76,7 +76,7 @@ public class MeasurementsListFragment extends ListFragment
             args.putInt(MeasurementDialog.MEASUREMENT_ID, (int)id);
         }
         dialog.setArguments(args);
-        dialog.show(getChildFragmentManager(), "MEASUREMENT_DIALOG");
+        dialog.show(getChildFragmentManager(), null);
     }
 
     @NonNull

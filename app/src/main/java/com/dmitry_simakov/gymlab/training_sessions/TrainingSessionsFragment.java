@@ -32,6 +32,7 @@ public class TrainingSessionsFragment extends Fragment
     public static final String CLASS_NAME = TrainingSessionsFragment.class.getSimpleName();
 
     private static final class TS extends DatabaseContract.TrainingSessionEntry {}
+    private static final class TSE extends DatabaseContract.TrainingSessionExerciseEntry {}
 
     private CursorAdapter mCursorAdapter;
 
@@ -61,7 +62,7 @@ public class TrainingSessionsFragment extends Fragment
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Fragment fragment = new TrainingSessionExercisesFragment();
                 Bundle bundle = new Bundle();
-                bundle.putInt(TS._ID, (int)id);
+                bundle.putInt(TSE.SESSION_ID, (int)id);
                 fragment.setArguments(bundle);
                 getActivity().getSupportFragmentManager()
                         .beginTransaction()
@@ -75,7 +76,7 @@ public class TrainingSessionsFragment extends Fragment
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                new TrainingSessionDialog().show(getChildFragmentManager(), "NEW_TRAINING_SESSION_DIALOG");
+                new TrainingSessionDialog().show(getChildFragmentManager(), null);
             }
         });
 

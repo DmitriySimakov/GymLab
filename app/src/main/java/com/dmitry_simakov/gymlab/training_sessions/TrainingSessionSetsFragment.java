@@ -82,7 +82,7 @@ public class TrainingSessionSetsFragment extends Fragment
                 args.putBooleanArray(TSE.PARAMS_BOOL_ARR, mParamsBoolArr);
                 args.putInt(TrainingSessionSetDialog.SET_ID, (int)id);
                 dialog.setArguments(args);
-                dialog.show(getChildFragmentManager(), "EDIT_SET_DIALOG");
+                dialog.show(getChildFragmentManager(), null);
             }
         });
 
@@ -95,7 +95,7 @@ public class TrainingSessionSetsFragment extends Fragment
                 args.putInt(TrainingSessionSetDialog.EXERCISE_ID, mExerciseId);
                 args.putBooleanArray(TSE.PARAMS_BOOL_ARR, mParamsBoolArr);
                 dialog.setArguments(args);
-                dialog.show(getChildFragmentManager(), "NEW_SET_DIALOG");
+                dialog.show(getChildFragmentManager(), null);
             }
         });
 
