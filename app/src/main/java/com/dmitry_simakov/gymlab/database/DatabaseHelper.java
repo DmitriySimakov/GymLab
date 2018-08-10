@@ -81,6 +81,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return sInstance.getWritableDatabase().insert(TrainingSessionEntry.TABLE_NAME, null, cv);
     }
 
+    public static void finishTrainingSession(int id, int duration) {
+        ContentValues cv = new ContentValues();
+        cv.put(TrainingSessionEntry.DURATION, duration);
+        sInstance.getWritableDatabase().update(TrainingSessionEntry.TABLE_NAME, cv,
+                TrainingSessionEntry._ID +" = ?", new String[]{ String.valueOf(id) });
+    }
+
     public static long insertExerciseIntoSession(int session_id, int exercise_id, int number, int paramsBoolArr) {
         ContentValues cv = new ContentValues();
         cv.put(TrainingSessionExerciseEntry.SESSION_ID, session_id);

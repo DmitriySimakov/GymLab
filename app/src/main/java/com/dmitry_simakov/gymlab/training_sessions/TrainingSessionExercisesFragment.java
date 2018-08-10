@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -18,14 +17,21 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.database.DatabaseContract;
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
-import com.dmitry_simakov.gymlab.exercises.ExercisesListFragment;
-import com.dmitry_simakov.gymlab.measurements.MeasurementDialog;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class TrainingSessionExercisesFragment extends Fragment
         implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -40,10 +46,17 @@ public class TrainingSessionExercisesFragment extends Fragment
     private static final class TPE extends DatabaseContract.TrainingProgramExerciseEntry {}
     private static final class E extends DatabaseContract.ExerciseEntry {}
 
+    private Timer mTimer;
+    private final SimpleDateFormat watchFormat = new SimpleDateFormat("HH:mm:ss");
+    private long mStartMillis;
+    private LinearLayout mTimePanel;
+    private TextView mDurationTV, mRestTV;
+
     private Cursor mCursor;
     private CursorAdapter mCursorAdapter;
 
     private int mTrainingDayId, mSessionId;
+    private boolean mFinished;
 
     public TrainingSessionExercisesFragment() {}
 
@@ -88,6 +101,10 @@ public class TrainingSessionExercisesFragment extends Fragment
             dialog.show(getChildFragmentManager(), null);
         });
 
+        mTimePanel = view.findViewById(R.id.time_panel);
+        mDurationTV = view.findViewById(R.id.duraton);
+        mRestTV = view.findViewById(R.id.rest);
+
         return view;
     }
 
@@ -98,12 +115,58 @@ public class TrainingSessionExercisesFragment extends Fragment
         Bundle args = getArguments();
         if (args != null) {
             mSessionId = getArguments().getInt(TSE.SESSION_ID);
+
             if (args.containsKey(TS.TRAINING_DAY_ID)) {
+                mFinished = false;
                 mTrainingDayId = args.getInt(TS.TRAINING_DAY_ID);
                 getLoaderManager().initLoader(PROGRAM_DAY_LOADER_ID, null, this);
             } else {
+                if (args.getInt(TS.DURATION) == 0) {
+                    mFinished = false;
+                    try {
+                        String dateTime = args.getString(TS.DATE_TIME);
+                        mStartMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+                                .parse(dateTime).getTime();
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    mFinished = true;
+                    mTimePanel.setVisibility(View.GONE);
+                }
                 getLoaderManager().initLoader(SESSION_LOADER_ID, null, this);
             }
+        }
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        if (!mFinished) {
+            mTimer = new Timer();
+            mTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    getActivity().runOnUiThread(() -> {
+                        long diffMillis = new Date().getTime() - mStartMillis;
+                        int hours   = (int) (diffMillis / (1000 * 60 * 60)) % 24;
+                        int minutes = (int) (diffMillis / (1000 * 60)) % 60;
+                        int seconds = (int) (diffMillis / 1000) % 60;
+                        mDurationTV.setText(hours +":"+ minutes +":"+ seconds);
+                    });
+                }
+
+            },0,1000);
+        }
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (mTimer != null) {
+            mTimer.cancel();
+            mTimer = null;
         }
     }
 

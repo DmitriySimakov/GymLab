@@ -131,6 +131,7 @@ public class DatabaseContract {
         public final static String _ID = ID;
         public final static String DATE_TIME = "date_time";
         public final static String TRAINING_DAY_ID = TRAINING_DAY + ID;
+        public final static String DURATION = "duration";
     }
 
     public static class TrainingSessionExerciseEntry implements BaseColumns {
@@ -164,14 +165,6 @@ public class DatabaseContract {
         public final static String REPS = "reps";
         public final static String TIME = "_time";
         public final static String DISTANCE = "distance";
-    }
-
-    public static class ExerciseMeasurementParamEntry implements BaseColumns {
-        public final static String TABLE_NAME = "exercise_measurement_param";
-
-        // Columns names
-        public final static String _ID = ID;
-        public final static String NAME = "name";
     }
 
     //______________________________ Measurements ______________________________

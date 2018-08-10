@@ -32,7 +32,6 @@ import android.widget.TimePicker;
 import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.database.DatabaseContract;
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
-import com.dmitry_simakov.gymlab.measurements.MeasurementDialog;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -119,39 +118,36 @@ public class TrainingSessionDialog extends AppCompatDialogFragment
     public void onLoadFinished(@NonNull Loader<Cursor> loader, final Cursor c) {
         final Calendar calendar = Calendar.getInstance();
         mDate = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime());
-        mTime = new SimpleDateFormat("HH:mm").format(calendar.getTime());
+        mTime = new SimpleDateFormat("HH:mm:ss").format(calendar.getTime());
         mDateTV.setText(mDate);
-        mTimeTV.setText(mTime);
+        mTimeTV.setText(mTime.substring(0, 5));
         setDatePickerDialog(calendar);
         setTimePickerDialog(calendar);
         setTrainingProgramWindow(c);
 
-        mDialog.getButton(Dialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.d(CLASS_NAME, "positiveButton onClick");
+        mDialog.getButton(Dialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            Log.d(CLASS_NAME, "positiveButton onClick");
 
-                Bundle bundle = new Bundle();
-                ContentValues cv = new ContentValues();
-                if (c.moveToFirst()) {
-                    int trainingDayId = c.getInt(c.getColumnIndex(TS.TRAINING_DAY_ID)); // TODO get id from TextView
-                    bundle.putInt(TS.TRAINING_DAY_ID, trainingDayId);
-                    cv.put(TS.TRAINING_DAY_ID, trainingDayId);
-                }
-                cv.put(TS.DATE_TIME, mDate +" "+ mTime +":00");
-                long sessionId = DatabaseHelper.insertTrainingSession(cv);
-                getContext().getContentResolver().notifyChange(TS.CONTENT_URI, null);
-                bundle.putInt(TSE.SESSION_ID, (int)sessionId);
-
-                mDialog.dismiss();
-                Fragment fragment = new TrainingSessionExercisesFragment();
-                fragment.setArguments(bundle);
-                getActivity().getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.fragment_container, fragment)
-                        .addToBackStack(null)
-                        .commit();
+            Bundle bundle = new Bundle();
+            ContentValues cv = new ContentValues();
+            if (c.moveToFirst()) {
+                int trainingDayId = c.getInt(c.getColumnIndex(TS.TRAINING_DAY_ID)); // TODO get id from TextView
+                bundle.putInt(TS.TRAINING_DAY_ID, trainingDayId);
+                cv.put(TS.TRAINING_DAY_ID, trainingDayId);
             }
+            cv.put(TS.DATE_TIME, mDate +" "+ mTime);
+            long sessionId = DatabaseHelper.insertTrainingSession(cv);
+            getContext().getContentResolver().notifyChange(TS.CONTENT_URI, null);
+            bundle.putInt(TSE.SESSION_ID, (int)sessionId);
+
+            mDialog.dismiss();
+            Fragment fragment = new TrainingSessionExercisesFragment();
+            fragment.setArguments(bundle);
+            getActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, fragment)
+                    .addToBackStack(null)
+                    .commit();
         });
     }
 
@@ -185,26 +181,20 @@ public class TrainingSessionDialog extends AppCompatDialogFragment
     }
 
     private void setTimePickerDialog(final Calendar calendar) {
-        mTimeTV.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.d(CLASS_NAME, "mTimeTV onClick");
+        mTimeTV.setOnClickListener(v -> {
+            Log.d(CLASS_NAME, "mTimeTV onClick");
 
-                final int hourOfDay  = calendar.get(Calendar.HOUR_OF_DAY);
-                int minute = calendar.get(Calendar.MINUTE);
-                TimePickerDialog dialog = new TimePickerDialog(getContext(), new TimePickerDialog.OnTimeSetListener() {
-                    @Override
-                    public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
-                        Log.d(CLASS_NAME, "DatePickerDialog onDateSet");
+            int hourOfDay  = calendar.get(Calendar.HOUR_OF_DAY);
+            int minute = calendar.get(Calendar.MINUTE);
+            TimePickerDialog dialog = new TimePickerDialog(getContext(), (view, hourOfDay1, minute1) -> {
+                Log.d(CLASS_NAME, "DatePickerDialog onDateSet");
 
-                        Calendar calendar = Calendar.getInstance();
-                        calendar.set(1970, 0, 1, hourOfDay, minute);
-                        mTime = new SimpleDateFormat("HH:mm").format(calendar.getTime());
-                        mTimeTV.setText(mTime);
-                    }
-                }, hourOfDay, minute, true);
-                dialog.show();
-            }
+                Calendar calendar1 = Calendar.getInstance();
+                calendar1.set(1970, 0, 1, hourOfDay1, minute1);
+                mTime = new SimpleDateFormat("HH:mm:ss").format(calendar1.getTime());
+                mTimeTV.setText(mTime.substring(0, 5));
+            }, hourOfDay, minute, true);
+            dialog.show();
         });
     }
 

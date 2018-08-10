@@ -57,28 +57,24 @@ public class TrainingSessionsFragment extends Fragment
 
         ListView listView = view.findViewById(R.id.list_view);
         listView.setAdapter(mCursorAdapter);
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Fragment fragment = new TrainingSessionExercisesFragment();
-                Bundle bundle = new Bundle();
-                bundle.putInt(TSE.SESSION_ID, (int)id);
-                fragment.setArguments(bundle);
-                getActivity().getSupportFragmentManager()
-                        .beginTransaction()
-                        .replace(R.id.fragment_container, fragment)
-                        .addToBackStack(null)
-                        .commit();
-            }
+        listView.setOnItemClickListener((parent, view1, position, id) -> {
+            Fragment fragment = new TrainingSessionExercisesFragment();
+            Bundle bundle = new Bundle();
+            Cursor c = mCursorAdapter.getCursor();
+            c.moveToPosition(position);
+            bundle.putInt(TSE.SESSION_ID, (int)id);
+            bundle.putString(TS.DATE_TIME, c.getString(c.getColumnIndex(TS.DATE_TIME)));
+            bundle.putInt(TS.DURATION, c.getInt(c.getColumnIndex(TS.DURATION)));
+            fragment.setArguments(bundle);
+            getActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, fragment)
+                    .addToBackStack(null)
+                    .commit();
         });
 
         FloatingActionButton fab = view.findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                new TrainingSessionDialog().show(getChildFragmentManager(), null);
-            }
-        });
+        fab.setOnClickListener(view2 -> new TrainingSessionDialog().show(getChildFragmentManager(), null));
 
         return view;
     }
@@ -119,9 +115,9 @@ public class TrainingSessionsFragment extends Fragment
             Log.d(CLASS_NAME, "loadInBackground id: "+ getId());
 
             SQLiteDatabase db = DatabaseHelper.getInstance(getContext()).getWritableDatabase();
-            Cursor cursor = db.rawQuery("SELECT "+ TS._ID +", "+ TS.DATE_TIME +" "+
-                    " FROM "+ TS.TABLE_NAME +
-                    " ORDER BY "+ TS.DATE_TIME +" DESC", null);
+            Cursor cursor = db.rawQuery("SELECT "+
+                    TS._ID +", "+ TS.DATE_TIME +", "+ TS.DURATION +" "+
+                    " FROM "+ TS.TABLE_NAME +" ORDER BY "+ TS.DATE_TIME +" DESC", null);
 
             if (cursor != null) {
                 cursor.getCount(); // Fill cursor window
