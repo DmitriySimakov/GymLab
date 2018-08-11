@@ -38,6 +38,7 @@ public class TrainingSessionExercisesFragment extends Fragment
 
     private CursorAdapter mCursorAdapter;
 
+    private boolean mProgramWasLoaded = false;
     private int mSessionId;
 
 
@@ -103,7 +104,8 @@ public class TrainingSessionExercisesFragment extends Fragment
         super.onActivityCreated(savedInstanceState);
 
         mSessionId = getArguments().getInt(TSE.SESSION_ID);
-        if (getArguments().containsKey(TS.TRAINING_DAY_ID)) {
+        // !mProgramWasLoaded prevent reload when returned from the back stack
+        if (getArguments().containsKey(TS.TRAINING_DAY_ID) && !mProgramWasLoaded) {
             getLoaderManager().initLoader(PROGRAM_DAY_LOADER_ID, null, this);
         } else {
             getLoaderManager().initLoader(SESSION_LOADER_ID, null, this);
@@ -130,6 +132,8 @@ public class TrainingSessionExercisesFragment extends Fragment
         switch (loader.getId()) {
             case PROGRAM_DAY_LOADER_ID:
                 insertTrainingProgramExercises(cursor);
+                mProgramWasLoaded = true;
+                getLoaderManager().destroyLoader(loader.getId());
                 getLoaderManager().initLoader(SESSION_LOADER_ID, null, this);
                 break;
             case SESSION_LOADER_ID:
