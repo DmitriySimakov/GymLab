@@ -135,13 +135,15 @@ public class TrainingSessionDialog extends AppCompatDialogFragment
                 bundle.putInt(TS.TRAINING_DAY_ID, trainingDayId);
                 cv.put(TS.TRAINING_DAY_ID, trainingDayId);
             }
-            cv.put(TS.DATE_TIME, mDate +" "+ mTime);
+            String dateTime = mDate +" "+ mTime;
+            bundle.putString(TS.DATE_TIME, dateTime);
+            cv.put(TS.DATE_TIME, dateTime);
             long sessionId = DatabaseHelper.insertTrainingSession(cv);
             getContext().getContentResolver().notifyChange(TS.CONTENT_URI, null);
             bundle.putInt(TSE.SESSION_ID, (int)sessionId);
 
             mDialog.dismiss();
-            Fragment fragment = new TrainingSessionExercisesFragment();
+            Fragment fragment = new ActiveTrainingSessionFragment();
             fragment.setArguments(bundle);
             getActivity().getSupportFragmentManager()
                     .beginTransaction()

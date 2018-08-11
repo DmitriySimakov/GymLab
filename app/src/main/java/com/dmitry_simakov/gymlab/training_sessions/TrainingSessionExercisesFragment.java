@@ -8,6 +8,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -29,6 +30,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -46,17 +48,9 @@ public class TrainingSessionExercisesFragment extends Fragment
     private static final class TPE extends DatabaseContract.TrainingProgramExerciseEntry {}
     private static final class E extends DatabaseContract.ExerciseEntry {}
 
-    private Timer mTimer;
-    private final SimpleDateFormat watchFormat = new SimpleDateFormat("HH:mm:ss");
-    private long mStartMillis;
-    private LinearLayout mTimePanel;
-    private TextView mDurationTV, mRestTV;
-
-    private Cursor mCursor;
     private CursorAdapter mCursorAdapter;
 
     private int mTrainingDayId, mSessionId;
-    private boolean mFinished;
 
     public TrainingSessionExercisesFragment() {}
 
@@ -79,15 +73,25 @@ public class TrainingSessionExercisesFragment extends Fragment
         listView.setAdapter(mCursorAdapter);
         listView.setOnItemClickListener((parent, view1, position, id) -> {
             Fragment fragment = new TrainingSessionSetsFragment();
+            Cursor c = mCursorAdapter.getCursor();
             Bundle bundle = new Bundle();
             bundle.putInt(TSE._ID, (int)id);
-            mCursor.moveToPosition(position);
-            int paramsBoolArr = mCursor.getInt(mCursor.getColumnIndex(TSE.PARAMS_BOOL_ARR));
+            c.moveToPosition(position);
+            int paramsBoolArr = c.getInt(c.getColumnIndex(TSE.PARAMS_BOOL_ARR));
             bundle.putInt(TSE.PARAMS_BOOL_ARR, paramsBoolArr);
             fragment.setArguments(bundle);
-            getActivity().getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragment_container, fragment)
+
+            FragmentManager fm;
+            int fragmentContainer;
+            if (getParentFragment() != null) {
+                fm = getParentFragment().getChildFragmentManager();
+                fragmentContainer = R.id.training_session_container;
+            } else {
+                fm = getActivity().getSupportFragmentManager();
+                fragmentContainer = R.id.fragment_container;
+            }
+            fm.beginTransaction()
+                    .replace(fragmentContainer, fragment)
                     .addToBackStack(null)
                     .commit();
         });
@@ -101,10 +105,6 @@ public class TrainingSessionExercisesFragment extends Fragment
             dialog.show(getChildFragmentManager(), null);
         });
 
-        mTimePanel = view.findViewById(R.id.time_panel);
-        mDurationTV = view.findViewById(R.id.duraton);
-        mRestTV = view.findViewById(R.id.rest);
-
         return view;
     }
 
@@ -115,65 +115,14 @@ public class TrainingSessionExercisesFragment extends Fragment
         Bundle args = getArguments();
         if (args != null) {
             mSessionId = getArguments().getInt(TSE.SESSION_ID);
+            mTrainingDayId = args.getInt(TS.TRAINING_DAY_ID);
 
-            if (args.containsKey(TS.TRAINING_DAY_ID)) {
-                mFinished = false;
-                mTrainingDayId = args.getInt(TS.TRAINING_DAY_ID);
+            if (args.containsKey(TS.TRAINING_DAY_ID)) { //TODO Logic error
                 getLoaderManager().initLoader(PROGRAM_DAY_LOADER_ID, null, this);
             } else {
-                if (args.getInt(TS.DURATION) == 0) {
-                    mFinished = false;
-                    try {
-                        String dateTime = args.getString(TS.DATE_TIME);
-                        mStartMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-                                .parse(dateTime).getTime();
-                    } catch (ParseException e) {
-                        e.printStackTrace();
-                    }
-                } else {
-                    mFinished = true;
-                    mTimePanel.setVisibility(View.GONE);
-                }
                 getLoaderManager().initLoader(SESSION_LOADER_ID, null, this);
             }
         }
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-
-        if (!mFinished) {
-            mTimer = new Timer();
-            mTimer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    getActivity().runOnUiThread(() -> {
-                        long diffMillis = new Date().getTime() - mStartMillis;
-                        int hours   = (int) (diffMillis / (1000 * 60 * 60)) % 24;
-                        int minutes = (int) (diffMillis / (1000 * 60)) % 60;
-                        int seconds = (int) (diffMillis / 1000) % 60;
-                        mDurationTV.setText(hours +":"+ minutes +":"+ seconds);
-                    });
-                }
-
-            },0,1000);
-        }
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        if (mTimer != null) {
-            mTimer.cancel();
-            mTimer = null;
-        }
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (mCursor != null) mCursor.close();
     }
 
     @NonNull
@@ -205,12 +154,11 @@ public class TrainingSessionExercisesFragment extends Fragment
                 }
 
                 Bundle args = getArguments();
-                if (args.containsKey(TS._ID)) {
+                if (args.containsKey(TSE.SESSION_ID)) {
                     getLoaderManager().initLoader(SESSION_LOADER_ID, null, this);
                 }
                 break;
             case SESSION_LOADER_ID:
-                mCursor = c;
                 mCursorAdapter.swapCursor(c);
                 break;
         }

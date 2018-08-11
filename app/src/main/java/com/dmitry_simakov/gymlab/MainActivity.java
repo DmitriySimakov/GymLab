@@ -155,7 +155,16 @@ public class MainActivity extends AppCompatActivity
     public void onBackPressed() {
         Log.d(CLASS_NAME, "onBackPressed");
 
-        mDrawer = findViewById(R.id.drawer_layout);
+        FragmentManager fm = getSupportFragmentManager();
+        for (Fragment frag : fm.getFragments()) {
+            if (frag.isVisible()) {
+                FragmentManager childFm = frag.getChildFragmentManager();
+                if (childFm.getBackStackEntryCount() > 0) {
+                    childFm.popBackStack();
+                    return;
+                }
+            }
+        }
         if (mDrawer.isDrawerOpen(GravityCompat.START)) {
             mDrawer.closeDrawer(GravityCompat.START);
         } else {

@@ -58,14 +58,22 @@ public class TrainingSessionsFragment extends Fragment
         ListView listView = view.findViewById(R.id.list_view);
         listView.setAdapter(mCursorAdapter);
         listView.setOnItemClickListener((parent, view1, position, id) -> {
-            Fragment fragment = new TrainingSessionExercisesFragment();
-            Bundle bundle = new Bundle();
             Cursor c = mCursorAdapter.getCursor();
             c.moveToPosition(position);
+
+            Fragment fragment;
+            Bundle bundle = new Bundle();
             bundle.putInt(TSE.SESSION_ID, (int)id);
-            bundle.putString(TS.DATE_TIME, c.getString(c.getColumnIndex(TS.DATE_TIME)));
-            bundle.putInt(TS.DURATION, c.getInt(c.getColumnIndex(TS.DURATION)));
+
+            if (c.getInt(c.getColumnIndex(TS.DURATION)) == 0) {
+                fragment = new ActiveTrainingSessionFragment();
+                bundle.putString(TS.DATE_TIME, c.getString(c.getColumnIndex(TS.DATE_TIME)));
+            } else {
+                fragment = new TrainingSessionExercisesFragment();
+            }
+
             fragment.setArguments(bundle);
+
             getActivity().getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.fragment_container, fragment)

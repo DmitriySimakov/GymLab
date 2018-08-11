@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDialogFragment;
 import android.util.Log;
@@ -31,10 +32,13 @@ import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 import com.dmitry_simakov.gymlab.exercises.ExercisesListFragment;
 import com.dmitry_simakov.gymlab.measurements.MeasurementDialog;
 
+import java.util.List;
+
 public class TrainingSessionExerciseDialog extends AppCompatDialogFragment {
 
     public static final String CLASS_NAME = TrainingSessionSetDialog.class.getSimpleName();
 
+    private static final class TS extends DatabaseContract.TrainingSessionEntry {}
     private static final class TSE extends DatabaseContract.TrainingSessionExerciseEntry {}
     private static final class Ex extends DatabaseContract.ExerciseEntry {}
 
@@ -79,9 +83,18 @@ public class TrainingSessionExerciseDialog extends AppCompatDialogFragment {
             Bundle bundle = new Bundle();
             bundle.putInt(TSE.SESSION_ID, mSessionId);
             fragment.setArguments(bundle);
-            getActivity().getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragment_container, fragment)
+
+            FragmentManager fm;
+            int fragmentContainer;
+            if (getParentFragment().getParentFragment() != null) {
+                fm = getParentFragment().getParentFragment().getChildFragmentManager();
+                fragmentContainer = R.id.training_session_container;
+            } else {
+                fm = getActivity().getSupportFragmentManager();
+                fragmentContainer = R.id.fragment_container;
+            }
+            fm.beginTransaction()
+                    .replace(fragmentContainer, fragment)
                     .addToBackStack(null)
                     .commit();
         });

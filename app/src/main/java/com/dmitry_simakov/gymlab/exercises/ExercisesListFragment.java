@@ -28,6 +28,7 @@ import com.dmitry_simakov.gymlab.database.DatabaseContract;
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 
 import java.util.HashMap;
+import java.util.List;
 
 public class ExercisesListFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
@@ -71,7 +72,11 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
                 model.setExercise(new Exercise(id,
                         c.getString(c.getColumnIndex(Ex.IMAGE)),
                         c.getString(c.getColumnIndex(Ex.NAME))));
-                getFragmentManager().popBackStack();
+                if (getParentFragment() != null) {
+                    getParentFragment().getChildFragmentManager().popBackStack();
+                } else {
+                    getActivity().getSupportFragmentManager().popBackStack();
+                }
             } else {
                 Fragment fragment = new ExerciseDescriptionFragment();
                 Bundle bundle = new Bundle();
