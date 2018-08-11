@@ -32,7 +32,6 @@ public class ActiveTrainingSessionFragment extends Fragment {
     private static final class TSE extends DatabaseContract.TrainingSessionExerciseEntry {}
 
     private Timer mTimer;
-    private final SimpleDateFormat watchFormat = new SimpleDateFormat("HH:mm:ss");
     private long mStartMillis;
     private TextView mDurationTV, mRestTV;
 

@@ -72,6 +72,7 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
                 model.setExercise(new Exercise(id,
                         c.getString(c.getColumnIndex(Ex.IMAGE)),
                         c.getString(c.getColumnIndex(Ex.NAME))));
+
                 if (getParentFragment() != null) {
                     getParentFragment().getChildFragmentManager().popBackStack();
                 } else {

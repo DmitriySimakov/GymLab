@@ -17,7 +17,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -46,14 +45,11 @@ public class TrainingSessionSetsFragment extends Fragment
         super.onAttach(context);
         Log.d(CLASS_NAME, "onAttach");
 
-        Bundle args = getArguments();
-        if (args != null) {
-            mExerciseId = args.getInt(TSE._ID);
-            int arr = args.getInt(TSE.PARAMS_BOOL_ARR);
-            for (int i = 0; i < 4; i++) {
-                mParamsBoolArr[4 - i - 1] = (arr%10 == 1);
-                arr /= 10;
-            }
+        mExerciseId = getArguments().getInt(TSE._ID);
+        int arr = getArguments().getInt(TSE.PARAMS_BOOL_ARR);
+        for (int i = 0; i < 4; i++) {
+            mParamsBoolArr[4 - i - 1] = (arr % 10 == 1);
+            arr /= 10;
         }
 
         mCursorAdapter = new MyCursorAdapter(getContext(), mParamsBoolArr);
@@ -64,48 +60,51 @@ public class TrainingSessionSetsFragment extends Fragment
 
         View view = inflater.inflate(R.layout.fragment_training_session_sets, container, false);
 
+        initListView(view);
+        configureListHeader(view);
+        initFAB(view);
+
+        return view;
+    }
+
+    private void initListView(View v) {
+        ListView listView = v.findViewById(R.id.list_view);
+        listView.setAdapter(mCursorAdapter);
+        listView.setOnItemClickListener((parent, view, position, id) -> {
+            TrainingSessionSetDialog dialog = new TrainingSessionSetDialog();
+            Bundle args = new Bundle();
+            args.putInt(TrainingSessionSetDialog.EXERCISE_ID, mExerciseId);
+            args.putBooleanArray(TSE.PARAMS_BOOL_ARR, mParamsBoolArr);
+            args.putInt(TrainingSessionSetDialog.SET_ID, (int)id);
+            dialog.setArguments(args);
+            dialog.show(getChildFragmentManager(), null);
+        });
+    }
+
+    private void configureListHeader(View v) {
         int[] header = new int[] { R.id.header_weight, R.id.header_reps, R.id.header_time, R.id.header_distance };
         for (int i = 0; i < 4; i++) {
             if (!mParamsBoolArr[i]) {
-                view.findViewById(header[i]).setVisibility(View.GONE);
+                v.findViewById(header[i]).setVisibility(View.GONE);
             }
         }
+    }
 
-        ListView listView = view.findViewById(R.id.list_view);
-        listView.setAdapter(mCursorAdapter);
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                TrainingSessionSetDialog dialog = new TrainingSessionSetDialog();
-                Bundle args = new Bundle();
-                args.putInt(TrainingSessionSetDialog.EXERCISE_ID, mExerciseId);
-                args.putBooleanArray(TSE.PARAMS_BOOL_ARR, mParamsBoolArr);
-                args.putInt(TrainingSessionSetDialog.SET_ID, (int)id);
-                dialog.setArguments(args);
-                dialog.show(getChildFragmentManager(), null);
-            }
+    private void initFAB(View v) {
+        FloatingActionButton fab = v.findViewById(R.id.fab);
+        fab.setOnClickListener(view -> {
+            TrainingSessionSetDialog dialog = new TrainingSessionSetDialog();
+            Bundle args = new Bundle();
+            args.putInt(TrainingSessionSetDialog.EXERCISE_ID, mExerciseId);
+            args.putBooleanArray(TSE.PARAMS_BOOL_ARR, mParamsBoolArr);
+            dialog.setArguments(args);
+            dialog.show(getChildFragmentManager(), null);
         });
-
-        FloatingActionButton fab = view.findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                TrainingSessionSetDialog dialog = new TrainingSessionSetDialog();
-                Bundle args = new Bundle();
-                args.putInt(TrainingSessionSetDialog.EXERCISE_ID, mExerciseId);
-                args.putBooleanArray(TSE.PARAMS_BOOL_ARR, mParamsBoolArr);
-                dialog.setArguments(args);
-                dialog.show(getChildFragmentManager(), null);
-            }
-        });
-
-        return view;
     }
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-
         getLoaderManager().initLoader(0, null, this);
     }
 

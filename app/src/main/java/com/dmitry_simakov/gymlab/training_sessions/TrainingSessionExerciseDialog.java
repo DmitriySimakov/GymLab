@@ -38,9 +38,7 @@ public class TrainingSessionExerciseDialog extends AppCompatDialogFragment {
 
     public static final String CLASS_NAME = TrainingSessionSetDialog.class.getSimpleName();
 
-    private static final class TS extends DatabaseContract.TrainingSessionEntry {}
     private static final class TSE extends DatabaseContract.TrainingSessionExerciseEntry {}
-    private static final class Ex extends DatabaseContract.ExerciseEntry {}
 
     private Button mChooseExerciseBtn;
     private LinearLayout mChosenExerciseLL;
@@ -58,11 +56,7 @@ public class TrainingSessionExerciseDialog extends AppCompatDialogFragment {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-
-        Bundle args = getArguments();
-        if (args != null) {
-            mSessionId = args.getInt(TSE.SESSION_ID);
-        }
+        mSessionId = getArguments().getInt(TSE.SESSION_ID);
     }
 
     @NonNull
@@ -77,55 +71,14 @@ public class TrainingSessionExerciseDialog extends AppCompatDialogFragment {
         View view = inflater.inflate(R.layout.dialog_training_session_exercise, null);
         builder.setView(view);
 
-        mChooseExerciseBtn = view.findViewById(R.id.choose_exercise_btn);
-        mChooseExerciseBtn.setOnClickListener(v -> {
-            Fragment fragment = new ExercisesListFragment();
-            Bundle bundle = new Bundle();
-            bundle.putInt(TSE.SESSION_ID, mSessionId);
-            fragment.setArguments(bundle);
+        initChooseExerciseButton(view);
+        initChosenExerciseLayout(view);
+        setExerciseObserver();
 
-            FragmentManager fm;
-            int fragmentContainer;
-            if (getParentFragment().getParentFragment() != null) {
-                fm = getParentFragment().getParentFragment().getChildFragmentManager();
-                fragmentContainer = R.id.training_session_container;
-            } else {
-                fm = getActivity().getSupportFragmentManager();
-                fragmentContainer = R.id.fragment_container;
-            }
-            fm.beginTransaction()
-                    .replace(fragmentContainer, fragment)
-                    .addToBackStack(null)
-                    .commit();
-        });
-        mChosenExerciseLL = view.findViewById(R.id.chosen_exercise_ll);
-        mExerciseIV       = view.findViewById(R.id.exercise_image);
-        mExerciseNameTV   = view.findViewById(R.id.exercise_name);
-        mRemoveExerciseIV = view.findViewById(R.id.remove_exercise_iv);
-        mRemoveExerciseIV.setOnClickListener(v -> {
-            mExercise = null;
-            mChooseExerciseBtn.setVisibility(View.VISIBLE);
-            mChosenExerciseLL.setVisibility(View.GONE);
-        });
         mWeightCB   = view.findViewById(R.id.weight_cb);
         mRepsCB     = view.findViewById(R.id.reps_cb);
         mTimeCB     = view.findViewById(R.id.time_cb);
         mDistanceCB = view.findViewById(R.id.distance_cb);
-
-        SharedViewModel model = ViewModelProviders.of(getActivity()).get(SharedViewModel.class);
-        model.getExercise().observe(this, exercise -> {
-            mChooseExerciseBtn.setVisibility(View.GONE);
-            mChosenExerciseLL.setVisibility(View.VISIBLE);
-            mExercise = exercise;
-            Resources res = getContext().getResources();
-            if (exercise.getImageName() != null) {
-                int resID = res.getIdentifier(exercise.getImageName(), "drawable", getContext().getPackageName());
-                if (resID != 0) {
-                    mExerciseIV.setImageDrawable(res.getDrawable(resID));
-                }
-            }
-            mExerciseNameTV.setText(exercise.getExerciseName());
-        });
 
         builder.setTitle("Упражнение");
         builder.setPositiveButton("Добавить", (dialog, which) -> {
@@ -151,5 +104,58 @@ public class TrainingSessionExerciseDialog extends AppCompatDialogFragment {
         });
 
         return builder.create();
+    }
+
+    private void initChooseExerciseButton(View v) {
+        mChooseExerciseBtn = v.findViewById(R.id.choose_exercise_btn);
+        mChooseExerciseBtn.setOnClickListener(view -> {
+            Fragment fragment = new ExercisesListFragment();
+            Bundle bundle = new Bundle();
+            bundle.putInt(TSE.SESSION_ID, mSessionId);
+            fragment.setArguments(bundle);
+
+            FragmentManager fm;
+            int fragmentContainer;
+            if (getParentFragment().getParentFragment() != null) {
+                fm = getParentFragment().getParentFragment().getChildFragmentManager();
+                fragmentContainer = R.id.training_session_container;
+            } else {
+                fm = getActivity().getSupportFragmentManager();
+                fragmentContainer = R.id.fragment_container;
+            }
+            fm.beginTransaction()
+                    .replace(fragmentContainer, fragment)
+                    .addToBackStack(null)
+                    .commit();
+        });
+    }
+
+    private void initChosenExerciseLayout(View v) {
+        mChosenExerciseLL = v.findViewById(R.id.chosen_exercise_ll);
+        mExerciseIV       = v.findViewById(R.id.exercise_image);
+        mExerciseNameTV   = v.findViewById(R.id.exercise_name);
+        mRemoveExerciseIV = v.findViewById(R.id.remove_exercise_iv);
+        mRemoveExerciseIV.setOnClickListener(view -> {
+            mExercise = null;
+            mChooseExerciseBtn.setVisibility(View.VISIBLE);
+            mChosenExerciseLL.setVisibility(View.GONE);
+        });
+    }
+
+    private void setExerciseObserver() {
+        SharedViewModel model = ViewModelProviders.of(getActivity()).get(SharedViewModel.class);
+        model.getExercise().observe(this, exercise -> {
+            mChooseExerciseBtn.setVisibility(View.GONE);
+            mChosenExerciseLL.setVisibility(View.VISIBLE);
+            mExercise = exercise;
+            Resources res = getContext().getResources();
+            if (exercise.getImageName() != null) {
+                int resID = res.getIdentifier(exercise.getImageName(), "drawable", getContext().getPackageName());
+                if (resID != 0) {
+                    mExerciseIV.setImageDrawable(res.getDrawable(resID));
+                }
+            }
+            mExerciseNameTV.setText(exercise.getExerciseName());
+        });
     }
 }

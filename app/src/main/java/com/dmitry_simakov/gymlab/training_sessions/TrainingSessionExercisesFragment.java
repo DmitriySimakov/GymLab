@@ -50,7 +50,8 @@ public class TrainingSessionExercisesFragment extends Fragment
 
     private CursorAdapter mCursorAdapter;
 
-    private int mTrainingDayId, mSessionId;
+    private int mSessionId;
+
 
     public TrainingSessionExercisesFragment() {}
 
@@ -69,16 +70,24 @@ public class TrainingSessionExercisesFragment extends Fragment
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_training_session_exercises, container, false);
 
-        ListView listView = view.findViewById(R.id.list_view);
+        initListView(view);
+        initFAB(view);
+
+        return view;
+    }
+
+    private void initListView(View v) {
+        ListView listView = v.findViewById(R.id.list_view);
         listView.setAdapter(mCursorAdapter);
-        listView.setOnItemClickListener((parent, view1, position, id) -> {
-            Fragment fragment = new TrainingSessionSetsFragment();
+        listView.setOnItemClickListener((parent, view, position, id) -> {
             Cursor c = mCursorAdapter.getCursor();
+            c.moveToPosition(position);
+
             Bundle bundle = new Bundle();
             bundle.putInt(TSE._ID, (int)id);
-            c.moveToPosition(position);
-            int paramsBoolArr = c.getInt(c.getColumnIndex(TSE.PARAMS_BOOL_ARR));
-            bundle.putInt(TSE.PARAMS_BOOL_ARR, paramsBoolArr);
+            bundle.putInt(TSE.PARAMS_BOOL_ARR, c.getInt(c.getColumnIndex(TSE.PARAMS_BOOL_ARR)));
+
+            Fragment fragment = new TrainingSessionSetsFragment();
             fragment.setArguments(bundle);
 
             FragmentManager fm;
@@ -95,33 +104,29 @@ public class TrainingSessionExercisesFragment extends Fragment
                     .addToBackStack(null)
                     .commit();
         });
+    }
 
-        FloatingActionButton fab = view.findViewById(R.id.fab);
-        fab.setOnClickListener(view2 -> {
+    private void initFAB(View v) {
+        FloatingActionButton fab = v.findViewById(R.id.fab);
+        fab.setOnClickListener(view -> {
+            Bundle bundle = new Bundle();
+            bundle.putInt(TSE.SESSION_ID, mSessionId);
+
             TrainingSessionExerciseDialog dialog = new TrainingSessionExerciseDialog();
-            Bundle args = new Bundle();
-            args.putInt(TSE.SESSION_ID, mSessionId);
-            dialog.setArguments(args);
+            dialog.setArguments(bundle);
             dialog.show(getChildFragmentManager(), null);
         });
-
-        return view;
     }
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        Bundle args = getArguments();
-        if (args != null) {
-            mSessionId = getArguments().getInt(TSE.SESSION_ID);
-            mTrainingDayId = args.getInt(TS.TRAINING_DAY_ID);
-
-            if (args.containsKey(TS.TRAINING_DAY_ID)) { //TODO Logic error
-                getLoaderManager().initLoader(PROGRAM_DAY_LOADER_ID, null, this);
-            } else {
-                getLoaderManager().initLoader(SESSION_LOADER_ID, null, this);
-            }
+        mSessionId = getArguments().getInt(TSE.SESSION_ID);
+        if (getArguments().containsKey(TS.TRAINING_DAY_ID)) {
+            getLoaderManager().initLoader(PROGRAM_DAY_LOADER_ID, null, this);
+        } else {
+            getLoaderManager().initLoader(SESSION_LOADER_ID, null, this);
         }
     }
 
@@ -131,7 +136,7 @@ public class TrainingSessionExercisesFragment extends Fragment
         Loader loader = null;
         switch (id) {
             case PROGRAM_DAY_LOADER_ID:
-                loader = new MyCursorLoader(getContext(), mTrainingDayId);
+                loader = new MyCursorLoader(getContext(), args.getInt(TS.TRAINING_DAY_ID));
                 break;
             case SESSION_LOADER_ID:
                 loader = new MyCursorLoader(getContext(), mSessionId);
@@ -141,26 +146,25 @@ public class TrainingSessionExercisesFragment extends Fragment
     }
 
     @Override
-    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor c) {
+    public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
         switch (loader.getId()) {
             case PROGRAM_DAY_LOADER_ID:
-                // insert exercise from program to the session
-                if (c.moveToFirst()) {
-                    do {
-                        int exerciseId = c.getInt(c.getColumnIndex(TPE.EXERCISE_ID));
-                        int number = c.getInt(c.getColumnIndex(TPE.NUMBER));
-                        DatabaseHelper.insertExerciseIntoSession(mSessionId, exerciseId, number, 1100);
-                    } while (c.moveToNext());
-                }
-
-                Bundle args = getArguments();
-                if (args.containsKey(TSE.SESSION_ID)) {
-                    getLoaderManager().initLoader(SESSION_LOADER_ID, null, this);
-                }
+                insertTrainingProgramExercises(cursor);
+                getLoaderManager().initLoader(SESSION_LOADER_ID, null, this);
                 break;
             case SESSION_LOADER_ID:
-                mCursorAdapter.swapCursor(c);
+                mCursorAdapter.swapCursor(cursor);
                 break;
+        }
+    }
+
+    private void insertTrainingProgramExercises(Cursor c) {
+        if (c.moveToFirst()) {
+            do {
+                int exerciseId = c.getInt(c.getColumnIndex(TPE.EXERCISE_ID));
+                int number = c.getInt(c.getColumnIndex(TPE.NUMBER));
+                DatabaseHelper.insertExerciseIntoSession(mSessionId, exerciseId, number, 1100);
+            } while (c.moveToNext());
         }
     }
 

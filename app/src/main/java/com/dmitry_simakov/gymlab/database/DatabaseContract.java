@@ -20,6 +20,7 @@ public class DatabaseContract {
 
         // Names for external keys
         public final static String MAIN_MUSCLE = "main_muscle";
+        public final static String TARGETED_MUSCLES = "targeted_muscles";
         public final static String MECHANICS_TYPE = "mechanics_type";
         public final static String EXERCISE_TYPE = "exercise_type";
         public final static String EQUIPMENT = "equipment";
@@ -175,6 +176,8 @@ public class DatabaseContract {
 
         // Names for external keys
         public final static String BODY_PARAM = "body_param";
+        public final static String PREV_DATE = "prev_date";
+        public final static String PREV_VALUE = "prev_value";
 
         // Columns names
         public final static String _ID = ID;

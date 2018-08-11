@@ -27,7 +27,6 @@ import android.widget.DatePicker;
 import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
-import android.widget.TimePicker;
 
 import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.database.DatabaseContract;
@@ -62,10 +61,9 @@ public class TrainingSessionDialog extends AppCompatDialogFragment
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         Log.d(CLASS_NAME, "onCreateDialog");
 
-        Activity activity = getActivity();
-        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 
-        LayoutInflater inflater = activity.getLayoutInflater();
+        LayoutInflater inflater = getActivity().getLayoutInflater();
         View view = inflater.inflate(R.layout.dialog_training_session, null);
         builder.setView(view);
 
@@ -76,25 +74,19 @@ public class TrainingSessionDialog extends AppCompatDialogFragment
         mSwitch = view.findViewById(R.id.program_switch);
         mChoseProgramLL = view.findViewById(R.id.chose_program_ll);
 
-        mSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    mChoseProgramLL.setVisibility(View.VISIBLE);
-                } else {
-                    mChoseProgramLL.setVisibility(View.GONE);
-                }
+        mSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                mChoseProgramLL.setVisibility(View.VISIBLE);
+            } else {
+                mChoseProgramLL.setVisibility(View.GONE);
             }
         });
 
         builder.setTitle("Тренировка");
         builder.setPositiveButton("Начать", null);
-        builder.setNegativeButton("Отмена", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                Log.d(CLASS_NAME, "negativeButton onClick");
-                dialog.cancel();
-            }
+        builder.setNegativeButton("Отмена", (dialog, which) -> {
+            Log.d(CLASS_NAME, "negativeButton onClick");
+            dialog.cancel();
         });
 
         return builder.create();
@@ -116,7 +108,7 @@ public class TrainingSessionDialog extends AppCompatDialogFragment
 
     @Override
     public void onLoadFinished(@NonNull Loader<Cursor> loader, final Cursor c) {
-        final Calendar calendar = Calendar.getInstance();
+        Calendar calendar = Calendar.getInstance();
         mDate = new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime());
         mTime = new SimpleDateFormat("HH:mm:ss").format(calendar.getTime());
         mDateTV.setText(mDate);
@@ -124,33 +116,7 @@ public class TrainingSessionDialog extends AppCompatDialogFragment
         setDatePickerDialog(calendar);
         setTimePickerDialog(calendar);
         setTrainingProgramWindow(c);
-
-        mDialog.getButton(Dialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-            Log.d(CLASS_NAME, "positiveButton onClick");
-
-            Bundle bundle = new Bundle();
-            ContentValues cv = new ContentValues();
-            if (c.moveToFirst()) {
-                int trainingDayId = c.getInt(c.getColumnIndex(TS.TRAINING_DAY_ID)); // TODO get id from TextView
-                bundle.putInt(TS.TRAINING_DAY_ID, trainingDayId);
-                cv.put(TS.TRAINING_DAY_ID, trainingDayId);
-            }
-            String dateTime = mDate +" "+ mTime;
-            bundle.putString(TS.DATE_TIME, dateTime);
-            cv.put(TS.DATE_TIME, dateTime);
-            long sessionId = DatabaseHelper.insertTrainingSession(cv);
-            getContext().getContentResolver().notifyChange(TS.CONTENT_URI, null);
-            bundle.putInt(TSE.SESSION_ID, (int)sessionId);
-
-            mDialog.dismiss();
-            Fragment fragment = new ActiveTrainingSessionFragment();
-            fragment.setArguments(bundle);
-            getActivity().getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragment_container, fragment)
-                    .addToBackStack(null)
-                    .commit();
-        });
+        setPositiveButton(c);
     }
 
     private void setDatePickerDialog(final Calendar calendar) {
@@ -208,6 +174,43 @@ public class TrainingSessionDialog extends AppCompatDialogFragment
         } else {
             mChoseProgramLL.setVisibility(View.GONE);
         }
+    }
+
+    private void setPositiveButton(Cursor c) {
+        mDialog.getButton(Dialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            Log.d(CLASS_NAME, "positiveButton onClick");
+
+            ContentValues cv = new ContentValues();
+            Bundle bundle = new Bundle();
+
+            // Get training program day
+            if (c.moveToFirst()) {
+                int trainingDayId = c.getInt(c.getColumnIndex(TS.TRAINING_DAY_ID)); // TODO get id from TextView
+                cv.put(TS.TRAINING_DAY_ID, trainingDayId);
+                bundle.putInt(TS.TRAINING_DAY_ID, trainingDayId);
+            }
+
+            // Get date_time
+            String dateTime = mDate +" "+ mTime;
+            cv.put(TS.DATE_TIME, dateTime);
+            bundle.putString(TS.DATE_TIME, dateTime);
+
+            // Insert training session and get it ID
+            long sessionId = DatabaseHelper.insertTrainingSession(cv);
+            getContext().getContentResolver().notifyChange(TS.CONTENT_URI, null);
+            bundle.putInt(TSE.SESSION_ID, (int)sessionId);
+
+            mDialog.dismiss();
+
+            Fragment fragment = new ActiveTrainingSessionFragment();
+            fragment.setArguments(bundle);
+
+            getActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, fragment)
+                    .addToBackStack(null)
+                    .commit();
+        });
     }
 
     @Override

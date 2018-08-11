@@ -15,14 +15,12 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.Toast;
 
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 import com.dmitry_simakov.gymlab.exercises.ExercisesListFragment;
 import com.dmitry_simakov.gymlab.measurements.MeasurementsTabFragment;
 import com.dmitry_simakov.gymlab.training_programs.TrainingProgramsFragment;
-import com.dmitry_simakov.gymlab.training_sessions.TrainingSessionExerciseDialog;
 import com.dmitry_simakov.gymlab.training_sessions.TrainingSessionsFragment;
 
 public class MainActivity extends AppCompatActivity
@@ -39,7 +37,6 @@ public class MainActivity extends AppCompatActivity
     private DrawerLayout mDrawer;
     private Toolbar mToolbar;
     private ActionBarDrawerToggle mToggle;
-    private FragmentManager mFragmentManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,8 +67,7 @@ public class MainActivity extends AppCompatActivity
 
         initDB();
 
-        mFragmentManager = getSupportFragmentManager();
-        mFragmentManager.addOnBackStackChangedListener(this);
+        getSupportFragmentManager().addOnBackStackChangedListener(this);
         setFragment(new TrainingSessionsFragment(), navigationView.getMenu().findItem(R.id.nav_training_sessions));
     }
 
@@ -130,24 +126,14 @@ public class MainActivity extends AppCompatActivity
     public void onBackStackChanged() {
         Log.d(CLASS_NAME, "onBackStackChanged");
 
-        if (mFragmentManager.getBackStackEntryCount() > 0) {
+        if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true); // show back button
-            mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    onBackPressed();
-                }
-            });
+            mToolbar.setNavigationOnClickListener(v -> onBackPressed());
         } else {
             getSupportActionBar().setDisplayHomeAsUpEnabled(false); //show hamburger
             mToggle.syncState();
+            mToolbar.setNavigationOnClickListener(v -> mDrawer.openDrawer(GravityCompat.START));
             setTitle(R.string.exercises);
-            mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    mDrawer.openDrawer(GravityCompat.START);
-                }
-            });
         }
     }
 
@@ -155,31 +141,32 @@ public class MainActivity extends AppCompatActivity
     public void onBackPressed() {
         Log.d(CLASS_NAME, "onBackPressed");
 
-        FragmentManager fm = getSupportFragmentManager();
-        for (Fragment frag : fm.getFragments()) {
-            if (frag.isVisible()) {
-                FragmentManager childFm = frag.getChildFragmentManager();
-                if (childFm.getBackStackEntryCount() > 0) {
-                    childFm.popBackStack();
+        if (mDrawer.isDrawerOpen(GravityCompat.START)) {
+            mDrawer.closeDrawer(GravityCompat.START);
+            return;
+        }
+
+        for (Fragment fragment : getSupportFragmentManager().getFragments()) {
+            if (fragment.isVisible()) {
+                FragmentManager childFM = fragment.getChildFragmentManager();
+                if (childFM.getBackStackEntryCount() > 0) {
+                    childFM.popBackStack();
                     return;
                 }
             }
         }
-        if (mDrawer.isDrawerOpen(GravityCompat.START)) {
-            mDrawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
+
+        super.onBackPressed();
     }
 
     private void initDB() {
         Log.d(CLASS_NAME, "initDB");
 
         // Copy database at the first launch
-        if(!mPreferences.contains(IS_DB_COPIED)) {
+        if (!mPreferences.contains(IS_DB_COPIED)) {
             DatabaseHelper dbHelper = DatabaseHelper.getInstance(this);
             dbHelper.getReadableDatabase(); // Need to open a connection
-            if(dbHelper.copyDatabase()) {
+            if (dbHelper.copyDatabase()) {
                 SharedPreferences.Editor editor = mPreferences.edit();
                 editor.putBoolean(IS_DB_COPIED, true);
                 editor.apply();
@@ -192,7 +179,7 @@ public class MainActivity extends AppCompatActivity
     private void setFragment(Fragment fragment, MenuItem item) {
         Log.d(CLASS_NAME, "setFragment");
 
-        mFragmentManager.beginTransaction().replace(R.id.fragment_container, fragment).commit();
+        getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, fragment).commit();
         item.setChecked(true); // Выделяем выбранный пункт меню в шторке
         setTitle(item.getTitle()); // Выводим выбранный пункт в заголовке
     }

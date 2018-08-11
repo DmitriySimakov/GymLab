@@ -78,7 +78,7 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
             String name            = c.getString(c.getColumnIndex(Ex.NAME));
             String imageName       = c.getString(c.getColumnIndex(Ex.IMAGE));
             String mainMuscle      = c.getString(c.getColumnIndex(Ex.MAIN_MUSCLE));
-            String targetedMuscles = c.getString(c.getColumnIndex("targeted_muscles"));
+            String targetedMuscles = c.getString(c.getColumnIndex(Ex.TARGETED_MUSCLES));
             String mechanicsType   = c.getString(c.getColumnIndex(Ex.MECHANICS_TYPE));
             String exerciseType    = c.getString(c.getColumnIndex(Ex.EXERCISE_TYPE));
             String equipment       = c.getString(c.getColumnIndex(Ex.EQUIPMENT));
@@ -129,7 +129,7 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
                             " (SELECT group_concat(m."+ M.NAME +", ', ')"+
                                 " FROM "+ TM.TABLE_NAME +" AS tm LEFT JOIN "+ M.TABLE_NAME +" AS m"+
                                 " ON tm."+ TM.MUSCLE_ID +" = m." + M._ID +
-                                " WHERE tm." + TM.EXERCISE_ID + " = ?) AS targeted_muscles,"+
+                                " WHERE tm." + TM.EXERCISE_ID + " = ?) AS "+ Ex.TARGETED_MUSCLES +","+
                             " (SELECT "+ MT.NAME +" FROM "+ MT.TABLE_NAME +" WHERE "+ MT._ID +" = Ex."+ Ex.MECHANICS_TYPE_ID +") AS "+ Ex.MECHANICS_TYPE +", "+
                             " (SELECT "+ ET.NAME +" FROM "+ ET.TABLE_NAME +" WHERE "+ ET._ID +" = Ex."+ Ex.EXERCISE_TYPE_ID +") AS "+ Ex.EXERCISE_TYPE +", "+
                             " (SELECT "+ Eq.NAME +" FROM "+ Eq.TABLE_NAME +" WHERE "+ Eq._ID +" = Ex."+ Ex.EQUIPMENT_ID +") AS "+ Ex.EQUIPMENT +", "+

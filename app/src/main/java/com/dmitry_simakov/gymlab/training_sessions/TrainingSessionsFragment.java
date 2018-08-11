@@ -7,7 +7,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
@@ -18,13 +17,11 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.database.DatabaseContract;
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
-import com.dmitry_simakov.gymlab.exercises.ExerciseDescriptionFragment;
 
 public class TrainingSessionsFragment extends Fragment
         implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -61,17 +58,16 @@ public class TrainingSessionsFragment extends Fragment
             Cursor c = mCursorAdapter.getCursor();
             c.moveToPosition(position);
 
-            Fragment fragment;
             Bundle bundle = new Bundle();
             bundle.putInt(TSE.SESSION_ID, (int)id);
 
-            if (c.getInt(c.getColumnIndex(TS.DURATION)) == 0) {
+            Fragment fragment;
+            if (c.getInt(c.getColumnIndex(TS.DURATION)) == 0) { // Session is not finished
                 fragment = new ActiveTrainingSessionFragment();
                 bundle.putString(TS.DATE_TIME, c.getString(c.getColumnIndex(TS.DATE_TIME)));
             } else {
                 fragment = new TrainingSessionExercisesFragment();
             }
-
             fragment.setArguments(bundle);
 
             getActivity().getSupportFragmentManager()

@@ -18,12 +18,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.database.DatabaseContract;
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
-import com.dmitry_simakov.gymlab.measurements.MeasurementDialog;
 
 public class TrainingSessionSetDialog extends AppCompatDialogFragment
         implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -63,26 +61,26 @@ public class TrainingSessionSetDialog extends AppCompatDialogFragment
         mTimeET = view.findViewById(R.id.time_et);
         mDistanceET = view.findViewById(R.id.distance_et);
 
+        configureParameterViews(view);
+
+        builder.setPositiveButton("ОК", null);
+        builder.setNegativeButton("Отмена", (dialog, which) -> {
+            dialog.cancel();
+        });
+
+        return builder.create();
+    }
+
+    private void configureParameterViews(View v) {
         boolean[] arr = getArguments().getBooleanArray(TSE.PARAMS_BOOL_ARR);
         int[] labels = new int[] { R.id.weight_tv, R.id.reps_tv, R.id.time_tv, R.id.distance_tv };
         int[] layouts = new int[] { R.id.weight_ll, R.id.reps_ll, R.id.time_ll, R.id.distance_ll };
         for (int i = 0; i < 4; i++) {
             if (!arr[i]) {
-                view.findViewById(labels[i]).setVisibility(View.GONE);
-                view.findViewById(layouts[i]).setVisibility(View.GONE);
+                v.findViewById(labels[i]).setVisibility(View.GONE);
+                v.findViewById(layouts[i]).setVisibility(View.GONE);
             }
         }
-
-        builder.setPositiveButton("ОК", null);
-        builder.setNegativeButton("Отмена", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                Log.d(CLASS_NAME, "negativeButton onClick");
-                dialog.cancel();
-            }
-        });
-
-        return builder.create();
     }
 
     @Override
@@ -103,6 +101,26 @@ public class TrainingSessionSetDialog extends AppCompatDialogFragment
         }
     }
 
+    private void newSetInit() {
+        mDialog.getButton(Dialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            Log.d(CLASS_NAME, "positiveButton onClick");
+            DatabaseHelper.insertSet(mExerciseId, 0,
+                    getValue(mWeightET), getValue(mRepsET), getValue(mTimeET), getValue(mDistanceET));
+            getContext().getContentResolver().notifyChange(TSS.CONTENT_URI, null);
+            mDialog.dismiss();
+        });
+    }
+
+    private int getValue(EditText et) {
+        int value = 0;
+        try {
+            value = Integer.parseInt(String.valueOf(et.getText()));
+        } catch(Exception e){
+            Log.d(CLASS_NAME, "parseDouble failed!");
+        }
+        return value;
+    }
+
     @NonNull
     @Override
     public Loader<Cursor> onCreateLoader(int id, @Nullable Bundle args) {
@@ -112,6 +130,22 @@ public class TrainingSessionSetDialog extends AppCompatDialogFragment
     @Override
     public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
         editSetInit(cursor);
+    }
+
+    private void editSetInit(Cursor c) {
+        if (c.moveToFirst()) {
+            mWeightET.setText(String.valueOf(c.getInt(c.getColumnIndex(TSS.WEIGHT))));
+            mRepsET.setText(String.valueOf(c.getInt(c.getColumnIndex(TSS.REPS))));
+            mTimeET.setText(String.valueOf(c.getInt(c.getColumnIndex(TSS.TIME))));
+            mDistanceET.setText(String.valueOf(c.getInt(c.getColumnIndex(TSS.DISTANCE))));
+        }
+
+        mDialog.getButton(Dialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            Log.d(CLASS_NAME, "positiveButton onClick");
+            DatabaseHelper.updateSet(mSetId, getValue(mWeightET), getValue(mRepsET), getValue(mTimeET), getValue(mDistanceET));
+            getContext().getContentResolver().notifyChange(TSS.CONTENT_URI, null);
+            mDialog.dismiss();
+        });
     }
 
     @Override
@@ -138,47 +172,5 @@ public class TrainingSessionSetDialog extends AppCompatDialogFragment
             }
             return cursor;
         }
-    }
-
-    private void newSetInit() {
-        mDialog.getButton(Dialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.d(CLASS_NAME, "positiveButton onClick");
-                DatabaseHelper.insertSet(mExerciseId, 0,
-                        getValue(mWeightET), getValue(mRepsET), getValue(mTimeET), getValue(mDistanceET));
-                getContext().getContentResolver().notifyChange(TSS.CONTENT_URI, null);
-                mDialog.dismiss();
-            }
-        });
-    }
-
-    private void editSetInit(Cursor c) {
-        if (c.moveToFirst()) {
-            mWeightET.setText(String.valueOf(c.getInt(c.getColumnIndex(TSS.WEIGHT))));
-            mRepsET.setText(String.valueOf(c.getInt(c.getColumnIndex(TSS.REPS))));
-            mTimeET.setText(String.valueOf(c.getInt(c.getColumnIndex(TSS.TIME))));
-            mDistanceET.setText(String.valueOf(c.getInt(c.getColumnIndex(TSS.DISTANCE))));
-        }
-
-        mDialog.getButton(Dialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.d(CLASS_NAME, "positiveButton onClick");
-                DatabaseHelper.updateSet(mSetId, getValue(mWeightET), getValue(mRepsET), getValue(mTimeET), getValue(mDistanceET));
-                getContext().getContentResolver().notifyChange(TSS.CONTENT_URI, null);
-                mDialog.dismiss();
-            }
-        });
-    }
-
-    private int getValue(EditText et) {
-        int value = 0;
-        try {
-            value = Integer.parseInt(String.valueOf(et.getText()));
-        } catch(Exception e){
-          Log.d(CLASS_NAME, "parseDouble failed!");
-        }
-        return value;
     }
 }

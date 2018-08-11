@@ -117,33 +117,42 @@ public class MeasurementsListFragment extends ListFragment
             Cursor cursor;
             if (mDate == null) {
                 cursor = db.rawQuery("SELECT "+ BMP._ID +", "+ BMP.NAME +","+
+
                                 " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
                                 " WHERE "+ BM.BODY_PARAM_ID +" = bmp."+ BMP._ID +
                                 " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.VALUE +","+
+
                                 " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
                                 " WHERE "+ BM.BODY_PARAM_ID +" = bmp."+ BMP._ID +
-                                " ORDER BY "+ BM.DATE +" DESC LIMIT 1, 1) AS prevVal,"+
+                                " ORDER BY "+ BM.DATE +" DESC LIMIT 1, 1) AS "+ BM.PREV_VALUE +","+
+
                                 " (SELECT "+ BM.DATE +" FROM "+ BM.TABLE_NAME +
                                 " WHERE "+ BM.BODY_PARAM_ID +" = bmp."+ BMP._ID +
-                                " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.DATE +", "+
+                                " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.DATE +","+
+
                                 " (SELECT "+ BM.DATE +" FROM "+ BM.TABLE_NAME +
                                 " WHERE "+ BM.BODY_PARAM_ID +" = bmp."+ BMP._ID +
-                                " ORDER BY "+ BM.DATE +" DESC LIMIT 1, 1) AS prevDate"+
+                                " ORDER BY "+ BM.DATE +" DESC LIMIT 1, 1) AS "+ BM.PREV_DATE +
+
                                 " FROM "+ BMP.TABLE_NAME +" AS bmp"+
                                 " ORDER BY "+ BMP._ID,
                         null
                 );
             } else {
                 cursor = db.rawQuery("SELECT bm."+ BM._ID +", bmp."+ BMP.NAME +", bm."+ BM.VALUE +","+
+
                                 " (SELECT "+ BM.VALUE +" FROM "+ BM.TABLE_NAME +
                                 " WHERE "+ BM.BODY_PARAM_ID +" = bmp."+ BMP._ID +
                                 " AND julianday("+ BM.DATE +") < julianday(?)"+
-                                " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS prevVal, "+
+                                " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.PREV_VALUE +", "+
+
                                 BM.DATE +"," +
+
                                 " (SELECT "+ BM.DATE +" FROM "+ BM.TABLE_NAME +
                                 " WHERE "+ BM.BODY_PARAM_ID +" = bmp."+ BMP._ID +
                                 " AND julianday("+ BM.DATE +") < julianday(?)"+
-                                " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS prevDate"+
+                                " ORDER BY "+ BM.DATE +" DESC LIMIT 0, 1) AS "+ BM.PREV_DATE +
+
                                 " FROM "+ BM.TABLE_NAME +" AS bm LEFT JOIN "+ BMP.TABLE_NAME +" AS bmp" +
                                 " ON bm."+ BM.BODY_PARAM_ID +" = bmp."+ BMP._ID +
                                 " WHERE bm."+ BM.DATE +" = ?"+
@@ -165,7 +174,7 @@ public class MeasurementsListFragment extends ListFragment
         public final String CLASS_NAME = MeasurementsListFragment.CLASS_NAME +"."+ MyCursorAdapter.class.getSimpleName();
 
         private static final int LAYOUT = R.layout.measurement_list_item;
-        private static final String[] FROM = { BMP.NAME, BM.VALUE, "prevVal", BM.DATE, "prevDate" };
+        private static final String[] FROM = { BMP.NAME, BM.VALUE, BM.PREV_VALUE, BM.DATE, BM.PREV_DATE };
         private static final int[] TO = { R.id.measure_parameter, R.id.measure_value,
                 R.id.measure_difference, R.id.measure_difference, R.id.measure_difference };
 
@@ -180,9 +189,9 @@ public class MeasurementsListFragment extends ListFragment
 
             TextView differenceTextView = view.findViewById(R.id.measure_difference);
 
-            int prevValColumnIndex = cursor.getColumnIndexOrThrow("prevVal");
+            int prevValColumnIndex = cursor.getColumnIndexOrThrow(BM.PREV_VALUE);
             int curValColumnIndex = cursor.getColumnIndexOrThrow(BM.VALUE);
-            int prevDateColumnIndex = cursor.getColumnIndexOrThrow("prevDate");
+            int prevDateColumnIndex = cursor.getColumnIndexOrThrow(BM.PREV_DATE);
             int curDateColumnIndex = cursor.getColumnIndexOrThrow(BM.DATE);
 
             double prevVal = cursor.getDouble(prevValColumnIndex);

@@ -28,7 +28,6 @@ public class MeasurementsHistoryListFragment extends ListFragment
 
     private static final class BM extends DatabaseContract.BodyMeasurementEntry {}
 
-    private Cursor mCursor;
     SimpleCursorAdapter mCursorAdapter;
 
 
@@ -59,9 +58,10 @@ public class MeasurementsHistoryListFragment extends ListFragment
         super.onListItemClick(l, v, position, id);
         Log.d(CLASS_NAME, "onListItemClick");
 
+        Cursor c = mCursorAdapter.getCursor();
         Fragment fragment = new MeasurementsListFragment();
         Bundle args = new Bundle();
-        String date = mCursor.getString(mCursor.getColumnIndex(BM.DATE));
+        String date = c.getString(c.getColumnIndex(BM.DATE));
         args.putString(BM.DATE, date);
         fragment.setArguments(args);
 
@@ -84,7 +84,6 @@ public class MeasurementsHistoryListFragment extends ListFragment
     @Override
     public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor cursor) {
         Log.d(CLASS_NAME, "onLoadFinished id: "+ loader.getId());
-        mCursor = cursor;
         mCursorAdapter.swapCursor(cursor);
     }
 
