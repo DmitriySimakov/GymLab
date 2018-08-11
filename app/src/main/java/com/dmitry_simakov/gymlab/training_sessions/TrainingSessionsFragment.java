@@ -61,13 +61,11 @@ public class TrainingSessionsFragment extends Fragment
             Bundle bundle = new Bundle();
             bundle.putInt(TSE.SESSION_ID, (int)id);
 
-            Fragment fragment;
             if (c.getInt(c.getColumnIndex(TS.DURATION)) == 0) { // Session is not finished
-                fragment = new ActiveTrainingSessionFragment();
                 bundle.putString(TS.DATE_TIME, c.getString(c.getColumnIndex(TS.DATE_TIME)));
-            } else {
-                fragment = new TrainingSessionExercisesFragment();
             }
+
+            Fragment fragment = new TrainingSessionExercisesFragment();
             fragment.setArguments(bundle);
 
             getActivity().getSupportFragmentManager()

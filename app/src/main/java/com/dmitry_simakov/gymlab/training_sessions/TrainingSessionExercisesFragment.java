@@ -8,7 +8,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -18,22 +17,11 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.TextView;
 
 import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.database.DatabaseContract;
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
-
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class TrainingSessionExercisesFragment extends Fragment
         implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -90,17 +78,9 @@ public class TrainingSessionExercisesFragment extends Fragment
             Fragment fragment = new TrainingSessionSetsFragment();
             fragment.setArguments(bundle);
 
-            FragmentManager fm;
-            int fragmentContainer;
-            if (getParentFragment() != null) {
-                fm = getParentFragment().getChildFragmentManager();
-                fragmentContainer = R.id.training_session_container;
-            } else {
-                fm = getActivity().getSupportFragmentManager();
-                fragmentContainer = R.id.fragment_container;
-            }
-            fm.beginTransaction()
-                    .replace(fragmentContainer, fragment)
+            getActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, fragment)
                     .addToBackStack(null)
                     .commit();
         });
@@ -136,7 +116,7 @@ public class TrainingSessionExercisesFragment extends Fragment
         Loader loader = null;
         switch (id) {
             case PROGRAM_DAY_LOADER_ID:
-                loader = new MyCursorLoader(getContext(), args.getInt(TS.TRAINING_DAY_ID));
+                loader = new MyCursorLoader(getContext(), getArguments().getInt(TS.TRAINING_DAY_ID));
                 break;
             case SESSION_LOADER_ID:
                 loader = new MyCursorLoader(getContext(), mSessionId);

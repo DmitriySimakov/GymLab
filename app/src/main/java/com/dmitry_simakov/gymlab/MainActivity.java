@@ -15,28 +15,47 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 import com.dmitry_simakov.gymlab.exercises.ExercisesListFragment;
 import com.dmitry_simakov.gymlab.measurements.MeasurementsTabFragment;
 import com.dmitry_simakov.gymlab.training_programs.TrainingProgramsFragment;
+import com.dmitry_simakov.gymlab.training_sessions.TrainingSessionDialog;
 import com.dmitry_simakov.gymlab.training_sessions.TrainingSessionsFragment;
 
-public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener,
-        FragmentManager.OnBackStackChangedListener {
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
+
+public class MainActivity extends AppCompatActivity implements
+        NavigationView.OnNavigationItemSelectedListener,
+        FragmentManager.OnBackStackChangedListener,
+        TrainingSessionDialog.OnStartTrainingSessionListener {
 
     public static final String CLASS_NAME = MainActivity.class.getSimpleName();
 
     public static final String APP_PREFERENCES = "app_preferences";
-    public static final String IS_DB_COPIED = "is_db_copied";
-    public static final String DARK_THEME = "dark_theme";
+    public static final String IS_DARK_THEME = "is_dark_theme";
+    public static final String DB_WAS_COPIED = "db_was_copied";
+    public static final String START_MILLIS = "start_millis";
+    public static final String TIMER_IS_RUNNING = "timer_is_running";
     private SharedPreferences mPreferences;
 
     private DrawerLayout mDrawer;
     private Toolbar mToolbar;
     private ActionBarDrawerToggle mToggle;
+
+    private Timer mTimer;
+    private long mStartMillis;
+    private boolean mTimerIsRunning;
+    private LinearLayout mTimerPanel;
+    private TextView mDurationTV, mRestTV;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,7 +63,7 @@ public class MainActivity extends AppCompatActivity
         Log.d(CLASS_NAME, "onCreate");
 
         mPreferences = getSharedPreferences(APP_PREFERENCES, Context.MODE_PRIVATE);
-        if (mPreferences.getBoolean(DARK_THEME, false)) {
+        if (mPreferences.getBoolean(IS_DARK_THEME, false)) {
             setTheme(R.style.AppThemeDark);
         }
 
@@ -66,9 +85,79 @@ public class MainActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
         initDB();
+        initTimer();
 
         getSupportFragmentManager().addOnBackStackChangedListener(this);
         setFragment(new TrainingSessionsFragment(), navigationView.getMenu().findItem(R.id.nav_training_sessions));
+    }
+
+    private void initDB() {
+        Log.d(CLASS_NAME, "initDB");
+
+        // Copy database at the first launch
+        if (!mPreferences.contains(DB_WAS_COPIED)) {
+            DatabaseHelper dbHelper = DatabaseHelper.getInstance(this);
+            dbHelper.getReadableDatabase(); // Need to open a connection
+            if (dbHelper.copyDatabase()) {
+                mPreferences.edit().putBoolean(DB_WAS_COPIED, true).apply();
+            } else {
+                Toast.makeText(this, "Проблемы с загрузкой базы данных", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void initTimer() {
+        mTimerPanel = findViewById(R.id.timer_panel);
+        mDurationTV = findViewById(R.id.duration);
+        mRestTV = findViewById(R.id.rest);
+
+        mStartMillis = mPreferences.getLong(START_MILLIS, 0);
+        mTimerIsRunning = mPreferences.getBoolean(TIMER_IS_RUNNING, false);
+
+        if (!mTimerIsRunning) {
+            mTimerPanel.setVisibility(View.GONE);
+        }
+    }
+
+    private void setFragment(Fragment fragment, MenuItem item) {
+        Log.d(CLASS_NAME, "setFragment");
+
+        getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, fragment).commit();
+        item.setChecked(true); // Выделяем выбранный пункт меню в шторке
+        setTitle(item.getTitle()); // Выводим выбранный пункт в заголовке
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (mTimerIsRunning) {
+            runTimer();
+        }
+    }
+
+    private void runTimer() {
+        mTimer = new Timer();
+        mTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                runOnUiThread(() -> {
+                    long diffMillis = new Date().getTime() - mStartMillis;
+                    int hours   = (int) (diffMillis / (1000 * 60 * 60)) % 24;
+                    int minutes = (int) (diffMillis / (1000 * 60)) % 60;
+                    int seconds = (int) (diffMillis / 1000) % 60;
+                    mDurationTV.setText(hours +":"+ minutes +":"+ seconds);
+                });
+            }
+        },0,1000);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (mTimer != null) {
+            mTimer.cancel();
+            mTimer = null;
+        }
     }
 
     @Override
@@ -108,9 +197,9 @@ public class MainActivity extends AppCompatActivity
                 setFragment(new MeasurementsTabFragment(), item);
                 break;
             case R.id.nav_settings:
-                SharedPreferences.Editor editor = mPreferences.edit();
-                editor.putBoolean(DARK_THEME, !mPreferences.getBoolean(DARK_THEME, false));
-                editor.apply();
+                mPreferences.edit()
+                        .putBoolean(IS_DARK_THEME, !mPreferences.getBoolean(IS_DARK_THEME, false))
+                        .apply();
                 recreate();
                 break;
             case R.id.nav_info:
@@ -143,44 +232,24 @@ public class MainActivity extends AppCompatActivity
 
         if (mDrawer.isDrawerOpen(GravityCompat.START)) {
             mDrawer.closeDrawer(GravityCompat.START);
-            return;
-        }
-
-        for (Fragment fragment : getSupportFragmentManager().getFragments()) {
-            if (fragment.isVisible()) {
-                FragmentManager childFM = fragment.getChildFragmentManager();
-                if (childFM.getBackStackEntryCount() > 0) {
-                    childFM.popBackStack();
-                    return;
-                }
-            }
-        }
-
-        super.onBackPressed();
-    }
-
-    private void initDB() {
-        Log.d(CLASS_NAME, "initDB");
-
-        // Copy database at the first launch
-        if (!mPreferences.contains(IS_DB_COPIED)) {
-            DatabaseHelper dbHelper = DatabaseHelper.getInstance(this);
-            dbHelper.getReadableDatabase(); // Need to open a connection
-            if (dbHelper.copyDatabase()) {
-                SharedPreferences.Editor editor = mPreferences.edit();
-                editor.putBoolean(IS_DB_COPIED, true);
-                editor.apply();
-            } else {
-                Toast.makeText(this, "Проблемы с загрузкой базы данных", Toast.LENGTH_SHORT).show();
-            }
+        } else {
+            super.onBackPressed();
         }
     }
 
-    private void setFragment(Fragment fragment, MenuItem item) {
-        Log.d(CLASS_NAME, "setFragment");
-
-        getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container, fragment).commit();
-        item.setChecked(true); // Выделяем выбранный пункт меню в шторке
-        setTitle(item.getTitle()); // Выводим выбранный пункт в заголовке
+    @Override
+    public void onStartTrainingSession(String dateTime) {
+        try {
+            mStartMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(dateTime).getTime();
+            mTimerIsRunning = true;
+            runTimer();
+            mTimerPanel.setVisibility(View.VISIBLE);
+            mPreferences.edit()
+                    .putLong(START_MILLIS, mStartMillis)
+                    .putBoolean(TIMER_IS_RUNNING, mTimerIsRunning)
+                    .apply();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
     }
 }

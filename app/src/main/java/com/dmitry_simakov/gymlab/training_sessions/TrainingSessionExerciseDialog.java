@@ -114,17 +114,9 @@ public class TrainingSessionExerciseDialog extends AppCompatDialogFragment {
             bundle.putInt(TSE.SESSION_ID, mSessionId);
             fragment.setArguments(bundle);
 
-            FragmentManager fm;
-            int fragmentContainer;
-            if (getParentFragment().getParentFragment() != null) {
-                fm = getParentFragment().getParentFragment().getChildFragmentManager();
-                fragmentContainer = R.id.training_session_container;
-            } else {
-                fm = getActivity().getSupportFragmentManager();
-                fragmentContainer = R.id.fragment_container;
-            }
-            fm.beginTransaction()
-                    .replace(fragmentContainer, fragment)
+            getActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, fragment)
                     .addToBackStack(null)
                     .commit();
         });

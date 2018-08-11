@@ -54,7 +54,23 @@ public class TrainingSessionDialog extends AppCompatDialogFragment
 
     private String mDate, mTime;
 
+    OnStartTrainingSessionListener mListener;
+
+    public interface OnStartTrainingSessionListener {
+        void onStartTrainingSession(String dateTime);
+    }
+
     public TrainingSessionDialog() {}
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        try {
+            mListener = (OnStartTrainingSessionListener) context;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(context.toString() + " must implement OnArticleSelectedListener");
+        }
+    }
 
     @NonNull
     @Override
@@ -183,26 +199,26 @@ public class TrainingSessionDialog extends AppCompatDialogFragment
             ContentValues cv = new ContentValues();
             Bundle bundle = new Bundle();
 
-            // Get training program day
+            // Put training program day
             if (c.moveToFirst()) {
                 int trainingDayId = c.getInt(c.getColumnIndex(TS.TRAINING_DAY_ID)); // TODO get id from TextView
                 cv.put(TS.TRAINING_DAY_ID, trainingDayId);
                 bundle.putInt(TS.TRAINING_DAY_ID, trainingDayId);
             }
 
-            // Get date_time
+            // Put date_time
             String dateTime = mDate +" "+ mTime;
             cv.put(TS.DATE_TIME, dateTime);
-            bundle.putString(TS.DATE_TIME, dateTime);
+            mListener.onStartTrainingSession(dateTime);
 
-            // Insert training session and get it ID
+            // Insert training session and put it ID
             long sessionId = DatabaseHelper.insertTrainingSession(cv);
             getContext().getContentResolver().notifyChange(TS.CONTENT_URI, null);
             bundle.putInt(TSE.SESSION_ID, (int)sessionId);
 
             mDialog.dismiss();
 
-            Fragment fragment = new ActiveTrainingSessionFragment();
+            Fragment fragment = new TrainingSessionExercisesFragment();
             fragment.setArguments(bundle);
 
             getActivity().getSupportFragmentManager()
