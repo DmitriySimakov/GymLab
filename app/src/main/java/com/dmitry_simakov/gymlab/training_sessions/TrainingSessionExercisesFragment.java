@@ -15,6 +15,9 @@ import android.support.v4.widget.CursorAdapter;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
@@ -22,11 +25,14 @@ import android.widget.ListView;
 import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.database.DatabaseContract;
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
+import com.dmitry_simakov.gymlab.measurements.MeasurementDialog;
 
 public class TrainingSessionExercisesFragment extends Fragment
         implements LoaderManager.LoaderCallbacks<Cursor> {
 
     public static final String CLASS_NAME = TrainingSessionExercisesFragment.class.getSimpleName();
+
+    public static final String SESSION_IS_FINISHED = "training_is_finished";
 
     private static final int SESSION_LOADER_ID = 0;
     private static final int PROGRAM_DAY_LOADER_ID = 1;
@@ -41,6 +47,8 @@ public class TrainingSessionExercisesFragment extends Fragment
     private boolean mProgramWasLoaded = false;
     private int mSessionId;
 
+    private OnTrainingStateChangeListener mListener;
+
 
     public TrainingSessionExercisesFragment() {}
 
@@ -49,10 +57,22 @@ public class TrainingSessionExercisesFragment extends Fragment
         super.onAttach(context);
         Log.d(CLASS_NAME, "onAttach");
 
+        try {
+            mListener = (OnTrainingStateChangeListener) context;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(context.toString() + " must implement OnTrainingStateChangeListener");
+        }
+
         String[] groupFrom = { E.NAME };
         int[] groupTo = { android.R.id.text1 };
         mCursorAdapter = new SimpleCursorAdapter(context,
                 android.R.layout.simple_list_item_1, null, groupFrom, groupTo, 0);
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
     }
 
     @Override
@@ -110,6 +130,36 @@ public class TrainingSessionExercisesFragment extends Fragment
         } else {
             getLoaderManager().initLoader(SESSION_LOADER_ID, null, this);
         }
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        if (!getArguments().containsKey(SESSION_IS_FINISHED)) {
+            inflater.inflate(R.menu.active_training_session_overlap, menu);
+        }
+        inflater.inflate(R.menu.training_session, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.finish_session:
+                int duration = mListener.onFinishTrainingSession();
+                DatabaseHelper.finishTrainingSession(mSessionId, duration);
+                getContext().getContentResolver().notifyChange(TS.CONTENT_URI, null);
+                getFragmentManager().popBackStack();
+                break;
+            case R.id.delete_session:
+                if (!getArguments().containsKey(SESSION_IS_FINISHED)) {
+                    mListener.onFinishTrainingSession();
+                }
+                DatabaseHelper.deleteTrainingSession(mSessionId);
+                getContext().getContentResolver().notifyChange(TS.CONTENT_URI, null);
+                getFragmentManager().popBackStack();
+                break;
+        }
+        return true;
     }
 
     @NonNull

@@ -23,6 +23,8 @@ import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.database.DatabaseContract;
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 
+import static com.dmitry_simakov.gymlab.training_sessions.TrainingSessionExercisesFragment.SESSION_IS_FINISHED;
+
 public class TrainingSessionsFragment extends Fragment
         implements LoaderManager.LoaderCallbacks<Cursor> {
 
@@ -50,19 +52,28 @@ public class TrainingSessionsFragment extends Fragment
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         Log.d(CLASS_NAME, "onCreateView");
 
-        View view = inflater.inflate(R.layout.fragment_training_sessions, container, false);
+        View v = inflater.inflate(R.layout.fragment_training_sessions, container, false);
 
-        ListView listView = view.findViewById(R.id.list_view);
+        initListView(v);
+
+        FloatingActionButton fab = v.findViewById(R.id.fab);
+        fab.setOnClickListener(view -> new TrainingSessionDialog().show(getChildFragmentManager(), null));
+
+        return v;
+    }
+
+    private void initListView(View v) {
+        ListView listView = v.findViewById(R.id.list_view);
         listView.setAdapter(mCursorAdapter);
-        listView.setOnItemClickListener((parent, view1, position, id) -> {
+        listView.setOnItemClickListener((parent, view, position, id) -> {
             Cursor c = mCursorAdapter.getCursor();
             c.moveToPosition(position);
 
             Bundle bundle = new Bundle();
             bundle.putInt(TSE.SESSION_ID, (int)id);
 
-            if (c.getInt(c.getColumnIndex(TS.DURATION)) == 0) { // Session is not finished
-                bundle.putString(TS.DATE_TIME, c.getString(c.getColumnIndex(TS.DATE_TIME)));
+            if (c.getInt(c.getColumnIndex(TS.DURATION)) > 0) {
+                bundle.putBoolean(SESSION_IS_FINISHED, true);
             }
 
             Fragment fragment = new TrainingSessionExercisesFragment();
@@ -74,11 +85,6 @@ public class TrainingSessionsFragment extends Fragment
                     .addToBackStack(null)
                     .commit();
         });
-
-        FloatingActionButton fab = view.findViewById(R.id.fab);
-        fab.setOnClickListener(view2 -> new TrainingSessionDialog().show(getChildFragmentManager(), null));
-
-        return view;
     }
 
     @Override

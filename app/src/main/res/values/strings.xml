@@ -17,7 +17,8 @@
     <string name="about">О приложении</string>
 
     <!-- Options menu -->
-
+    <string name="finish_session">Завершить тренировку</string>
+    <string name="delete_session">Удалить тренировку</string>
 
     <!-- ExerciseDescriptionFragment -->
     <string name="exercise">Упражнение</string>

@@ -24,6 +24,7 @@ import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 import com.dmitry_simakov.gymlab.exercises.ExercisesListFragment;
 import com.dmitry_simakov.gymlab.measurements.MeasurementsTabFragment;
 import com.dmitry_simakov.gymlab.training_programs.TrainingProgramsFragment;
+import com.dmitry_simakov.gymlab.training_sessions.OnTrainingStateChangeListener;
 import com.dmitry_simakov.gymlab.training_sessions.TrainingSessionDialog;
 import com.dmitry_simakov.gymlab.training_sessions.TrainingSessionsFragment;
 
@@ -36,7 +37,7 @@ import java.util.TimerTask;
 public class MainActivity extends AppCompatActivity implements
         NavigationView.OnNavigationItemSelectedListener,
         FragmentManager.OnBackStackChangedListener,
-        TrainingSessionDialog.OnStartTrainingSessionListener {
+        OnTrainingStateChangeListener {
 
     public static final String CLASS_NAME = MainActivity.class.getSimpleName();
 
@@ -135,35 +136,17 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    private void runTimer() {
-        mTimer = new Timer();
-        mTimer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                runOnUiThread(() -> {
-                    long diffMillis = new Date().getTime() - mStartMillis;
-                    int hours   = (int) (diffMillis / (1000 * 60 * 60)) % 24;
-                    int minutes = (int) (diffMillis / (1000 * 60)) % 60;
-                    int seconds = (int) (diffMillis / 1000) % 60;
-                    mDurationTV.setText(hours +":"+ minutes +":"+ seconds);
-                });
-            }
-        },0,1000);
-    }
-
     @Override
     public void onStop() {
         super.onStop();
-        if (mTimer != null) {
-            mTimer.cancel();
-            mTimer = null;
+        if (mTimerIsRunning) {
+            stopTimer();
         }
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         Log.d(CLASS_NAME, "onCreateOptionsMenu");
-
         getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
@@ -241,15 +224,51 @@ public class MainActivity extends AppCompatActivity implements
     public void onStartTrainingSession(String dateTime) {
         try {
             mStartMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(dateTime).getTime();
-            mTimerIsRunning = true;
             runTimer();
-            mTimerPanel.setVisibility(View.VISIBLE);
-            mPreferences.edit()
-                    .putLong(START_MILLIS, mStartMillis)
-                    .putBoolean(TIMER_IS_RUNNING, mTimerIsRunning)
-                    .apply();
         } catch (ParseException e) {
             e.printStackTrace();
+        }
+    }
+
+    @Override
+    public int onFinishTrainingSession() {
+        stopTimer();
+        return (int) ((new Date().getTime() - mStartMillis) / 60000); // return duration in minutes
+    }
+
+    private void runTimer() {
+        mTimerIsRunning = true;
+        mPreferences.edit()
+                .putLong(START_MILLIS, mStartMillis)
+                .putBoolean(TIMER_IS_RUNNING, true)
+                .apply();
+
+        mTimerPanel.setVisibility(View.VISIBLE);
+        mTimer = new Timer();
+        mTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                runOnUiThread(() -> {
+                    long diffMillis = new Date().getTime() - mStartMillis;
+                    int hours   = (int) (diffMillis / (1000 * 60 * 60)) % 24;
+                    int minutes = (int) (diffMillis / (1000 * 60)) % 60;
+                    int seconds = (int) (diffMillis / 1000) % 60;
+                    mDurationTV.setText(hours +":"+ minutes +":"+ seconds);
+                });
+            }
+        },0,1000);
+    }
+
+    private void stopTimer() {
+        mTimerIsRunning = false;
+        mPreferences.edit()
+                .putBoolean(TIMER_IS_RUNNING, false)
+                .apply();
+
+        mTimerPanel.setVisibility(View.GONE);
+        if (mTimer != null) {
+            mTimer.cancel();
+            mTimer = null;
         }
     }
 }

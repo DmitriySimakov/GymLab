@@ -69,6 +69,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
     }
 
+
     private static long insertExercise(String name, int majorMuscles, String description) {
         ContentValues contentValues = new ContentValues();
         contentValues.put(ExerciseEntry.NAME, name);
@@ -76,6 +77,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         contentValues.put(ExerciseEntry.DESCRIPTION, description);
         return sInstance.getWritableDatabase().insert(ExerciseEntry.TABLE_NAME, null, contentValues);
     }
+
 
     public static long insertTrainingSession(ContentValues cv) {
         return sInstance.getWritableDatabase().insert(TrainingSessionEntry.TABLE_NAME, null, cv);
@@ -88,6 +90,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 TrainingSessionEntry._ID +" = ?", new String[]{ String.valueOf(id) });
     }
 
+    public static void deleteTrainingSession(int id) {
+        sInstance.getWritableDatabase().delete(TrainingSessionEntry.TABLE_NAME,
+                TrainingSessionEntry._ID +" = ?", new String[]{ String.valueOf(id) });
+    }
+
+
     public static long insertExerciseIntoSession(int session_id, int exercise_id, int number, int paramsBoolArr) {
         ContentValues cv = new ContentValues();
         cv.put(TrainingSessionExerciseEntry.SESSION_ID, session_id);
@@ -96,6 +104,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         cv.put(TrainingSessionExerciseEntry.PARAMS_BOOL_ARR, paramsBoolArr);
         return sInstance.getWritableDatabase().insert(TrainingSessionExerciseEntry.TABLE_NAME, null, cv);
     }
+
 
     public static long insertSet(int exercise_id, int secsSinceStart, int weight, int reps, int time, int distance) {
         ContentValues cv = new ContentValues();
@@ -122,6 +131,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         sInstance.getWritableDatabase().delete(TrainingSessionSetEntry.TABLE_NAME,
                 TrainingSessionSetEntry._ID +" = ?", new String[]{ String.valueOf(id) });
     }
+
 
     public static long insertMeasurement(String date, int body_parameter_id, double value) {
         ContentValues cv = new ContentValues();

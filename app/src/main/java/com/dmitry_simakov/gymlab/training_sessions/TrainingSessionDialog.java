@@ -54,11 +54,8 @@ public class TrainingSessionDialog extends AppCompatDialogFragment
 
     private String mDate, mTime;
 
-    OnStartTrainingSessionListener mListener;
+    private OnTrainingStateChangeListener mListener;
 
-    public interface OnStartTrainingSessionListener {
-        void onStartTrainingSession(String dateTime);
-    }
 
     public TrainingSessionDialog() {}
 
@@ -66,9 +63,9 @@ public class TrainingSessionDialog extends AppCompatDialogFragment
     public void onAttach(Context context) {
         super.onAttach(context);
         try {
-            mListener = (OnStartTrainingSessionListener) context;
+            mListener = (OnTrainingStateChangeListener) context;
         } catch (ClassCastException e) {
-            throw new ClassCastException(context.toString() + " must implement OnArticleSelectedListener");
+            throw new ClassCastException(context.toString() + " must implement OnTrainingStateChangeListener");
         }
     }
 
