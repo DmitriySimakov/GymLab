@@ -42,7 +42,19 @@ public class TrainingSessionSetDialog extends AppCompatDialogFragment
 
     private int mExerciseId, mSetId;
 
+    private OnTrainingStateChangeListener mListener;
+
     public TrainingSessionSetDialog() {}
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        try {
+            mListener = (OnTrainingStateChangeListener) context;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(context.toString() + " must implement OnTrainingStateChangeListener");
+        }
+    }
 
     @NonNull
     @Override
@@ -104,7 +116,8 @@ public class TrainingSessionSetDialog extends AppCompatDialogFragment
     private void newSetInit() {
         mDialog.getButton(Dialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             Log.d(CLASS_NAME, "positiveButton onClick");
-            DatabaseHelper.insertSet(mExerciseId, 0,
+            int secsSinceStart = mListener.onFinishSet();
+            DatabaseHelper.insertSet(mExerciseId, secsSinceStart,
                     getValue(mWeightET), getValue(mRepsET), getValue(mTimeET), getValue(mDistanceET));
             getContext().getContentResolver().notifyChange(TSS.CONTENT_URI, null);
             mDialog.dismiss();

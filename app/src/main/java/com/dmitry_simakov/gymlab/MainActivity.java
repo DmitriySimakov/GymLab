@@ -25,11 +25,11 @@ import com.dmitry_simakov.gymlab.exercises.ExercisesListFragment;
 import com.dmitry_simakov.gymlab.measurements.MeasurementsTabFragment;
 import com.dmitry_simakov.gymlab.training_programs.TrainingProgramsFragment;
 import com.dmitry_simakov.gymlab.training_sessions.OnTrainingStateChangeListener;
-import com.dmitry_simakov.gymlab.training_sessions.TrainingSessionDialog;
 import com.dmitry_simakov.gymlab.training_sessions.TrainingSessionsFragment;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -44,7 +44,8 @@ public class MainActivity extends AppCompatActivity implements
     public static final String APP_PREFERENCES = "app_preferences";
     public static final String IS_DARK_THEME = "is_dark_theme";
     public static final String DB_WAS_COPIED = "db_was_copied";
-    public static final String START_MILLIS = "start_millis";
+    public static final String SESSION_START_MILLIS = "session_start_millis";
+    public static final String REST_START_MILLIS = "rest_start_millis";
     public static final String TIMER_IS_RUNNING = "timer_is_running";
     private SharedPreferences mPreferences;
 
@@ -53,7 +54,8 @@ public class MainActivity extends AppCompatActivity implements
     private ActionBarDrawerToggle mToggle;
 
     private Timer mTimer;
-    private long mStartMillis;
+    private long mSessionStartMillis;
+    private long mRestStartMillis;
     private boolean mTimerIsRunning;
     private LinearLayout mTimerPanel;
     private TextView mDurationTV, mRestTV;
@@ -112,10 +114,11 @@ public class MainActivity extends AppCompatActivity implements
         mDurationTV = findViewById(R.id.duration);
         mRestTV = findViewById(R.id.rest);
 
-        mStartMillis = mPreferences.getLong(START_MILLIS, 0);
         mTimerIsRunning = mPreferences.getBoolean(TIMER_IS_RUNNING, false);
-
-        if (!mTimerIsRunning) {
+        if (mTimerIsRunning) {
+            mSessionStartMillis = mPreferences.getLong(SESSION_START_MILLIS, 0);
+            mRestStartMillis = mPreferences.getLong(REST_START_MILLIS, 0);
+        } else {
             mTimerPanel.setVisibility(View.GONE);
         }
     }
@@ -131,17 +134,14 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onStart() {
         super.onStart();
-        if (mTimerIsRunning) {
-            runTimer();
-        }
+        if (mTimerIsRunning) runTimer();
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        if (mTimerIsRunning) {
-            stopTimer();
-        }
+        if (mTimerIsRunning) stopTimer();
+        mPreferences.edit().putBoolean(TIMER_IS_RUNNING, mTimerIsRunning).apply();
     }
 
     @Override
@@ -223,8 +223,10 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onStartTrainingSession(String dateTime) {
         try {
-            mStartMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(dateTime).getTime();
+            mSessionStartMillis = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(dateTime).getTime();
+            mTimerIsRunning = true;
             runTimer();
+            mPreferences.edit().putLong(SESSION_START_MILLIS, mSessionStartMillis).apply();
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -232,39 +234,60 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public int onFinishTrainingSession() {
+        mTimerIsRunning = false;
+        mSessionStartMillis = 0;
+        mRestStartMillis = 0;
         stopTimer();
-        return (int) ((new Date().getTime() - mStartMillis) / 60000); // return duration in minutes
+
+        mPreferences.edit()
+                .putLong(SESSION_START_MILLIS, 0)
+                .putLong(REST_START_MILLIS, 0)
+                .apply();
+        return (int) ((new Date().getTime() - mSessionStartMillis) / 1000); // return session duration in seconds
+    }
+
+    @Override
+    public int onFinishSet() {
+        if (!mTimerIsRunning) return 0;
+
+        long now = new Date().getTime();
+        int restDuration = (int) ((now - mRestStartMillis) / 1000);
+        mRestStartMillis = now;
+
+        mPreferences.edit().putLong(REST_START_MILLIS, mRestStartMillis).apply();
+        return restDuration;
     }
 
     private void runTimer() {
-        mTimerIsRunning = true;
-        mPreferences.edit()
-                .putLong(START_MILLIS, mStartMillis)
-                .putBoolean(TIMER_IS_RUNNING, true)
-                .apply();
-
         mTimerPanel.setVisibility(View.VISIBLE);
         mTimer = new Timer();
         mTimer.schedule(new TimerTask() {
             @Override
             public void run() {
                 runOnUiThread(() -> {
-                    long diffMillis = new Date().getTime() - mStartMillis;
-                    int hours   = (int) (diffMillis / (1000 * 60 * 60)) % 24;
-                    int minutes = (int) (diffMillis / (1000 * 60)) % 60;
-                    int seconds = (int) (diffMillis / 1000) % 60;
-                    mDurationTV.setText(hours +":"+ minutes +":"+ seconds);
+                    Calendar calendar = Calendar.getInstance();
+                    long now = calendar.getTime().getTime();
+                    long diffMillis = now - mSessionStartMillis;
+                    calendar.set(1970, 0, 1, 1, 1, 1);
+                    calendar.set(Calendar.HOUR_OF_DAY, (int) (diffMillis / (1000 * 60 * 60)) % 24);
+                    calendar.set(Calendar.MINUTE,      (int) (diffMillis / (1000 * 60)) % 60);
+                    calendar.set(Calendar.SECOND,      (int) (diffMillis / 1000) % 60);
+                    String time = new SimpleDateFormat("HH:mm:ss").format(calendar.getTime());
+                    mDurationTV.setText(time);
+
+                    if (mRestStartMillis != 0) {
+                        diffMillis = now - mRestStartMillis;
+                        calendar.set(Calendar.MINUTE, (int) (diffMillis / (1000 * 60)) % 60);
+                        calendar.set(Calendar.SECOND, (int) (diffMillis / 1000) % 60);
+                        time = new SimpleDateFormat("mm:ss").format(calendar.getTime());
+                        mRestTV.setText(time);
+                    }
                 });
             }
         },0,1000);
     }
 
     private void stopTimer() {
-        mTimerIsRunning = false;
-        mPreferences.edit()
-                .putBoolean(TIMER_IS_RUNNING, false)
-                .apply();
-
         mTimerPanel.setVisibility(View.GONE);
         if (mTimer != null) {
             mTimer.cancel();

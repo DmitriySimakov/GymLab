@@ -5,4 +5,6 @@ public interface OnTrainingStateChangeListener {
     void onStartTrainingSession(String dateTime);
 
     int onFinishTrainingSession();
+
+    int onFinishSet();
 }
