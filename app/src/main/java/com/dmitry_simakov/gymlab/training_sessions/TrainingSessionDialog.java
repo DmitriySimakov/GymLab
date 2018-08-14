@@ -238,15 +238,47 @@ public class TrainingSessionDialog extends AppCompatDialogFragment
         @Override
         public Cursor loadInBackground() {
             SQLiteDatabase db = DatabaseHelper.getInstance(getContext()).getReadableDatabase();
-            Cursor cursor = db.rawQuery("SELECT tp."+ TP.NAME +" AS "+ TPD.PROGRAM +","+
-                            " tpd."+ TPD.NAME +" AS "+ TS.TRAINING_DAY +","+
-                            " ts."+ TS.TRAINING_DAY_ID +
-                            " FROM "+ TS.TABLE_NAME +" AS ts"+
-                            " LEFT JOIN "+ TPD.TABLE_NAME +" AS tpd"+
-                            " ON ts."+ TS.TRAINING_DAY_ID +" = tpd."+ TPD._ID +
-                            " LEFT JOIN "+ TP.TABLE_NAME +" AS tp"+
-                            " WHERE ts."+ TS.TRAINING_DAY_ID +" IS NOT NULL"+
-                            " ORDER BY "+ TS.DATE_TIME +" DESC LIMIT 1",
+            Cursor cursor = db.rawQuery(
+                    // 4) Find the data for the day you want
+                "SELECT" +
+                        " tp."+ TP.NAME +" AS "+ TPD.PROGRAM +","+
+                        " tpd4."+ TPD.NAME +" AS "+ TS.TRAINING_DAY +","+
+                        " tpd4."+ TPD._ID +" AS "+ TS.TRAINING_DAY_ID +
+                        " FROM ("+
+                            // 3) If there is no such day, take the first day from this program
+                        " SELECT"+
+                            " last_prog_id,"+
+                            " ifnull(last_number_plus_1, 1) AS desired_number"+
+                            " FROM ("+
+                                // 2) Looking for a training day from the same program, whose number is 1 more.
+                                " SELECT" +
+                                " last_prog_id," +
+                                " tpd2."+ TPD.NUMBER +" AS last_number_plus_1"+
+                                " FROM ("+
+                                    // 1) Find the training day we trained for the last time
+                                    " SELECT" +
+                                    " tpd1."+ TPD.PROGRAM_ID +" AS last_prog_id,"+
+                                    " tpd1."+ TPD.NUMBER +" AS last_number"+
+                                    " FROM "+ TS.TABLE_NAME +" AS ts"+
+                                    " LEFT JOIN "+ TPD.TABLE_NAME +" AS tpd1"+
+                                    " ON ts."+ TS.TRAINING_DAY_ID +" = tpd1."+ TPD._ID +
+                                    " WHERE ts."+ TS.TRAINING_DAY_ID +" IS NOT NULL"+
+                                    " ORDER BY ts."+ TS.DATE_TIME +
+                                    " DESC LIMIT 1"+
+                                " )"+
+                                " LEFT JOIN "+ TPD.TABLE_NAME +" AS tpd2"+
+                                " ON last_prog_id = tpd2."+ TPD.PROGRAM_ID +
+                                " AND last_number + 1 = tpd2."+ TPD.NUMBER +
+                            " )"+
+                            " LEFT JOIN "+ TPD.TABLE_NAME +" AS tpd3"+
+                            " ON last_prog_id = tpd3."+ TPD.PROGRAM_ID +
+                            " AND last_number_plus_1 = tpd3."+ TPD.NUMBER +
+                        " )"+
+                        " INNER JOIN "+ TPD.TABLE_NAME +" AS tpd4"+
+                        " ON last_prog_id = tpd4."+ TPD.PROGRAM_ID +
+                        " AND desired_number = tpd4."+ TPD.NUMBER +
+                        " INNER JOIN "+ TP.TABLE_NAME +" AS tp"+
+                        " ON last_prog_id = tp."+ TP._ID,
                     null);
             if (cursor != null) {
                 cursor.getCount(); // Fill cursor window

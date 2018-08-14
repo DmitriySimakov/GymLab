@@ -15,6 +15,9 @@ import android.support.v4.widget.CursorAdapter;
 import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
@@ -56,6 +59,12 @@ public class TrainingSessionSetsFragment extends Fragment
     }
 
     @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
+    }
+
+    @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
         View view = inflater.inflate(R.layout.fragment_training_session_sets, container, false);
@@ -73,9 +82,9 @@ public class TrainingSessionSetsFragment extends Fragment
         listView.setOnItemClickListener((parent, view, position, id) -> {
             TrainingSessionSetDialog dialog = new TrainingSessionSetDialog();
             Bundle args = new Bundle();
-            args.putInt(TrainingSessionSetDialog.EXERCISE_ID, mExerciseId);
+            args.putInt(TSS.TS_EXERCISE_ID, mExerciseId);
             args.putBooleanArray(TSE.PARAMS_BOOL_ARR, mParamsBoolArr);
-            args.putInt(TrainingSessionSetDialog.SET_ID, (int)id);
+            args.putInt(TSS._ID, (int)id);
             dialog.setArguments(args);
             dialog.show(getChildFragmentManager(), null);
         });
@@ -95,7 +104,7 @@ public class TrainingSessionSetsFragment extends Fragment
         fab.setOnClickListener(view -> {
             TrainingSessionSetDialog dialog = new TrainingSessionSetDialog();
             Bundle args = new Bundle();
-            args.putInt(TrainingSessionSetDialog.EXERCISE_ID, mExerciseId);
+            args.putInt(TSS.TS_EXERCISE_ID, mExerciseId);
             args.putBooleanArray(TSE.PARAMS_BOOL_ARR, mParamsBoolArr);
             dialog.setArguments(args);
             dialog.show(getChildFragmentManager(), null);
@@ -106,6 +115,24 @@ public class TrainingSessionSetsFragment extends Fragment
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         getLoaderManager().initLoader(0, null, this);
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.ts_sets, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.delete_exercise:
+                DatabaseHelper.deleteEntry(mExerciseId, TSE.TABLE_NAME);
+                getContext().getContentResolver().notifyChange(TSE.CONTENT_URI, null);
+                getFragmentManager().popBackStack();
+                break;
+        }
+        return true;
     }
 
     @NonNull
@@ -147,7 +174,7 @@ public class TrainingSessionSetsFragment extends Fragment
                             TSS.TIME +", "+
                             TSS.DISTANCE +" "+
                             " FROM "+ TSS.TABLE_NAME +
-                            " WHERE "+ TSS.EXERCISE_ID +" = ?"+
+                            " WHERE "+ TSS.TS_EXERCISE_ID +" = ?"+
                             " ORDER BY "+ TSS._ID,
                     new String[]{ String.valueOf(mExerciseId) });
 

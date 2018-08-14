@@ -13,6 +13,8 @@ import java.io.OutputStream;
 
 import com.dmitry_simakov.gymlab.database.DatabaseContract.*;
 
+import static com.dmitry_simakov.gymlab.database.DatabaseContract.ID;
+
 public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String LOG_TAG = DatabaseHelper.class.getSimpleName();
@@ -45,6 +47,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         Log.d(LOG_TAG, "onUpgrade");
+    }
+
+    @Override
+    public void onOpen(SQLiteDatabase db) {
+        super.onOpen(db);
+        if (!db.isReadOnly()) {
+            db.execSQL("PRAGMA foreign_keys = ON;");
+        }
     }
 
     public boolean copyDatabase() {
@@ -90,16 +100,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 TrainingSessionEntry._ID +" = ?", new String[]{ String.valueOf(id) });
     }
 
-    public static void deleteTrainingSession(int id) {
-        sInstance.getWritableDatabase().delete(TrainingSessionEntry.TABLE_NAME,
-                TrainingSessionEntry._ID +" = ?", new String[]{ String.valueOf(id) });
-    }
 
-
-    public static long insertExerciseIntoSession(int session_id, int exercise_id, int number, int paramsBoolArr) {
+    public static long insertExerciseIntoSession(int sessionId, int exerciseId, int number, int paramsBoolArr) {
         ContentValues cv = new ContentValues();
-        cv.put(TrainingSessionExerciseEntry.SESSION_ID, session_id);
-        cv.put(TrainingSessionExerciseEntry.EXERCISE_ID, exercise_id);
+        cv.put(TrainingSessionExerciseEntry.SESSION_ID, sessionId);
+        cv.put(TrainingSessionExerciseEntry.EXERCISE_ID, exerciseId);
         cv.put(TrainingSessionExerciseEntry.NUMBER, number);
         cv.put(TrainingSessionExerciseEntry.PARAMS_BOOL_ARR, paramsBoolArr);
         return sInstance.getWritableDatabase().insert(TrainingSessionExerciseEntry.TABLE_NAME, null, cv);
@@ -108,7 +113,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public static long insertSet(int exercise_id, int secsSinceStart, int weight, int reps, int time, int distance) {
         ContentValues cv = new ContentValues();
-        cv.put(TrainingSessionSetEntry.EXERCISE_ID, exercise_id);
+        cv.put(TrainingSessionSetEntry.TS_EXERCISE_ID, exercise_id);
         cv.put(TrainingSessionSetEntry.SECS_SINCE_START, secsSinceStart);
         cv.put(TrainingSessionSetEntry.WEIGHT, weight);
         cv.put(TrainingSessionSetEntry.REPS, reps);
@@ -127,16 +132,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 TrainingSessionSetEntry._ID +" = ?", new String[]{ String.valueOf(id) });
     }
 
-    public static void deleteSet(int id) {
-        sInstance.getWritableDatabase().delete(TrainingSessionSetEntry.TABLE_NAME,
-                TrainingSessionSetEntry._ID +" = ?", new String[]{ String.valueOf(id) });
-    }
 
-
-    public static long insertMeasurement(String date, int body_parameter_id, double value) {
+    public static long insertMeasurement(String date, int bodyParameterId, double value) {
         ContentValues cv = new ContentValues();
         cv.put(BodyMeasurementEntry.DATE, date);
-        cv.put(BodyMeasurementEntry.BODY_PARAM_ID, body_parameter_id);
+        cv.put(BodyMeasurementEntry.BODY_PARAM_ID, bodyParameterId);
         cv.put(BodyMeasurementEntry.VALUE, value);
         return sInstance.getWritableDatabase().insert(BodyMeasurementEntry.TABLE_NAME, null, cv);
     }
@@ -149,8 +149,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 BodyMeasurementEntry._ID +" = ?", new String[]{ String.valueOf(id) });
     }
 
-    public static void deleteMeasurement(int id) {
-        sInstance.getWritableDatabase().delete(BodyMeasurementEntry.TABLE_NAME,
-                BodyMeasurementEntry._ID +" = ?", new String[]{ String.valueOf(id) });
+
+    public static void deleteEntry(int id, String tableName) {
+        sInstance.getWritableDatabase().delete(tableName,
+                ID +" = ?", new String[]{ String.valueOf(id) });
     }
 }

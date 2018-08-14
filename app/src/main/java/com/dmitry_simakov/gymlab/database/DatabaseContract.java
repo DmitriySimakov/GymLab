@@ -5,12 +5,12 @@ import android.provider.BaseColumns;
 
 public class DatabaseContract {
 
-    private static final String ID = BaseColumns._ID;
-
-    private DatabaseContract() {};
+    public static final String ID = BaseColumns._ID;
 
     private static final String CONTENT_AUTHORITY = "com.dmitry_simakov.gymlab";
     private static final Uri BASE_CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
+
+    private DatabaseContract() {};
 
     //______________________________ Exercises ______________________________
 
@@ -101,6 +101,7 @@ public class DatabaseContract {
         public final static String _ID = ID;
         public final static String NAME = "name";
         public final static String PROGRAM_ID = PROGRAM + ID;
+        public final static String NUMBER = "number";
     }
 
     public static class TrainingProgramExerciseEntry implements BaseColumns {
@@ -156,11 +157,11 @@ public class DatabaseContract {
         public static final Uri CONTENT_URI = Uri.withAppendedPath(BASE_CONTENT_URI, TABLE_NAME);
 
         // Names for external keys
-        public final static String EXERCISE = "exercise";
+        public final static String TS_EXERCISE = "ts_exercise";
 
         // Columns names
         public final static String _ID = ID;
-        public final static String EXERCISE_ID = EXERCISE + ID;
+        public final static String TS_EXERCISE_ID = TS_EXERCISE + ID;
         public final static String SECS_SINCE_START = "secs_since_start";
         public final static String WEIGHT = "weight";
         public final static String REPS = "reps";

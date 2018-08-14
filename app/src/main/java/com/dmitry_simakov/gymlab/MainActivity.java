@@ -145,24 +145,6 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        Log.d(CLASS_NAME, "onCreateOptionsMenu");
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        Log.d(CLASS_NAME, "onOptionsItemSelected");
-
-        switch (item.getItemId()) {
-            case R.id.action_settings:
-                return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         Log.d(CLASS_NAME, "onNavigationItemSelected");
 
@@ -234,16 +216,17 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public int onFinishTrainingSession() {
+        stopTimer();
+        int duration = (int) ((new Date().getTime() - mSessionStartMillis) / 1000);
         mTimerIsRunning = false;
         mSessionStartMillis = 0;
         mRestStartMillis = 0;
-        stopTimer();
 
         mPreferences.edit()
                 .putLong(SESSION_START_MILLIS, 0)
                 .putLong(REST_START_MILLIS, 0)
                 .apply();
-        return (int) ((new Date().getTime() - mSessionStartMillis) / 1000); // return session duration in seconds
+        return duration;
     }
 
     @Override
@@ -268,17 +251,16 @@ public class MainActivity extends AppCompatActivity implements
                     Calendar calendar = Calendar.getInstance();
                     long now = calendar.getTime().getTime();
                     long diffMillis = now - mSessionStartMillis;
-                    calendar.set(1970, 0, 1, 1, 1, 1);
-                    calendar.set(Calendar.HOUR_OF_DAY, (int) (diffMillis / (1000 * 60 * 60)) % 24);
+                    calendar.set(Calendar.HOUR_OF_DAY, (int) (diffMillis / (1000 * 60 * 60)));
                     calendar.set(Calendar.MINUTE,      (int) (diffMillis / (1000 * 60)) % 60);
-                    calendar.set(Calendar.SECOND,      (int) (diffMillis / 1000) % 60);
+                    calendar.set(Calendar.SECOND,      (int) (diffMillis / 1000)        % 60);
                     String time = new SimpleDateFormat("HH:mm:ss").format(calendar.getTime());
                     mDurationTV.setText(time);
 
                     if (mRestStartMillis != 0) {
                         diffMillis = now - mRestStartMillis;
                         calendar.set(Calendar.MINUTE, (int) (diffMillis / (1000 * 60)) % 60);
-                        calendar.set(Calendar.SECOND, (int) (diffMillis / 1000) % 60);
+                        calendar.set(Calendar.SECOND, (int) (diffMillis / 1000)        % 60);
                         time = new SimpleDateFormat("mm:ss").format(calendar.getTime());
                         mRestTV.setText(time);
                     }

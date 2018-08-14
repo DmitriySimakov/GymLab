@@ -31,9 +31,6 @@ public class TrainingSessionSetDialog extends AppCompatDialogFragment
     private static final class TSE extends DatabaseContract.TrainingSessionExerciseEntry {}
     private static final class TSS extends DatabaseContract.TrainingSessionSetEntry {}
 
-    public static final String EXERCISE_ID = "exercise_id";
-    public static final String SET_ID = "set_id";
-
     public static final int EDIT_SET_LOADER_ID = 1;
 
     private AlertDialog mDialog;
@@ -103,9 +100,9 @@ public class TrainingSessionSetDialog extends AppCompatDialogFragment
 
         Bundle args = getArguments();
         if (args != null) {
-            mExerciseId = args.getInt(EXERCISE_ID);
-            if (args.containsKey(SET_ID)) {
-                mSetId = args.getInt(SET_ID);
+            mExerciseId = args.getInt(TSS.TS_EXERCISE_ID);
+            if (args.containsKey(TSS._ID)) {
+                mSetId = args.getInt(TSS._ID);
                 getLoaderManager().initLoader(EDIT_SET_LOADER_ID, null, this);
             } else {
                 newSetInit();

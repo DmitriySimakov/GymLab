@@ -381,7 +381,7 @@ public class MeasurementDialog extends AppCompatDialogFragment
                     Log.d(CLASS_NAME, "alertDialog positiveButton onClick");
 
                     DatabaseHelper.updateMeasurement(id, mDate, mValue);
-                    DatabaseHelper.deleteMeasurement(mMeasurementId);
+                    DatabaseHelper.deleteEntry(mMeasurementId, BM.TABLE_NAME);
                     getContext().getContentResolver().notifyChange(BM.CONTENT_URI, null);
                     mDialog.dismiss();
                 }

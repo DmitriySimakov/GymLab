@@ -25,7 +25,6 @@ import android.widget.ListView;
 import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.database.DatabaseContract;
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
-import com.dmitry_simakov.gymlab.measurements.MeasurementDialog;
 
 public class TrainingSessionExercisesFragment extends Fragment
         implements LoaderManager.LoaderCallbacks<Cursor> {
@@ -135,9 +134,9 @@ public class TrainingSessionExercisesFragment extends Fragment
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         if (!getArguments().containsKey(SESSION_IS_FINISHED)) {
-            inflater.inflate(R.menu.active_training_session_overlap, menu);
+            inflater.inflate(R.menu.active_ts_exercises_overlap, menu);
         }
-        inflater.inflate(R.menu.training_session, menu);
+        inflater.inflate(R.menu.ts_exercises, menu);
         super.onCreateOptionsMenu(menu, inflater);
     }
 
@@ -154,7 +153,7 @@ public class TrainingSessionExercisesFragment extends Fragment
                 if (!getArguments().containsKey(SESSION_IS_FINISHED)) {
                     mListener.onFinishTrainingSession();
                 }
-                DatabaseHelper.deleteTrainingSession(mSessionId);
+                DatabaseHelper.deleteEntry(mSessionId, TS.TABLE_NAME);
                 getContext().getContentResolver().notifyChange(TS.CONTENT_URI, null);
                 getFragmentManager().popBackStack();
                 break;
@@ -197,7 +196,8 @@ public class TrainingSessionExercisesFragment extends Fragment
             do {
                 int exerciseId = c.getInt(c.getColumnIndex(TPE.EXERCISE_ID));
                 int number = c.getInt(c.getColumnIndex(TPE.NUMBER));
-                DatabaseHelper.insertExerciseIntoSession(mSessionId, exerciseId, number, 1100);
+                int paramsBoolArr = c.getInt(c.getColumnIndex(TPE.PARAMS_BOOL_ARR));
+                DatabaseHelper.insertExerciseIntoSession(mSessionId, exerciseId, number, paramsBoolArr);
             } while (c.moveToNext());
         }
     }

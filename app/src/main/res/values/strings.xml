@@ -49,5 +49,6 @@
     <string name="actual_value">Фактическое значение</string>
     <string name="expected_value">Ожидаемое значение</string>
     <string name="percent">Процент</string>
+    <string name="delete_exercise">Удалить упражнение</string>
 
 </resources>
