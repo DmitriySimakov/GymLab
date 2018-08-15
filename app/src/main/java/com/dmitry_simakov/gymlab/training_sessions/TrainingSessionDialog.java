@@ -238,47 +238,24 @@ public class TrainingSessionDialog extends AppCompatDialogFragment
         @Override
         public Cursor loadInBackground() {
             SQLiteDatabase db = DatabaseHelper.getInstance(getContext()).getReadableDatabase();
-            Cursor cursor = db.rawQuery(
-                    // 4) Find the data for the day you want
-                "SELECT" +
-                        " tp."+ TP.NAME +" AS "+ TPD.PROGRAM +","+
-                        " tpd4."+ TPD.NAME +" AS "+ TS.TRAINING_DAY +","+
-                        " tpd4."+ TPD._ID +" AS "+ TS.TRAINING_DAY_ID +
-                        " FROM ("+
-                            // 3) If there is no such day, take the first day from this program
-                        " SELECT"+
-                            " last_prog_id,"+
-                            " ifnull(last_number_plus_1, 1) AS desired_number"+
-                            " FROM ("+
-                                // 2) Looking for a training day from the same program, whose number is 1 more.
-                                " SELECT" +
-                                " last_prog_id," +
-                                " tpd2."+ TPD.NUMBER +" AS last_number_plus_1"+
-                                " FROM ("+
-                                    // 1) Find the training day we trained for the last time
-                                    " SELECT" +
-                                    " tpd1."+ TPD.PROGRAM_ID +" AS last_prog_id,"+
-                                    " tpd1."+ TPD.NUMBER +" AS last_number"+
-                                    " FROM "+ TS.TABLE_NAME +" AS ts"+
-                                    " LEFT JOIN "+ TPD.TABLE_NAME +" AS tpd1"+
-                                    " ON ts."+ TS.TRAINING_DAY_ID +" = tpd1."+ TPD._ID +
-                                    " WHERE ts."+ TS.TRAINING_DAY_ID +" IS NOT NULL"+
-                                    " ORDER BY ts."+ TS.DATE_TIME +
-                                    " DESC LIMIT 1"+
-                                " )"+
-                                " LEFT JOIN "+ TPD.TABLE_NAME +" AS tpd2"+
-                                " ON last_prog_id = tpd2."+ TPD.PROGRAM_ID +
-                                " AND last_number + 1 = tpd2."+ TPD.NUMBER +
-                            " )"+
-                            " LEFT JOIN "+ TPD.TABLE_NAME +" AS tpd3"+
-                            " ON last_prog_id = tpd3."+ TPD.PROGRAM_ID +
-                            " AND last_number_plus_1 = tpd3."+ TPD.NUMBER +
-                        " )"+
-                        " INNER JOIN "+ TPD.TABLE_NAME +" AS tpd4"+
-                        " ON last_prog_id = tpd4."+ TPD.PROGRAM_ID +
-                        " AND desired_number = tpd4."+ TPD.NUMBER +
-                        " INNER JOIN "+ TP.TABLE_NAME +" AS tp"+
-                        " ON last_prog_id = tp."+ TP._ID,
+            String in = "last."+ TPD.NUMBER +" + 1, 1"; // IDE doesn't expect a comma lul.
+            Cursor cursor = db.rawQuery("SELECT" +
+                            " tp."+ TP.NAME +" AS "+ TPD.PROGRAM +","+
+                            " next."+ TPD.NAME +" AS "+ TS.TRAINING_DAY +","+
+                            " next."+ TPD._ID +" AS "+ TS.TRAINING_DAY_ID +
+                            " FROM (SELECT tpd."+ TPD.PROGRAM_ID +", tpd."+ TPD.NUMBER +
+                                    " FROM "+ TPD.TABLE_NAME +" AS tpd"+
+                                    " INNER JOIN "+ TS.TABLE_NAME +" AS ts"+
+                                    " ON tpd."+ TPD._ID +" = ts."+ TS.TRAINING_DAY_ID +
+                                    " ORDER BY ts."+ TS.DATE_TIME +" DESC"+
+                                    " LIMIT 1) AS last"+
+                            " INNER JOIN "+ TPD.TABLE_NAME +" AS next"+
+                            " ON next."+ TPD.PROGRAM_ID +" = last."+ TPD.PROGRAM_ID +
+                            " AND next."+ TPD.NUMBER +" IN ("+ in +")"+
+                            " INNER JOIN "+ TP.TABLE_NAME +" AS tp"+
+                            " ON next."+ TPD.PROGRAM_ID +" = tp."+ TP._ID +
+                            " ORDER BY next."+ TPD.NUMBER +" DESC"+
+                            " LIMIT 1",
                     null);
             if (cursor != null) {
                 cursor.getCount(); // Fill cursor window

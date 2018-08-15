@@ -1,7 +1,6 @@
 package com.dmitry_simakov.gymlab.exercises;
 
 import android.content.Context;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -19,6 +18,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.dmitry_simakov.gymlab.R;
+import com.dmitry_simakov.gymlab.Utils;
 import com.dmitry_simakov.gymlab.database.DatabaseContract;
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 
@@ -33,7 +33,7 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
     private static final class ET extends DatabaseContract.ExerciseTypeEntry {}
     private static final class Eq extends DatabaseContract.EquipmentEntry{}
 
-    private ImageView mImageView;
+    private ImageView mImageView1, mImageView2;
     private TextView mExerciseNameTextView, mMainMuscleTextView, mTargetedMusclesTextView,
             mMechanicsTypeTextView, mExerciseTypeTextView, mEquipmentTextView, mDescriptionTextView,
             mTechniqueTextView;
@@ -47,7 +47,8 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
         View view = inflater.inflate(R.layout.activity_exercise_description, container, false);
 
         mExerciseNameTextView    = view.findViewById(R.id.exercise_name);
-        mImageView               = view.findViewById(R.id.images);
+        mImageView1              = view.findViewById(R.id.image_1);
+        mImageView2              = view.findViewById(R.id.image_2);
         mMainMuscleTextView      = view.findViewById(R.id.main_muscle);
         mTargetedMusclesTextView = view.findViewById(R.id.targeted_muscles);
         mMechanicsTypeTextView   = view.findViewById(R.id.mechanics_type);
@@ -76,7 +77,8 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
     public void onLoadFinished(@NonNull Loader<Cursor> loader, Cursor c) {
         if (c.moveToFirst()) {
             String name            = c.getString(c.getColumnIndex(Ex.NAME));
-            String imageName       = c.getString(c.getColumnIndex(Ex.IMAGE));
+            String muscleId        = c.getString(c.getColumnIndex(Ex.MAIN_MUSCLE_ID));
+            String id              = c.getString(c.getColumnIndex(Ex._ID));
             String mainMuscle      = c.getString(c.getColumnIndex(Ex.MAIN_MUSCLE));
             String targetedMuscles = c.getString(c.getColumnIndex(Ex.TARGETED_MUSCLES));
             String mechanicsType   = c.getString(c.getColumnIndex(Ex.MECHANICS_TYPE));
@@ -87,13 +89,11 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
 
             getActivity().setTitle(name);
             mExerciseNameTextView.setText(name);
-            if (imageName != null) {
-                Resources res = getContext().getResources();
-                int resID = res.getIdentifier(imageName, "drawable", getContext().getPackageName());
-                if (resID != 0) {
-                    mImageView.setImageDrawable(res.getDrawable(resID));
-                }
-            }
+
+            String imagePath = "exercises/" + muscleId +"/"+ id;
+            Utils.setImageFromAssets(getContext(), mImageView1,  imagePath +"_1.jpg");
+            Utils.setImageFromAssets(getContext(), mImageView2, imagePath +"_2.jpg");
+
             mMainMuscleTextView.setText(mainMuscle);
             mTargetedMusclesTextView.setText(targetedMuscles);
             mMechanicsTypeTextView.setText(mechanicsType);
@@ -123,8 +123,9 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
         public Cursor loadInBackground() {
             SQLiteDatabase db = DatabaseHelper.getInstance(getContext()).getReadableDatabase();
             Cursor cursor = db.rawQuery("SELECT "+
+                            Ex._ID +", "+
                             Ex.NAME +", "+
-                            Ex.IMAGE +", "+
+                            Ex.MAIN_MUSCLE_ID +", "+
                             " (SELECT "+ M.NAME +" FROM "+ M.TABLE_NAME +" WHERE "+ M._ID +" = Ex."+ Ex.MAIN_MUSCLE_ID +") AS "+ Ex.MAIN_MUSCLE +", "+
                             " (SELECT group_concat(m."+ M.NAME +", ', ')"+
                                 " FROM "+ TM.TABLE_NAME +" AS tm LEFT JOIN "+ M.TABLE_NAME +" AS m"+

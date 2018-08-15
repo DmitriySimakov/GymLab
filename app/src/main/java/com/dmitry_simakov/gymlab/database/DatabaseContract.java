@@ -28,7 +28,6 @@ public class DatabaseContract {
         // Columns names
         public final static String _ID = ID;
         public final static String NAME = "name";
-        public final static String IMAGE = "image";
         public final static String MAIN_MUSCLE_ID = MAIN_MUSCLE + ID;
         public final static String MECHANICS_TYPE_ID = MECHANICS_TYPE + ID;
         public final static String EXERCISE_TYPE_ID = EXERCISE_TYPE + ID;
@@ -43,7 +42,6 @@ public class DatabaseContract {
         // Columns names
         public final static String _ID = ID;
         public final static String NAME = "name";
-        public final static String IMAGE = "image";
     }
 
     public static class TargetedMuscleEntry implements BaseColumns {

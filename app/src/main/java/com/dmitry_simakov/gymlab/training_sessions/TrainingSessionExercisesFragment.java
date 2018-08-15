@@ -227,19 +227,19 @@ public class TrainingSessionExercisesFragment extends Fragment
             Cursor cursor = null;
             switch (getId()) {
                 case PROGRAM_DAY_LOADER_ID:
-                    cursor = db.rawQuery("SELECT tpe."+ TPE._ID +", tpe."+ TPE.EXERCISE_ID +"," +
-                                    " tpe."+ TPE.NUMBER +", tpe."+ TPE.PARAMS_BOOL_ARR +"," +
-                                    " e."+ E.IMAGE +", e."+ E.NAME +
-                                    " FROM "+ TPE.TABLE_NAME +" AS tpe LEFT JOIN "+ E.TABLE_NAME +" AS e"+
-                                    " ON tpe."+ TPE.EXERCISE_ID +" = e."+ E._ID +
+                    cursor = db.rawQuery("SELECT "+ TPE.EXERCISE_ID +", " +
+                                    TPE.NUMBER +", "+ TPE.PARAMS_BOOL_ARR +
+                                    " FROM "+ TPE.TABLE_NAME +
                                     " WHERE "+ TPE.TRAINING_DAY_ID +" = ?"+
-                                    " ORDER BY tpe."+ TPE.NUMBER,
+                                    " ORDER BY "+ TPE.NUMBER,
                             new String[]{ String.valueOf(mId) });
                     break;
                 case SESSION_LOADER_ID:
-                    cursor = db.rawQuery("SELECT tse."+ TSE._ID +", tse."+ TSE.PARAMS_BOOL_ARR +", "+
-                                    "e."+ E.IMAGE +", e."+ E.NAME +
-                                    " FROM "+ TSE.TABLE_NAME +" AS tse LEFT JOIN "+ E.TABLE_NAME +" AS e"+
+                    cursor = db.rawQuery("SELECT tse."+ TSE._ID +"," +
+                                    " tse."+ TSE.PARAMS_BOOL_ARR +", tse."+ TSE.EXERCISE_ID +"," +
+                                    " e."+ E.NAME +
+                                    " FROM "+ TSE.TABLE_NAME +" AS tse"+
+                                    " LEFT JOIN "+ E.TABLE_NAME +" AS e"+
                                     " ON tse."+ TSE.EXERCISE_ID +" = e."+ E._ID +
                                     " WHERE "+ TSE.SESSION_ID +" = ?"+
                                     " ORDER BY tse."+ TSE.NUMBER,

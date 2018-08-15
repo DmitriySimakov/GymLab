@@ -2,7 +2,6 @@ package com.dmitry_simakov.gymlab.exercises;
 
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -21,20 +20,19 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.SimpleCursorTreeAdapter;
 
-import com.dmitry_simakov.gymlab.Exercise;
 import com.dmitry_simakov.gymlab.R;
 import com.dmitry_simakov.gymlab.SharedViewModel;
+import com.dmitry_simakov.gymlab.Utils;
 import com.dmitry_simakov.gymlab.database.DatabaseContract;
 import com.dmitry_simakov.gymlab.database.DatabaseHelper;
 
 import java.util.HashMap;
-import java.util.List;
 
 public class ExercisesListFragment extends Fragment implements LoaderManager.LoaderCallbacks<Cursor> {
 
     public static final String CLASS_NAME = ExercisesListFragment.class.getSimpleName();
 
-    private static final class Ex extends DatabaseContract.ExerciseEntry {}
+    private static final class E extends DatabaseContract.ExerciseEntry {}
     private static final class M extends DatabaseContract.MuscleEntry {}
     private static final class TSE extends DatabaseContract.TrainingSessionExerciseEntry {}
 
@@ -68,15 +66,17 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
             Bundle args = getArguments();
             if (args != null && args.containsKey(TSE.SESSION_ID)) {
                 Cursor c = mCursorTreeAdapter.getChild(groupPosition, childPosition);
+                String name = c.getString(c.getColumnIndex(E.NAME));
+                String muscleId = c.getString(c.getColumnIndex(E.MAIN_MUSCLE_ID));
+                String exerciseId = c.getString(c.getColumnIndex(E._ID));
+                String imagePath = "exercises/"+ muscleId +"/"+ exerciseId +"_1.jpg";
                 SharedViewModel model = ViewModelProviders.of(getActivity()).get(SharedViewModel.class);
-                model.setExercise(new Exercise(id,
-                        c.getString(c.getColumnIndex(Ex.IMAGE)),
-                        c.getString(c.getColumnIndex(Ex.NAME))));
+                model.setExercise(new Exercise(id, name, imagePath));
                 getActivity().getSupportFragmentManager().popBackStack();
             } else {
                 Fragment fragment = new ExerciseDescriptionFragment();
                 Bundle bundle = new Bundle();
-                bundle.putInt(Ex._ID, (int) id);
+                bundle.putInt(E._ID, (int) id);
                 fragment.setArguments(bundle);
                 getActivity().getSupportFragmentManager()
                         .beginTransaction()
@@ -160,11 +160,11 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
             SQLiteDatabase db = DatabaseHelper.getInstance(getContext()).getReadableDatabase();
             Cursor cursor;
             if (id != GROUP_LOADER_ID) { // child loader
-                cursor = db.rawQuery("SELECT "+ Ex._ID +", "+ Ex.NAME +", "+ Ex.IMAGE +
-                                " FROM "+ Ex.TABLE_NAME +" WHERE "+ Ex.MAIN_MUSCLE_ID +" = ?",
+                cursor = db.rawQuery("SELECT "+ E._ID +", "+ E.NAME +", "+ E.MAIN_MUSCLE_ID +
+                                " FROM "+ E.TABLE_NAME +" WHERE "+ E.MAIN_MUSCLE_ID +" = ?",
                         new String[]{ String.valueOf(id) });
             } else { // group loader
-                cursor = db.rawQuery("SELECT "+ M._ID +", "+ M.NAME +", "+ M.IMAGE +
+                cursor = db.rawQuery("SELECT "+ M._ID +", "+ M.NAME +
                         " FROM "+ M.TABLE_NAME + " ORDER BY "+ M._ID, null);
             }
 
@@ -182,10 +182,10 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
         public static final String CLASS_NAME = ExercisesListFragment.CLASS_NAME +"."+ MyCursorTreeAdapter.class.getSimpleName();
 
         private static final int GROUP_LAYOUT = R.layout.exercise_list_group_item;
-        private static final String[] GROUP_FROM = { M.NAME, M.IMAGE };
+        private static final String[] GROUP_FROM = { M.NAME, M._ID };
         private static final int[] GROUP_TO = { R.id.muscle_name, R.id.muscle_image };
         private static final int CHILD_LAYOUT = R.layout.exercise_list_child_item;
-        private static final String[] CHILD_FROM = { Ex.NAME, Ex.IMAGE };
+        private static final String[] CHILD_FROM = { E.NAME, E._ID };
         private static final int[] CHILD_TO = { R.id.exercise_name, R.id.exercise_image };
 
         private Context mContext;
@@ -200,18 +200,19 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
             mFragment = fragment;
             mGroupMap = new HashMap<>();
 
-            setViewBinder((view, cursor, columnIndex) -> {
-                if (view.getId() == R.id.muscle_image || view.getId() == R.id.exercise_image) {
+            setViewBinder((view, c, columnIndex) -> {
+                if (view.getId() == R.id.muscle_image) {
                     ImageView imageView = (ImageView) view;
-
-                    String imageName = cursor.getString(columnIndex);
-                    if (imageName != null) {
-                        Resources res = mContext.getResources();
-                        int resID = res.getIdentifier(imageName, "drawable", mContext.getPackageName());
-                        if (resID != 0) {
-                            imageView.setImageDrawable(res.getDrawable(resID));
-                        }
-                    }
+                    String muscleId   = c.getString(c.getColumnIndex(M._ID));
+                    Utils.setImageFromAssets(mContext, imageView,
+                            "muscles/"+ muscleId +".png");
+                    return true;
+                } else if (view.getId() == R.id.exercise_image) {
+                    ImageView imageView = (ImageView) view;
+                    String muscleId   = c.getString(c.getColumnIndex(E.MAIN_MUSCLE_ID));
+                    String exerciseId = c.getString(c.getColumnIndex(E._ID));
+                    Utils.setImageFromAssets(mContext, imageView,
+                            "exercises/"+ muscleId +"/"+ exerciseId +"_1.jpg");
                     return true;
                 }
                 return false;
@@ -221,7 +222,7 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
         @Override
         protected Cursor getChildrenCursor(Cursor groupCursor) {
             int groupPos = groupCursor.getPosition();
-            int groupId = groupCursor.getInt(groupCursor.getColumnIndex(Ex._ID));
+            int groupId = groupCursor.getInt(groupCursor.getColumnIndex(E._ID));
 
             Log.d(CLASS_NAME, "getChildrenCursor groupPos: "+ groupPos +", groupId: "+ groupId);
             mGroupMap.put(groupId, groupPos);

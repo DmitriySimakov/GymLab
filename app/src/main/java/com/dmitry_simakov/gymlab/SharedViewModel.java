@@ -8,6 +8,8 @@ import android.arch.lifecycle.ViewModel;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
+import com.dmitry_simakov.gymlab.exercises.Exercise;
+
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SharedViewModel extends ViewModel {
