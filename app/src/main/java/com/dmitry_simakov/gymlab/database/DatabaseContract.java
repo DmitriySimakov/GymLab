@@ -33,7 +33,6 @@ public class DatabaseContract {
         public final static String EXERCISE_TYPE_ID = EXERCISE_TYPE + ID;
         public final static String EQUIPMENT_ID = EQUIPMENT + ID;
         public final static String DESCRIPTION = "description";
-        public final static String TECHNIQUE = "technique";
     }
 
     public static class MuscleEntry implements BaseColumns {

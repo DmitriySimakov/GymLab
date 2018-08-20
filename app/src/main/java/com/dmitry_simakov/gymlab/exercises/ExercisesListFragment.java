@@ -69,7 +69,7 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
                 String name = c.getString(c.getColumnIndex(E.NAME));
                 String muscleId = c.getString(c.getColumnIndex(E.MAIN_MUSCLE_ID));
                 String exerciseId = c.getString(c.getColumnIndex(E._ID));
-                String imagePath = "exercises/"+ muscleId +"/"+ exerciseId +"_1.jpg";
+                String imagePath = "exercises/"+ muscleId +"/"+ exerciseId +"_1.jpeg";
                 SharedViewModel model = ViewModelProviders.of(getActivity()).get(SharedViewModel.class);
                 model.setExercise(new Exercise(id, name, imagePath));
                 getActivity().getSupportFragmentManager().popBackStack();
@@ -212,7 +212,7 @@ public class ExercisesListFragment extends Fragment implements LoaderManager.Loa
                     String muscleId   = c.getString(c.getColumnIndex(E.MAIN_MUSCLE_ID));
                     String exerciseId = c.getString(c.getColumnIndex(E._ID));
                     Utils.setImageFromAssets(mContext, imageView,
-                            "exercises/"+ muscleId +"/"+ exerciseId +"_1.jpg");
+                            "exercises/"+ muscleId +"/"+ exerciseId +"_1.jpeg");
                     return true;
                 }
                 return false;

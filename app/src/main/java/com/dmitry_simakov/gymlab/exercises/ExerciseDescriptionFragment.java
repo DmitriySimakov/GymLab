@@ -34,9 +34,8 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
     private static final class Eq extends DatabaseContract.EquipmentEntry{}
 
     private ImageView mImageView1, mImageView2;
-    private TextView mExerciseNameTextView, mMainMuscleTextView, mTargetedMusclesTextView,
-            mMechanicsTypeTextView, mExerciseTypeTextView, mEquipmentTextView, mDescriptionTextView,
-            mTechniqueTextView;
+    private TextView mMainMuscleTextView, mTargetedMusclesTextView, mMechanicsTypeTextView,
+            mExerciseTypeTextView, mEquipmentTextView, mDescriptionTextView;
 
     public ExerciseDescriptionFragment() {}
 
@@ -46,7 +45,6 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
 
         View view = inflater.inflate(R.layout.activity_exercise_description, container, false);
 
-        mExerciseNameTextView    = view.findViewById(R.id.exercise_name);
         mImageView1              = view.findViewById(R.id.image_1);
         mImageView2              = view.findViewById(R.id.image_2);
         mMainMuscleTextView      = view.findViewById(R.id.main_muscle);
@@ -55,7 +53,6 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
         mExerciseTypeTextView    = view.findViewById(R.id.exercise_type);
         mEquipmentTextView       = view.findViewById(R.id.equipment);
         mDescriptionTextView     = view.findViewById(R.id.description);
-        mTechniqueTextView       = view.findViewById(R.id.technique);
 
         return view;
     }
@@ -85,14 +82,12 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
             String exerciseType    = c.getString(c.getColumnIndex(Ex.EXERCISE_TYPE));
             String equipment       = c.getString(c.getColumnIndex(Ex.EQUIPMENT));
             String description     = c.getString(c.getColumnIndex(Ex.DESCRIPTION));
-            String technique       = c.getString(c.getColumnIndex(Ex.TECHNIQUE));
 
             getActivity().setTitle(name);
-            mExerciseNameTextView.setText(name);
 
             String imagePath = "exercises/" + muscleId +"/"+ id;
-            Utils.setImageFromAssets(getContext(), mImageView1,  imagePath +"_1.jpg");
-            Utils.setImageFromAssets(getContext(), mImageView2, imagePath +"_2.jpg");
+            Utils.setImageFromAssets(getContext(), mImageView1,  imagePath +"_1.jpeg");
+            Utils.setImageFromAssets(getContext(), mImageView2, imagePath +"_2.jpeg");
 
             mMainMuscleTextView.setText(mainMuscle);
             mTargetedMusclesTextView.setText(targetedMuscles);
@@ -100,7 +95,6 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
             mExerciseTypeTextView.setText(exerciseType);
             mEquipmentTextView.setText(equipment);
             mDescriptionTextView.setText(description);
-            mTechniqueTextView.setText(technique);
         }
     }
 
@@ -134,8 +128,7 @@ public class ExerciseDescriptionFragment extends Fragment implements LoaderManag
                             " (SELECT "+ MT.NAME +" FROM "+ MT.TABLE_NAME +" WHERE "+ MT._ID +" = Ex."+ Ex.MECHANICS_TYPE_ID +") AS "+ Ex.MECHANICS_TYPE +", "+
                             " (SELECT "+ ET.NAME +" FROM "+ ET.TABLE_NAME +" WHERE "+ ET._ID +" = Ex."+ Ex.EXERCISE_TYPE_ID +") AS "+ Ex.EXERCISE_TYPE +", "+
                             " (SELECT "+ Eq.NAME +" FROM "+ Eq.TABLE_NAME +" WHERE "+ Eq._ID +" = Ex."+ Ex.EQUIPMENT_ID +") AS "+ Ex.EQUIPMENT +", "+
-                            Ex.DESCRIPTION +","+
-                            Ex.TECHNIQUE +
+                            Ex.DESCRIPTION +
                             " FROM "+ Ex.TABLE_NAME +" AS Ex "+
                             " WHERE "+ Ex._ID +" = ?",
                     new String[]{ String.valueOf(mExerciseId), String.valueOf(mExerciseId) });
